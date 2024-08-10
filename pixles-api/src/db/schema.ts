@@ -56,7 +56,9 @@ export const photos = mysqlTable("photos", {
         .notNull()
         .default(sql`CURRENT_TIMESTAMP`)
         .$onUpdate(() => new Date()),
-});
+}, (photos) => ({
+	dateModifiedIndex: uniqueIndex("date_modified_idx").on(photos.dateModified),
+}));
 
 export const insertPhotoSchema = createInsertSchema(photos);
 export const selectPhotoSchema = createSelectSchema(photos);

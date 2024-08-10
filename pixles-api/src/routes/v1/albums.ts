@@ -87,6 +87,19 @@ export const albumsRoutes = () => new Elysia({
                     }
                 },
             },
+            params: t.Object({
+                id: t.String({ description: 'Album ID' }),
+                cursor: t.String({ description: 'Cursor for pagination' }),
+                limit: t.Number({ description: 'Limit for pagination' }),
+                sortBy: t.Union([
+                    t.Literal('timestamp', { description: 'Sort by timestamp' }),
+                    t.Literal('name', { description: 'Sort by name' }),
+                ]),
+                sortOrder: t.Union([
+                    t.Literal('asc', { description: 'Sort in ascending order' }),
+                    t.Literal('desc', { description: 'Sort in descending order' }),
+                ]),
+            }),
             response: t.Array(PhotoThumbnail),
         })
         .put('/', ({ params: { id } }) => {
