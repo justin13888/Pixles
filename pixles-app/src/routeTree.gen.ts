@@ -13,6 +13,8 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as AlbumsIndexImport } from './routes/albums/index'
+import { Route as AlbumsIdImport } from './routes/albums/$id'
 
 // Create Virtual Routes
 
@@ -25,6 +27,16 @@ const IndexLazyRoute = IndexLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
 
+const AlbumsIndexRoute = AlbumsIndexImport.update({
+  path: '/albums/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AlbumsIdRoute = AlbumsIdImport.update({
+  path: '/albums/$id',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -36,12 +48,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/albums/$id': {
+      id: '/albums/$id'
+      path: '/albums/$id'
+      fullPath: '/albums/$id'
+      preLoaderRoute: typeof AlbumsIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/albums/': {
+      id: '/albums/'
+      path: '/albums'
+      fullPath: '/albums'
+      preLoaderRoute: typeof AlbumsIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
 // Create and export the route tree
 
-export const routeTree = rootRoute.addChildren({ IndexLazyRoute })
+export const routeTree = rootRoute.addChildren({
+  IndexLazyRoute,
+  AlbumsIdRoute,
+  AlbumsIndexRoute,
+})
 
 /* prettier-ignore-end */
 
@@ -51,11 +81,19 @@ export const routeTree = rootRoute.addChildren({ IndexLazyRoute })
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/albums/$id",
+        "/albums/"
       ]
     },
     "/": {
       "filePath": "index.lazy.tsx"
+    },
+    "/albums/$id": {
+      "filePath": "albums/$id.tsx"
+    },
+    "/albums/": {
+      "filePath": "albums/index.tsx"
     }
   }
 }

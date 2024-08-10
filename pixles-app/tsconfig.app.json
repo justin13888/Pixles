@@ -14,7 +14,10 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ]
+      ],
+      "@backend/*": [
+        "../pixles-api/src/*"
+      ],
     },
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -31,6 +34,7 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "src"
+    "src",
+    "../pixles-api/src"
   ]
 }
