@@ -1,10 +1,14 @@
 import Elysia, { t } from "elysia";
+import { passkeyRoutes } from "./passkey";
 
 export const auth = () => new Elysia({
     detail: {
         tags: ['Auth']
     }
 })
+    .group('/passkey', (app) => app.use(passkeyRoutes()))
+
+
     // .post('/register', ({ body: { email, username, password } }) => {
     //     return {
     //         username,
@@ -23,5 +27,6 @@ export const auth = () => new Elysia({
     //     // TODO: Define other properties like error
     // })
 
+
+// TODO: Implement passkey, oauth, then refresh token routes
 // TODO: Finish all endpoints here: POST /register, POST /login, POST /logout, POST /oauth/init/:provider, POST /oauth/callback/:provider, POST /oauth/logout, POST /refresh
-// POST /passkey/register, POST /passkey/login, POST /passkey/refresh

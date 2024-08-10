@@ -62,7 +62,7 @@ export const albumsRoutes = () => new Elysia({
             id: t.String({ description: 'Album ID' }),
         }),
     }, (app) => app
-        .get('', ({ params: { id } }) => { // TODO: Add query params for cursor and limit
+        .get('/', ({ params: { id } }) => { // TODO: Add query params for cursor and limit
             console.log('Fetching album with id:', id)
             return [
                 {
@@ -89,7 +89,7 @@ export const albumsRoutes = () => new Elysia({
             },
             response: t.Array(PhotoThumbnail),
         })
-        .put('', ({ params: { id } }) => {
+        .put('/', ({ params: { id } }) => {
             console.log('Uploading to album with id:', id)
             return "FKjdfkjsdfkjds" // TODO: Implement upload
         }, {
@@ -103,7 +103,7 @@ export const albumsRoutes = () => new Elysia({
             },
             response: t.String(),
         })
-        .delete('', ({ params: { id }}) => {
+        .delete('/', ({ params: { id }}) => {
             console.log('Deleting album with id:', id)
         }, {
             detail: {
