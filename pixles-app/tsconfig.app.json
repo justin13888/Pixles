@@ -1,4 +1,5 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
@@ -11,12 +12,13 @@
     ],
     "module": "ESNext",
     "skipLibCheck": true,
+    "baseUrl": "./",
     "paths": {
       "@/*": [
-        "./src/*"
+        "src/*"
       ],
       "@backend/*": [
-        "../pixles-api/src/*"
+        "../pixles-api/src/*",
       ],
     },
     /* Bundler mode */
@@ -35,6 +37,10 @@
   },
   "include": [
     "src",
-    "../pixles-api/src"
+  ],
+  "references": [
+    {
+      "path": "../pixles-api"
+    }
   ]
 }
