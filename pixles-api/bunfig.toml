@@ -1,0 +1,5 @@
+telemetry = false
+
+[test]
+coverage=true
+coverageThreshold = 0.8

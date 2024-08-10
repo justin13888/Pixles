@@ -1,7 +1,7 @@
 import Elysia, { t } from "elysia";
 import { Stats } from "../../models/dashboard";
 
-export const dashboard = () => new Elysia({
+export const dashboardRoutes = () => new Elysia({
     detail: {
         tags: ['Dashboard']
     },

@@ -1,8 +1,9 @@
-import { Elysia } from "elysia";
+import { Elysia, error } from "elysia";
 import cors from "@elysiajs/cors";
 import { v1 } from "./routes/v1";
 import swagger from "@elysiajs/swagger";
 import serverTiming from "@elysiajs/server-timing";
+import { envs } from "./env";
 
 const API_VERSION = "0.1.0";
 const version = (version: string) =>
@@ -37,9 +38,14 @@ const app = new Elysia()
 			},
 		}),
 	)
+	.onError(({ code, error }) => {
+		// Obfuscate error details
+		console.error(code, error); // TODO: replace with logger
+		return new Response("Internal Server Error", { status: 500 });
+	})
 	.use(version(API_VERSION))
 	.group("/v1", (app) => app.use(v1()))
-	.listen(3000);
+	.listen(envs.PORT);
 
 console.log(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,

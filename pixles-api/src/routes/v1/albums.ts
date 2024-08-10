@@ -4,7 +4,7 @@ import { PhotoCollection } from "../../models/photo";
 
 // TODO: Enforce bearer token
 
-export const albums = () => new Elysia({
+export const albumsRoutes = () => new Elysia({
     detail: {
         tags: ['Album']
     },
