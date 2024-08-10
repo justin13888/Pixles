@@ -1,15 +1,15 @@
-# Elysia with Bun runtime
+# Pixles API
+
+Written in TypeScript with Elysia, Drizzle ORM.
 
 ## Getting Started
-To get started with this template, simply paste this command into your terminal:
-```bash
-bun create elysia ./elysia-example
-```
 
-## Development
-To start the development server run:
-```bash
-bun run dev
-```
+1. Populate `.env` as needed.
+2. Run
 
-Open http://localhost:3000/ with your browser to see the result.
+    ```bash
+    bun install
+    bun dev
+    ```
+
+3. Open <http://localhost:3000/> with your browser to see the result.
