@@ -1,8 +1,8 @@
 # Pixles API
 
-Written in TypeScript with Elysia, Drizzle ORM.
+This is a REST API for Pixles, written in TypeScript with Elysia, Drizzle ORM.
 
-## Getting Started
+## Development
 
 1. Populate `.env` as needed.
 2. Run
