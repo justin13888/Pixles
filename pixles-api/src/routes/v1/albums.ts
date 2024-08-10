@@ -1,6 +1,6 @@
 import Elysia, { t } from "elysia";
-import { Album } from "../../models/album";
-import { PhotoCollection } from "../../models/photo";
+import { PhotoThumbnail } from "../../models/photo";
+import { selectAlbumSchema } from "@/db/schema";
 
 // TODO: Enforce bearer token
 
@@ -16,14 +16,16 @@ export const albumsRoutes = () => new Elysia({
                 name: "Album 1",
                 description: "Description 1",
                 coverUrl: "https://via.placeholder.com/150",
-                photoCount: 10,
+                dateCreated: new Date(),
+                dateModified: new Date(),
             },
             {
                 id: "2",
                 name: "Album 2",
                 description: "Description 2",
                 coverUrl: "https://via.placeholder.com/150",
-                photoCount: 20,
+                dateCreated: new Date(),
+                dateModified: new Date()
             }
         ]
     }, {
@@ -35,7 +37,7 @@ export const albumsRoutes = () => new Elysia({
                 }
             }
         },
-        response: t.Array(Album)
+        response: t.Array(selectAlbumSchema),
     })
     .post('/', () => {
         console.log('Creating album')
@@ -65,14 +67,12 @@ export const albumsRoutes = () => new Elysia({
             return [
                 {
                     id: "1",
-                    albumId: id,
                     thumbnailUrl: "https://via.placeholder.com/150",
                     originalUrl: "https://via.placeholder.com/600",
                     timestamp: new Date().toISOString(),
                 },
                 {
                     id: "2",
-                    albumId: id,
                     thumbnailUrl: "https://via.placeholder.com/150",
                     originalUrl: "https://via.placeholder.com/600",
                     timestamp: new Date().toISOString(),
@@ -87,7 +87,7 @@ export const albumsRoutes = () => new Elysia({
                     }
                 },
             },
-            response: PhotoCollection,
+            response: t.Array(PhotoThumbnail),
         })
         .put('', ({ params: { id } }) => {
             console.log('Uploading to album with id:', id)

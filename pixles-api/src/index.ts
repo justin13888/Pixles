@@ -30,11 +30,11 @@ const app = new Elysia()
 						description: "Local development server",
 					},
 				],
-        tags: [
-			{ name: 'About', description: 'About endpoints' },
-			{ name: 'Auth', description: 'Authentication endpoints' },
-          { name: 'Album', description: 'Album endpoints' },
-        ]
+				tags: [
+					{ name: "About", description: "About endpoints" },
+					{ name: "Auth", description: "Authentication endpoints" },
+					{ name: "Album", description: "Album endpoints" },
+				],
 			},
 		}),
 	)
@@ -46,6 +46,8 @@ const app = new Elysia()
 	.use(version(API_VERSION))
 	.group("/v1", (app) => app.use(v1()))
 	.listen(envs.PORT);
+
+export type App = typeof app;
 
 console.log(
 	`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,

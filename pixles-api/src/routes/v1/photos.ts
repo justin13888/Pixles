@@ -1,5 +1,5 @@
 import Elysia, { NotFoundError, t } from "elysia";
-import { Photo } from "../../models/photo";
+import { PhotoThumbnail } from "../../models/photo";
 import { db } from "@/db";
 import { photos, selectPhotoSchema } from "@/db/schema";
 import { eq } from "drizzle-orm";
