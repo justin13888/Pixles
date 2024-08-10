@@ -1,6 +1,6 @@
 import Elysia, { t } from "elysia";
 
-export const passkeyRoutes = new Elysia()
+export const passkeyRoutes = () => new Elysia()
     .group('/register', (app) => app
         .post('/start', ({ body: { username }}) => {
             return {

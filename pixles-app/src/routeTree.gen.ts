@@ -18,9 +18,15 @@ import { Route as AlbumsIdImport } from './routes/albums/$id'
 
 // Create Virtual Routes
 
+const DashboardLazyImport = createFileRoute('/dashboard')()
 const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
+
+const DashboardLazyRoute = DashboardLazyImport.update({
+  path: '/dashboard',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/dashboard.lazy').then((d) => d.Route))
 
 const IndexLazyRoute = IndexLazyImport.update({
   path: '/',
@@ -48,6 +54,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/albums/$id': {
       id: '/albums/$id'
       path: '/albums/$id'
@@ -69,6 +82,7 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren({
   IndexLazyRoute,
+  DashboardLazyRoute,
   AlbumsIdRoute,
   AlbumsIndexRoute,
 })
@@ -82,12 +96,16 @@ export const routeTree = rootRoute.addChildren({
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/dashboard",
         "/albums/$id",
         "/albums/"
       ]
     },
     "/": {
       "filePath": "index.lazy.tsx"
+    },
+    "/dashboard": {
+      "filePath": "dashboard.lazy.tsx"
     },
     "/albums/$id": {
       "filePath": "albums/$id.tsx"
