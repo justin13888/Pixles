@@ -1,7 +1,4 @@
-use std::{
-    env,
-    net::{Ipv4Addr, SocketAddrV4},
-};
+use std::net::{Ipv4Addr, SocketAddrV4};
 
 use async_graphql::http::GraphiQLSource;
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
@@ -14,11 +11,13 @@ use axum::{
 };
 use context::get_user_context_from_headers;
 use environment::Environment;
-use eyre::{eyre, Result, WrapErr};
+use eyre::{eyre, Result};
 use listenfd::ListenFd;
 use schema::{create_schema, AppSchema};
 use tokio::net::TcpListener;
 use tower_http::cors::{AllowOrigin, CorsLayer};
+use tracing::{debug, info};
+use tracing_subscriber::fmt::format::FmtSpan;
 
 mod context;
 mod environment;
@@ -54,11 +53,34 @@ async fn graphiql() -> impl IntoResponse {
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-
     // Load environment settings
     let env =
         Environment::load().map_err(|e| eyre!("Failed to load environment settings: {:?}", e))?;
-    println!("Environment settings loaded: {:?}", env);
+
+    // Set up logging
+    if cfg!(debug_assertions) {
+        // Development configuration: Pretty printing with colors
+        tracing_subscriber::fmt()
+            .with_max_level(env.log_level)
+            .with_target(true)
+            .with_file(true)
+            .with_line_number(true)
+            .with_span_events(FmtSpan::FULL)
+            .with_ansi(true)
+            .pretty()
+            .init();
+    } else {
+        // Production configuration: JSON format
+        tracing_subscriber::fmt()
+            .with_max_level(env.log_level)
+            .with_target(true)
+            .with_file(true)
+            .with_span_events(FmtSpan::FULL)
+            .json()
+            .init();
+    }
+
+    debug!("Environment settings loaded: {:?}", env);
     // Build GraphQL schema
     let schema = create_schema();
 
@@ -73,7 +95,7 @@ async fn main() -> Result<()> {
         );
 
     // Start server
-    println!(
+    info!(
         "GraphQL server running at http://{}:{}/graphql",
         env.server.host, env.server.port
     );

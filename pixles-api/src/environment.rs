@@ -2,6 +2,7 @@ use dotenvy::dotenv;
 use serde::Deserialize;
 use std::{env, num::ParseIntError};
 use thiserror::Error;
+use tracing::level_filters::LevelFilter;
 
 #[derive(Debug, Error)]
 pub enum EnvironmentError {
@@ -22,10 +23,11 @@ pub struct EnvironmentServer {
     pub port: u16,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct Environment {
     pub database: EnvironmentDatabase,
     pub server: EnvironmentServer,
+    pub log_level: LevelFilter,
 }
 
 impl Environment {
@@ -49,6 +51,18 @@ impl Environment {
             server: EnvironmentServer {
                 host: load_env("SERVER_HOST")?,
                 port: load_env_int("SERVER_PORT")?,
+            },
+            log_level: match load_env("LOG_LEVEL") {
+                Ok(level) => level
+                    .parse::<LevelFilter>()
+                    .map_err(|e| EnvironmentError::ParseError(e.to_string()))?,
+                Err(_) => {
+                    if cfg!(debug_assertions) {
+                        LevelFilter::DEBUG
+                    } else {
+                        LevelFilter::INFO
+                    }
+                }
             },
         })
     }
