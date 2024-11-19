@@ -1,0 +1,20 @@
+[package]
+name = "pixles-api-service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pixles-api-entity = { path = "../entity" }
+sea-orm = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1.34.0", features = ["macros", "rt"] }
+
+[features]
+mock = ["sea-orm/mock"]
+
+[[test]]
+name = "mock"
+required-features = ["mock"]
