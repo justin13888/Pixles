@@ -8,6 +8,9 @@ members = [".", "graphql", "service", "entity", "migration"]
 
 [dependencies]
 pixles-api-graphql = { path = "./graphql" }
+color-eyre = "0.6.3"
+eyre = "0.6.12"
+tokio = { version = "1.41.1", features = ["full"] }
 
 [workspace.dependencies]
 nanoid = "0.4.0"
@@ -16,3 +19,7 @@ sea-orm = { version = "1.1.1", features = [
     "runtime-tokio-rustls",
     "debug-print",
 ] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

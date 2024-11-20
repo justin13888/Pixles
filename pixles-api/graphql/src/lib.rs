@@ -53,9 +53,7 @@ async fn graphiql() -> impl IntoResponse {
     )
 }
 
-#[tokio::main]
 pub async fn start() -> Result<()> {
-    color_eyre::install()?;
     // Load environment settings
     let env =
         Environment::load().map_err(|e| eyre!("Failed to load environment settings: {:?}", e))?;
