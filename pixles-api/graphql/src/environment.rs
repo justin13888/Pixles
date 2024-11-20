@@ -49,8 +49,8 @@ impl Environment {
                 url: load_env("DATABASE_URL")?,
             },
             server: EnvironmentServer {
-                host: load_env("SERVER_HOST")?,
-                port: load_env_int("SERVER_PORT")?,
+                host: load_env("SERVER_HOST").unwrap_or("0.0.0.0".to_string()),
+                port: load_env_int("SERVER_PORT").unwrap_or(3000),
             },
             log_level: match load_env("LOG_LEVEL") {
                 Ok(level) => level
