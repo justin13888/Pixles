@@ -1,6 +1,6 @@
 # Pixles
 
-Photo sharing for all! Or you could think of as Google Photo wanted to be.
+Photo sharing for all! Or you could think of it as what Google Photo wanted to be.
 
 ## Features
 
