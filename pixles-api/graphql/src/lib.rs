@@ -5,6 +5,7 @@ use std::{
 
 use async_graphql::http::GraphiQLSource;
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::http::header;
 use axum::{
     extract::State,
     http::{HeaderMap, Method},
@@ -20,6 +21,7 @@ use loaders::Loaders;
 use schema::{create_schema, AppSchema};
 use sea_orm::Database;
 use state::AppState;
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tracing::{debug, info};
@@ -56,6 +58,20 @@ async fn graphiql() -> impl IntoResponse {
             .finish(),
     )
 }
+
+#[cfg(debug_assertions)]
+fn create_cors_layer() -> CorsLayer {
+    CorsLayer::permissive()
+}
+
+#[cfg(not(debug_assertions))]
+fn create_cors_layer() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin("*".parse::<HeaderValue>().unwrap())
+        .allow_methods(vec![Method::POST])
+        .allow_headers(vec![header::CONTENT_TYPE])
+        .max_age(300) // 5 minutes
+} // TODO: Test this in prod ^^
 
 pub async fn start() -> Result<()> {
     // Load environment settings
@@ -102,13 +118,14 @@ pub async fn start() -> Result<()> {
 
     // Build router
     let app = Router::new()
-        .route("/graphql", get(graphiql).post(graphql_handler))
-        .with_state(state)
-        .layer(
-            CorsLayer::new()
-                .allow_origin(AllowOrigin::predicate(|_, _| true))
-                .allow_methods([Method::GET, Method::POST]),
-        );
+        .route(
+            "/graphql",
+            #[cfg(debug_assertions)]
+            get(graphiql).post(graphql_handler).with_state(state),
+            #[cfg(not(debug_assertions))]
+            post(graphql_handler).with_state(state),
+        )
+        .layer(create_cors_layer());
 
     // Start server
     info!(
