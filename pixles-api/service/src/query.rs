@@ -19,6 +19,19 @@ impl Query {
             .await
     }
 
+    pub async fn get_hashed_password_by_email(
+        db: &DbConn,
+        email: &str,
+    ) -> Result<Option<String>, DbErr> {
+        let user = User::find_by_email(email)
+            .select_only()
+            .column(user::Column::HashedPassword)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
+        Ok(user.hashed_password)
+    }
+
     // /// If ok, returns (user models, num pages).
     // pub async fn find_users_in_page(
     //     db: &DbConn,

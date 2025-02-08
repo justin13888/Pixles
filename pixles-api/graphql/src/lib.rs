@@ -1,4 +1,7 @@
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    sync::Arc,
+};
 
 use async_graphql::http::GraphiQLSource;
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
@@ -13,6 +16,7 @@ use context::get_user_context_from_headers;
 use environment::Environment;
 use eyre::{eyre, Result};
 use listenfd::ListenFd;
+use loaders::Loaders;
 use schema::{create_schema, AppSchema};
 use sea_orm::Database;
 use state::AppState;
@@ -23,7 +27,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 
 mod context;
 mod environment;
-mod graphql;
+mod loaders;
 mod models;
 mod schema;
 mod state;
@@ -82,12 +86,16 @@ pub async fn start() -> Result<()> {
     }
 
     debug!("Environment settings loaded: {:?}", env);
-    // Build GraphQL schema
-    let schema = create_schema();
 
     // Initialize database connection
-    let conn = Database::connect(env.database.url).await?;
+    let conn = Arc::new(Database::connect(env.database.url).await?);
     // Migrator::up(&conn, None).await?; // TODO
+
+    // Create loaders
+    let loaders = Loaders::new(conn.clone());
+
+    // Build GraphQL schema
+    let schema: AppSchema = create_schema(loaders);
 
     // Define state
     let state = AppState { schema, conn };
