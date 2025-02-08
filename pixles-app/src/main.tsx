@@ -8,9 +8,19 @@ import { routeTree } from './routeTree.gen'
 
 import './index.css'
 
+const exchanges = [];
+
+if (import.meta.env.DEV) {
+  await import('@urql/devtools').then(({ devtoolsExchange }) => {
+    exchanges.push(devtoolsExchange);
+  });
+}
+
+exchanges.push(cacheExchange, fetchExchange);
+
 const client = new Client({
   url: 'http://localhost:3000/graphql',
-  exchanges: [cacheExchange, fetchExchange],
+  exchanges,
 });
 
 // const client = new Client({
