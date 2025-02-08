@@ -2,7 +2,7 @@ use crate::loaders::Loaders;
 use crate::schema::admin::{AdminMutation, AdminQuery};
 use crate::schema::media::{MediaMutation, MediaQuery};
 use crate::schema::user::{UserMutation, UserQuery};
-use async_graphql::{EmptySubscription, Object, Schema};
+use async_graphql::{extensions::Logger, EmptySubscription, Object, Schema};
 
 pub mod admin;
 pub mod media;
@@ -44,11 +44,14 @@ impl MutationRoot {
 pub type AppSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
 pub fn create_schema(loaders: Loaders) -> AppSchema {
-    Schema::build(
+    let schema = Schema::build(
         QueryRoot(UserQuery, MediaQuery, AdminQuery),
         MutationRoot(UserMutation, MediaMutation, AdminMutation),
         EmptySubscription,
-    )
-    .data(loaders)
-    .finish()
+    );
+
+    #[cfg(debug_assertions)]
+    let schema = schema.extension(Logger);
+
+    schema.data(loaders).finish()
 }

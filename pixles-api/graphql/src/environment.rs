@@ -58,7 +58,7 @@ impl Environment {
                     .map_err(|e| EnvironmentError::ParseError(e.to_string()))?,
                 Err(_) => {
                     if cfg!(debug_assertions) {
-                        LevelFilter::DEBUG
+                        LevelFilter::TRACE
                     } else {
                         LevelFilter::INFO
                     }

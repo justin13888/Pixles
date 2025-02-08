@@ -6,7 +6,16 @@ edition = "2021"
 [dependencies]
 pixles-api-entity = { path = "../entity" }
 pixles-api-service = { path = "../service" }
-async-graphql = "7.0.11"
+async-graphql = { version = "7.0.11", features = [
+    "chrono",
+    "dataloader",
+    "log",
+    "opentelemetry",
+    "secrecy",
+    "tracing",
+    "uuid",
+    "url",
+] }
 async-graphql-axum = "7.0.11"
 axum = "0.7.9"
 dotenvy = "0.15.7"
