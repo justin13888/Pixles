@@ -17,7 +17,7 @@ async-graphql = { version = "7.0.11", features = [
     "url",
 ] }
 async-graphql-axum = "7.0.11"
-axum = "0.7.9"
+axum = "0.8.1"
 dotenvy = "0.15.7"
 eyre = "0.6.12"
 futures-util = "0.3.31"
