@@ -51,6 +51,15 @@ pub struct UpdateUserInput {
     pub email: Option<String>,
 }
 
+/// The response from the register user mutation
+#[derive(SimpleObject, Clone, Serialize, Deserialize)]
+pub struct RegisterUserResponse {
+    pub success: bool,
+    pub data: Option<AuthResponse>,
+    pub errors: Vec<String>,
+}
+
+/// The response from the login user mutation
 #[derive(SimpleObject, Clone, Serialize, Deserialize)]
 pub struct AuthResponse {
     pub token: String,

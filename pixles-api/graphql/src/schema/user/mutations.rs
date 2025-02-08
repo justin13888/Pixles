@@ -2,7 +2,7 @@ use crate::loaders::Loaders;
 
 use super::{
     types::{RegisterUserInput, UpdateUserInput, User},
-    AuthResponse, LoginUserInput,
+    AuthResponse, LoginUserInput, RegisterUserResponse,
 };
 use async_graphql::*;
 use serde::{Deserialize, Serialize};
@@ -11,21 +11,35 @@ pub struct UserMutation;
 
 #[Object]
 impl UserMutation {
-    async fn register(&self, ctx: &Context<'_>, input: RegisterUserInput) -> Result<AuthResponse> {
+    async fn register(
+        &self,
+        ctx: &Context<'_>,
+        input: RegisterUserInput,
+    ) -> Result<RegisterUserResponse> {
         let RegisterUserInput {
             name,
             email,
             password,
         } = input;
 
+        let mut errors = vec![];
+
         // Validate email format
         if !email.contains('@') {
-            return Err("Invalid email format".into());
+            errors.push("Invalid email format".to_string());
         }
 
         // Validate password strength
         if password.len() < 8 {
-            return Err("Password must be at least 8 characters long".into());
+            errors.push("Password must be at least 8 characters long".to_string());
+        } // TODO: Add more validation rules
+
+        if !errors.is_empty() {
+            return Ok(RegisterUserResponse {
+                success: false,
+                data: None,
+                errors,
+            });
         }
 
         // Get your service from the context
@@ -47,9 +61,13 @@ impl UserMutation {
             needs_onboarding: true,
         }; // TODO
 
-        Ok(AuthResponse {
-            token,
-            user: Some(user),
+        Ok(RegisterUserResponse {
+            success: true,
+            data: Some(AuthResponse {
+                token,
+                user: Some(user),
+            }),
+            errors: vec![],
         })
     }
 
