@@ -7,6 +7,7 @@ edition = "2021"
 pixles-api-entity = { path = "../entity" }
 pixles-api-service = { path = "../service" }
 async-graphql = { version = "7.0.11", features = [
+    "apollo_persisted_queries",
     "chrono",
     "dataloader",
     "log",
