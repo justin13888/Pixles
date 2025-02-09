@@ -1,7 +1,13 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { Client, Provider, cacheExchange, fetchExchange } from 'urql';
+import { Client, Provider, fetchExchange } from 'urql';
+import { offlineExchange } from '@urql/exchange-graphcache';
+import { makeDefaultStorage } from '@urql/exchange-graphcache/default-storage';
+import { requestPolicyExchange } from '@urql/exchange-request-policy';
+import { populateExchange } from '@urql/exchange-populate'; import { persistedExchange } from '@urql/exchange-persisted';
+
+import schema from './schema';
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
@@ -16,7 +22,29 @@ if (import.meta.env.DEV) {
   });
 }
 
-exchanges.push(cacheExchange, fetchExchange);
+const storage = makeDefaultStorage({
+  idbName: 'graphcache-v3', // The name of the IndexedDB database
+  maxAge: 7, // The maximum age of the persisted data in days
+});
+
+exchanges.push(
+  populateExchange({
+    schema,
+  }),
+  requestPolicyExchange({
+    ttl: 1000 * 60, // 1 minute
+  }),
+  offlineExchange({
+    schema,
+    storage,
+    // updates: {},
+    // optimistic: {},
+  }),
+  persistedExchange({
+    preferGetForPersistedQueries: true,
+  }),
+  fetchExchange,
+);
 
 const client = new Client({
   url: 'http://localhost:3000/graphql',

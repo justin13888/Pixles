@@ -9,6 +9,16 @@ const config: CodegenConfig = {
             preset: 'client',
             plugins: [],
         },
+        './src/schema.ts': {
+            plugins: ['urql-introspection'],
+            config: {
+                useTypeImports: true,
+                includeScalars: true,
+                includeEnums: true,
+                includeInputs: true,
+                includeDirectives: true,
+            },
+        },
     },
 };
 

@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# graphql-codegen
+src/gql/
+src/schema.ts
