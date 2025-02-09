@@ -1,9 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { graphql } from 'graphql'
 
 export const Route = createFileRoute('/albums/$id')({
   staleTime: Number.POSITIVE_INFINITY,
   component: () => <Album />,
 })
+
+// const AlbumFragment = graphql(`
+//   fragment AlbumFragment on Album {
+//     id
+//     title
+//   }
+// `);
 
 const Album = () => {
   return <div>Album</div>;
