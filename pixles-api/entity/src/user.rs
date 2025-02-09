@@ -10,7 +10,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
     #[sea_orm(unique)]
-    pub username: String,
+    pub username: String, // TODO: Make the uniqueness case-insensitive
     pub name: String,
     #[sea_orm(unique)]
     pub email: String,
