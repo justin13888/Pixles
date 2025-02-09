@@ -14,7 +14,6 @@
         "@urql/exchange-graphcache": "^7.2.2",
         "@urql/exchange-persisted": "^4.3.0",
         "@urql/exchange-populate": "^1.2.0",
-        "@urql/exchange-request-policy": "^1.2.0",
         "@urql/introspection": "^1.2.0",
         "change-case": "^5.4.4",
         "class-variance-authority": "^0.7.0",
@@ -556,8 +555,6 @@
     "@urql/exchange-persisted": ["@urql/exchange-persisted@4.3.0", "", { "dependencies": { "@urql/core": "^5.0.0", "wonka": "^6.3.2" } }, "sha512-gI3i5uA9K/f0z5VLqKL5SGJpTrPjsN+BOMvAGJj13Bg4JUmJCaqYYHKetay27q4K2GDZIMGDoeytR7XkpP5ftg=="],
 
     "@urql/exchange-populate": ["@urql/exchange-populate@1.2.0", "", { "dependencies": { "@urql/core": "^5.0.0", "wonka": "^6.3.2" }, "peerDependencies": { "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0" } }, "sha512-NZHqf2mpmr2Tl6SklexhOoUfjMy98ulifdoKgeB467fPE66OXy00U9NHADeMHaoTNg0p/rZDy0hBDsE070vtfQ=="],
-
-    "@urql/exchange-request-policy": ["@urql/exchange-request-policy@1.2.0", "", { "dependencies": { "@urql/core": "^5.0.0", "wonka": "^6.3.2" } }, "sha512-30CwS5/YzX0YWVATg19rrDhruDCRIu96xUz6HGlhJPUw22M7njRldl44fmoU11ZbIemg01t8ysq6+0rdktYBgg=="],
 
     "@urql/introspection": ["@urql/introspection@1.2.0", "", { "peerDependencies": { "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0" } }, "sha512-Mrc7YM/G4yV7NkmmHBFkRKANj8fnZIVTth23/Poo1ASErwjG3j7LERbE/wqOmzTHIkbqOw4yhe8/kimtXFMU/Q=="],
 

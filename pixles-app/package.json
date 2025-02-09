@@ -21,7 +21,6 @@
     "@urql/exchange-graphcache": "^7.2.2",
     "@urql/exchange-persisted": "^4.3.0",
     "@urql/exchange-populate": "^1.2.0",
-    "@urql/exchange-request-policy": "^1.2.0",
     "@urql/introspection": "^1.2.0",
     "change-case": "^5.4.4",
     "class-variance-authority": "^0.7.0",
