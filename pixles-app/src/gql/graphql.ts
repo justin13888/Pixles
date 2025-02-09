@@ -57,6 +57,7 @@ export type AdminQueryGetAdminArgs = {
   id: Scalars['ID']['input'];
 };
 
+/** The response from the login user mutation */
 export type AuthResponse = {
   __typename?: 'AuthResponse';
   token: Scalars['String']['output'];
@@ -133,6 +134,14 @@ export type RegisterUserInput = {
   password: Scalars['String']['input'];
 };
 
+/** The response from the register user mutation */
+export type RegisterUserResponse = {
+  __typename?: 'RegisterUserResponse';
+  data?: Maybe<AuthResponse>;
+  errors: Array<Scalars['String']['output']>;
+  success: Scalars['Boolean']['output'];
+};
+
 export type UpdateAdminInput = {
   email?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
@@ -159,7 +168,7 @@ export type User = {
 export type UserMutation = {
   __typename?: 'UserMutation';
   login: AuthResponse;
-  register: AuthResponse;
+  register: RegisterUserResponse;
 };
 
 
@@ -191,5 +200,11 @@ export type FooQueryVariables = Exact<{
 
 export type FooQuery = { __typename?: 'QueryRoot', user: { __typename?: 'UserQuery', getUser: { __typename?: 'User', id: string, username: string, name: string } } };
 
+export type BarMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type BarMutation = { __typename?: 'MutationRoot', user: { __typename?: 'UserMutation', register: { __typename?: 'RegisterUserResponse', success: boolean, errors: Array<string>, data?: { __typename?: 'AuthResponse', token: string, user?: { __typename?: 'User', id: string, username: string } | null } | null } } };
+
 
 export const FooDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"foo"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getUser"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]} as unknown as DocumentNode<FooQuery, FooQueryVariables>;
+export const BarDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"bar"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"register"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"name"},"value":{"kind":"StringValue","value":"hi","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"email"},"value":{"kind":"StringValue","value":"hi","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"password"},"value":{"kind":"StringValue","value":"foo","block":false}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"token"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"username"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"errors"}}]}}]}}]}}]} as unknown as DocumentNode<BarMutation, BarMutationVariables>;
