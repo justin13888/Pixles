@@ -4,7 +4,6 @@ use chrono::{DateTime, Utc};
 use crate::schema::{user::User, Tag};
 
 /// Asset Metadata
-#[derive(SimpleObject)]
 pub struct AssetMetadata {
     id: ID,
     user: User,
@@ -14,8 +13,71 @@ pub struct AssetMetadata {
     uploaded_at: DateTime<Utc>,
     modified_at: DateTime<Utc>,
     deleted_at: Option<DateTime<Utc>>,
-    /// List of tags
     tags: Vec<Tag>,
+}
+
+#[Object]
+impl AssetMetadata {
+    async fn id(&self) -> &ID {
+        &self.id
+    }
+
+    async fn user(&self) -> &User {
+        &self.user
+    }
+
+    async fn width(&self) -> i32 {
+        self.width
+    }
+
+    async fn height(&self) -> i32 {
+        self.height
+    }
+
+    async fn date(&self) -> &DateTime<Utc> {
+        &self.date
+    }
+
+    async fn uploaded_at(&self) -> &DateTime<Utc> {
+        &self.uploaded_at
+    }
+
+    async fn modified_at(&self) -> &DateTime<Utc> {
+        &self.modified_at
+    }
+
+    async fn deleted_at(&self) -> Option<&DateTime<Utc>> {
+        self.deleted_at.as_ref()
+    }
+
+    async fn tags(&self) -> &Vec<Tag> {
+        &self.tags
+    }
+
+    /// Generate URL for the asset
+    /// RECOMMENDED to use with @defer
+    async fn url(
+        &self,
+        _ctx: &Context<'_>,
+        #[graphql(desc = "Width in pixels")] _width: i32,
+        #[graphql(desc = "Output format")] _format: Option<ImageFormat>,
+    ) -> Result<String> {
+        // self.generate_url(width, format.unwrap_or(ImageFormat::Jpeg))
+        //     .await
+        todo!()
+    }
+
+    /// Generate URL for thumbnail (150px)
+    /// RECOMMENDED to use with @defer
+    async fn thumbnail(&self, ctx: &Context<'_>, format: Option<ImageFormat>) -> Result<String> {
+        self.url(ctx, 150, format).await
+    }
+
+    /// Generate URL for preview (800px)
+    /// RECOMMENDED to use with @defer
+    async fn preview(&self, ctx: &Context<'_>, format: Option<ImageFormat>) -> Result<String> {
+        self.url(ctx, 800, format).await
+    }
 }
 
 #[derive(SimpleObject)]
@@ -137,4 +199,17 @@ pub struct AssetFilter {
     pub modified_at_min: Option<DateTime<Utc>>,
     /// Maximum modified at date
     pub modified_at_max: Option<DateTime<Utc>>,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+pub enum ImageFormat {
+    Jpeg,
+    Webp,
+    Avif,
+}
+
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+pub enum VideoFormat {
+    Mp4,
+    Webm,
 }
