@@ -9,24 +9,27 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: String,
-    pub user_id: String, // TODO: foreign key
+    #[sea_orm(indexed)]
+    pub owner_id: String,
     #[sea_orm(indexed)]
     pub name: String,
     pub description: String, // TODO: make this full-text searchable
     #[sea_orm(
         column_type = "TimestampWithTimeZone",
-        default_value = "CURRENT_TIMESTAMP"
+        default_value = "CURRENT_TIMESTAMP",
+        indexed
     )]
     pub created_at: DateTime<Utc>, // TODO: Index
     #[sea_orm(
         column_type = "TimestampWithTimeZone",
         default_value = "CURRENT_TIMESTAMP",
-        on_update = "CURRENT_TIMESTAMP"
+        on_update = "CURRENT_TIMESTAMP",
+        indexed
     )]
     pub modified_at: DateTime<Utc>, // TODO: Index
     /// Date when the album was deleted if not NULL
-    #[sea_orm(column_type = "TimestampWithTimeZone", nullable)]
-    pub deleted_at: Option<DateTime<Utc>>, // TODO: Index
+    #[sea_orm(column_type = "TimestampWithTimeZone", nullable, indexed)]
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 // TODO: Index username, email
 
@@ -34,15 +37,15 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::user::Entity",
-        from = "Column::UserId",
+        from = "Column::OwnerId",
         to = "super::user::Column::Id"
     )]
-    User,
+    Owner,
 }
 
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::User.def()
+        Relation::Owner.def()
     }
 }
 

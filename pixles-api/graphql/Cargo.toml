@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 pixles-api-entity = { path = "../entity" }
 pixles-api-service = { path = "../service" }
+pixles-api-migration = { path = "../migration" }
 async-graphql = { version = "7.0.11", features = [
     "apollo_persisted_queries",
     "chrono",
@@ -14,6 +15,7 @@ async-graphql = { version = "7.0.11", features = [
     "opentelemetry",
     "secrecy",
     "tracing",
+    "unblock",
     "uuid",
     "url",
 ] }
@@ -34,3 +36,7 @@ tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 uuid = { version = "1.11.0", features = ["v4"] }
 chrono = { version = "0.4.38", features = ["serde"] }
+ring = "0.17.8"
+base64 = "0.22.1"
+secrecy = { workspace = true }
+nanoid = { workspace = true }

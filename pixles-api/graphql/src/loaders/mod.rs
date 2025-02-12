@@ -3,7 +3,9 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use std::{collections::HashMap, sync::Arc};
 
 use crate::schema::user::User;
-use ::entity::user;
+use entity::user;
+
+// TODO: FInish implementation for user and all other entities
 
 pub struct UserLoader {
     pub conn: Arc<DatabaseConnection>,

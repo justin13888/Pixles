@@ -4,7 +4,7 @@ This is GraphQL API for all Pixles clients, written in Rust, async-graphql, and 
 
 ## Development
 
-- Populate `.env` file
+- Populate `.env` file based on `.env.example`
 - `cargo install systemfd cargo-watch`
 - `cargo install sea-orm-cli`
 - `RUST_BACKTRACE=full COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`

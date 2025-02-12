@@ -5,12 +5,13 @@ use super::{
     AuthResponse, LoginUserInput, RegisterUserResponse,
 };
 use async_graphql::*;
-use serde::{Deserialize, Serialize};
+use secrecy::ExposeSecret;
 
 pub struct UserMutation;
 
 #[Object]
 impl UserMutation {
+    /// Register a new user
     async fn register(
         &self,
         ctx: &Context<'_>,
@@ -21,6 +22,7 @@ impl UserMutation {
             email,
             password,
         } = input;
+        let password = password.expose_secret();
 
         let mut errors = vec![];
 
@@ -55,6 +57,7 @@ impl UserMutation {
             username: "fsdf".into(),
             email,
             account_verified: false,
+            is_admin: false,
             created_at: chrono::Utc::now(),
             deleted_at: None,
             modified_at: chrono::Utc::now(),
@@ -71,6 +74,7 @@ impl UserMutation {
         })
     }
 
+    /// Login a user
     async fn login(&self, ctx: &Context<'_>, input: LoginUserInput) -> Result<AuthResponse> {
         let LoginUserInput { email, password } = input;
 
@@ -99,7 +103,34 @@ impl UserMutation {
         Ok(AuthResponse { token, user: None })
     }
 
-    // async fn update_user(&self, ctx: &Context<'_>, id: ID, input: UpdateUserInput) -> Result<User> {
+    /// Update a user
+    /// If user_id is not itself, requires admin privileges
+    // async fn update_user(&self, ctx: &Context<'_>, user_id: ID, input: UpdateUserInput) -> Result<User> {
     //     todo!()
     // }
+
+    // TODO: Delete user
+
+    /// Refresh a user's token
+    async fn refresh_token(&self, ctx: &Context<'_>, token: String) -> Result<AuthResponse> {
+        todo!()
+    }
+
+    /// Logout the user
+    /// Returns true if the user was logged out, false if they were not logged in
+    async fn logout(&self, ctx: &Context<'_>) -> Result<bool> {
+        todo!()
+    }
+
+    /// Logout all sessions for a user
+    /// Requires admin privileges
+    async fn logout_all(&self, ctx: &Context<'_>, user_id: String) -> Result<bool> {
+        todo!()
+    }
+
+    /// Revoke a specific refresh token
+    /// Requires admin privileges
+    async fn revoke_token(&self, ctx: &Context<'_>, token: String) -> Result<AuthResponse> {
+        todo!()
+    }
 }

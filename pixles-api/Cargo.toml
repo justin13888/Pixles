@@ -12,7 +12,8 @@ color-eyre = "0.6.3"
 eyre = "0.6.12"
 tokio = { version = "1.41.1", features = ["full"] }
 openidconnect = "3.5.0"
-async-graphql = { version = "7.0.11", features = ["chrono", "dataloader", "opentelemetry", "tracing", "unblock", "url"] }
+futures-util = "0.3.31"
+async-stream = "0.3.6"
 
 [workspace.dependencies]
 nanoid = "0.4.0"
@@ -21,6 +22,7 @@ sea-orm = { version = "1.1.1", features = [
     "runtime-tokio-rustls",
     "debug-print",
 ] }
+secrecy = { version = "0.10.3", features = ["serde"] }
 
 [profile.release]
 lto = "thin"

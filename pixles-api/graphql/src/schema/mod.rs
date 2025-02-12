@@ -1,53 +1,76 @@
 use crate::loaders::Loaders;
-use crate::schema::admin::{AdminMutation, AdminQuery};
-use crate::schema::media::{MediaMutation, MediaQuery};
+use crate::schema::album::{AlbumMutation, AlbumQuery};
+use crate::schema::asset::{AssetMutation, AssetQuery, AssetSubscription};
 use crate::schema::user::{UserMutation, UserQuery};
-use async_graphql::{extensions::Logger, EmptySubscription, Object, Schema};
+use async_graphql::MergedSubscription;
+use async_graphql::{extensions::Logger, Object, Schema};
 
-pub mod admin;
-pub mod media;
+pub mod album;
+pub mod asset;
+mod types;
 pub mod user;
 
-pub struct QueryRoot(UserQuery, MediaQuery, AdminQuery);
-pub struct MutationRoot(UserMutation, MediaMutation, AdminMutation);
+pub use types::*;
+
+pub struct QueryRoot {
+    pub user: UserQuery,
+    pub album: AlbumQuery,
+    pub asset: AssetQuery,
+}
+pub struct MutationRoot {
+    pub user: UserMutation,
+    pub album: AlbumMutation,
+    pub asset: AssetMutation,
+}
 
 #[Object]
 impl QueryRoot {
     async fn user(&self) -> &UserQuery {
-        &self.0
+        &self.user
     }
 
-    async fn media(&self) -> &MediaQuery {
-        &self.1
+    async fn album(&self) -> &AlbumQuery {
+        &self.album
     }
 
-    async fn admin(&self) -> &AdminQuery {
-        &self.2
+    async fn asset(&self) -> &AssetQuery {
+        &self.asset
     }
 }
 
 #[Object]
 impl MutationRoot {
     async fn user(&self) -> &UserMutation {
-        &self.0
+        &self.user
     }
 
-    async fn media(&self) -> &MediaMutation {
-        &self.1
+    async fn album(&self) -> &AlbumMutation {
+        &self.album
     }
 
-    async fn admin(&self) -> &AdminMutation {
-        &self.2
+    async fn asset(&self) -> &AssetMutation {
+        &self.asset
     }
 }
 
-pub type AppSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
+#[derive(MergedSubscription, Default)]
+pub struct SubscriptionRoot(AssetSubscription);
+
+pub type AppSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
 
 pub fn create_schema(loaders: Loaders) -> AppSchema {
     let schema = Schema::build(
-        QueryRoot(UserQuery, MediaQuery, AdminQuery),
-        MutationRoot(UserMutation, MediaMutation, AdminMutation),
-        EmptySubscription,
+        QueryRoot {
+            user: UserQuery,
+            album: AlbumQuery,
+            asset: AssetQuery,
+        },
+        MutationRoot {
+            user: UserMutation,
+            album: AlbumMutation,
+            asset: AssetMutation,
+        },
+        SubscriptionRoot::default(),
     );
 
     #[cfg(debug_assertions)]

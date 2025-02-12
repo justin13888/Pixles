@@ -29,7 +29,7 @@ impl Query {
             .one(db)
             .await?
             .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
-        Ok(user.hashed_password)
+        Ok(Some(user.hashed_password))
     }
 
     // /// If ok, returns (user models, num pages).

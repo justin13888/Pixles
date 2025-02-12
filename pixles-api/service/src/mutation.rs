@@ -9,7 +9,7 @@ impl Mutation {
         db: &DbConn,
         username: String,
         email: String,
-        hashed_password: Option<String>,
+        hashed_password: String,
     ) -> Result<user::ActiveModel, DbErr> {
         user::ActiveModel {
             username: Set(username),
