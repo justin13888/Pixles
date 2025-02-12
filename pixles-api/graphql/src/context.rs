@@ -5,6 +5,7 @@ use axum::http::HeaderMap;
 use chrono::Utc;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, TokenData, Validation};
 use sea_orm::DatabaseConnection;
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -23,17 +24,17 @@ pub enum UserType {
 
 #[derive(Debug, Clone)]
 pub struct UserContext {
-    usertype: UserType,
+    user_type: UserType,
     scopes: HashSet<String>,
 }
 
 impl UserContext {
     pub fn from_headers(headers: &HeaderMap, config: &ServerConfig) -> Result<Self, AuthError> {
         let mut scopes = None;
-        let usertype: UserType = match get_token_from_headers(headers) {
+        let user_type: UserType = match get_token_from_headers(headers) {
             Ok(token) => {
                 let TokenData { claims, .. } =
-                    Claims::decode(&token, &config.jwt_eddsa_decoding_key)?;
+                    Claims::decode(token.expose_secret(), &config.jwt_eddsa_decoding_key)?;
 
                 scopes = Some(claims.scopes);
 
@@ -47,7 +48,7 @@ impl UserContext {
         };
 
         Ok(Self {
-            usertype,
+            user_type,
             scopes: scopes.unwrap_or_default(),
         })
     }
@@ -96,7 +97,8 @@ impl From<AuthError> for ServerError {
     }
 }
 
-fn get_token_from_headers(headers: &HeaderMap) -> Result<String, AuthError> {
+/// Get the token from the Authorization header
+fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, AuthError> {
     let auth_header = headers
         .get("Authorization")
         .ok_or(AuthError::TokenMissing)?
@@ -109,7 +111,7 @@ fn get_token_from_headers(headers: &HeaderMap) -> Result<String, AuthError> {
     }
 
     // Extract the token part
-    Ok(auth_header[7..].to_string())
+    Ok(SecretString::from(&auth_header[7..]))
 }
 
 // TODO: Bench all the functions here (used in each context)

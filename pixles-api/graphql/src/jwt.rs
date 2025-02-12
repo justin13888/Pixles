@@ -124,7 +124,7 @@ mod tests {
             .unwrap();
         let (encoding_key, decoding_key) = convert_ed25519_der_to_jwt_keys(doc.as_ref()).unwrap();
 
-        let claims = Claims::new("user_id".to_string(), HashSet::new());
+        let claims = Claims::new("user_id".to_string(), UserRole::User, HashSet::new());
 
         let token = claims.encode(&encoding_key).unwrap();
         let decoded = Claims::decode(&token, &decoding_key).unwrap();
