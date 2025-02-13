@@ -6,6 +6,9 @@ const isDev = process.env.NODE_ENV === 'development';
 
 export default defineConfig({
   plugins: [pluginReact()],
+  // dev: {
+  //   lazyCompilation: true, // Breaks UI
+  // },
   server: {
     port: 5173,
   },
@@ -14,9 +17,11 @@ export default defineConfig({
     removeConsole: !isDev,
   },
   tools: {
-    postcss: {},
     rspack: {
       plugins: [TanStackRouterRspack()],
+      experiments: {
+        incremental: isDev,
+      }
     },
   },
 });

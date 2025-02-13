@@ -5,10 +5,13 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "build": "rsbuild build",
-    "build:analyze": "cross-env BUNDLE_ANALYZE=true rsbuild build",
+    "build:analyze": "cross-env BUNDLE_ANALYZE=true bun run build",
+    "build:doctor": "RSDOCTOR=true bun run build",
     "lint": "biome check",
     "lint:fix": "biome check --write",
-    "dev": "rsbuild dev --open",
+    "dev": "rsbuild dev",
+    "dev:analyze": "cross-env BUNDLE_ANALYZE=true bun run dev",
+    "dev:doctor": "cross-env RSDOCTOR=true bun run dev",
     "preview": "rsbuild preview",
     "codegen": "graphql-codegen"
   },
@@ -45,6 +48,7 @@
     "@graphql-codegen/client-preset": "^4.6.2",
     "@rsbuild/core": "^1.2.4",
     "@rsbuild/plugin-react": "^1.1.0",
+    "@rsdoctor/rspack-plugin": "^0.4.13",
     "@tanstack/eslint-plugin-query": "^5.66.0",
     "@tanstack/router-devtools": "^1.101.0",
     "@tanstack/router-plugin": "^1.102.6",
