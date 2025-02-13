@@ -52,6 +52,14 @@ Pixles is open-source and designed to be friendly to self-host. See this [guide]
 
 <!-- TODO: Add internationalization note -->
 
+## FAQ
+
+**Q: Why not extend off existing open-source solutions?**
+
+A: While there are multiple great open-source solutions, they lack a lot of the involved functions that professionals and prosumers need. For prosumers interested in an open-source and self-hosted solution, we have a robust, and highly scalable solution. For professionals looking to host all their assets in a seamless and integrated service, we have a solution that may be a better fit than some proprietary options.
+
+Side note: The original author loves open-source and has contributed to various projects. The reason for starting from the ground up is that many of the technical decisions to achieve the goals with user experience and performance require lots of serious thoughts and careful considerations.
+
 ## License
 
 Pixles is licensed under the [AGPL-3.0 License](LICENSE).
