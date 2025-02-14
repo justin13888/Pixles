@@ -22,6 +22,8 @@ impl UserMutation {
             email,
             password,
         } = input;
+        // TODO: Check username availability and doesn't break username rules, nor is reserved
+        // E.g. cannot be "admin", "root", "pixles", "admin*", etc.
         let password = password.expose_secret();
 
         let mut errors = vec![];
@@ -48,6 +50,8 @@ impl UserMutation {
         // let auth_service = ctx.data::<YourAuthService>()?;
 
         // Call your existing service function
+        // TOOD: Normalize email, username
+        // TODO: Hash with argon2id
         // let (user, token) = auth_service.register_user(email, password).await?;
 
         let token = "foo".to_string();
