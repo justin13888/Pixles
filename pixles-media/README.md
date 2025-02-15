@@ -31,6 +31,12 @@ Build:
 conan build .
 ```
 
+Format code:
+
+```bash
+ninja -C <build_folder> clang-format
+```
+
 Run everything (e.g. install,build, package, test)
 
 ```bash
