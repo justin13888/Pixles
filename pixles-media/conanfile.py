@@ -1,13 +1,20 @@
-import os
 from conan import ConanFile
 from conan.tools.meson import MesonToolchain, Meson
 from conan.tools.layout import basic_layout
-from conan.tools.files import copy
 
-class pixles_mediaConan(ConanFile):
+class PixlesMediaConan(ConanFile):
     name = "pixles_media"
     version = "0.1.0"
+    description = "High-level, cross-platform image and video processing library."
+    license = "AGPL-3.0-only"
+    author = "Justin Chung"
+    homepage = "https://github.com/justin13888/Pixles"
+    url = "https://github.com/justin13888/Pixles"
+    topics = ("image", "video", "processing")
     package_type = "library"
+    requires = "ffmpeg/7.0.1"
+    tool_requires = "meson/1.6.0", "ninja/1.12.1"
+    generators = "PkgConfigDeps"
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
