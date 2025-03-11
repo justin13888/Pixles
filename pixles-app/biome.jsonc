@@ -4,5 +4,10 @@
         "ignore": [
             "**/routeTree.gen.ts"
         ]
+    },
+    "vcs": { // Required because as of March 2025, Biome doesn't check nested gitignore files otherwise
+        "enabled": true,
+        "clientKind": "git",
+        "useIgnoreFile": true
     }
 }
