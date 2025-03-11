@@ -143,21 +143,21 @@ pub async fn start() -> Result<()> {
     };
 
     // Build router
-    let app = Router::new()
-        .route(
-            "/graphql",
-            get(graphql_handler).post(graphql_handler).with_state(state),
-        )
-        .route("/playground", get(graphiql))
-        .layer(create_cors_layer());
+    let mut app = Router::new().route(
+        "/graphql",
+        get(graphql_handler).post(graphql_handler).with_state(state),
+    );
+    #[cfg(debug_assertions)]
+    {
+        app = app.route("/playground", get(graphiql));
+    }
+    app = app.layer(create_cors_layer());
 
     // Start server
     info!(
         "GraphQL server running at http://{}:{}/graphql",
         env.server.host, env.server.port
     );
-    // let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    // axum::serve(listener, app).await.unwrap();
 
     let mut listenfd = ListenFd::from_env();
     let listener = match listenfd.take_tcp_listener(0).unwrap() {
