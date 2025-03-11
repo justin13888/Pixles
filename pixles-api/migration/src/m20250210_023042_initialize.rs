@@ -17,9 +17,9 @@ impl MigrationTrait for Migration {
                     .table(Users::Table)
                     .if_not_exists()
                     .col(char_len(Users::Id, 21).primary_key())
-                    .col(string_len_uniq(Users::Username, 64))
+                    .col(string_len(Users::Username, 64))
                     .col(string(Users::Name))
-                    .col(string_len_uniq(Users::Email, 255))
+                    .col(string_len(Users::Email, 255))
                     .col(boolean(Users::AccountVerified))
                     .col(boolean(Users::NeedsOnboarding))
                     .col(string(Users::HashedPassword))
@@ -33,29 +33,44 @@ impl MigrationTrait for Migration {
                             .default(Expr::current_timestamp()),
                     )
                     .col(timestamp_with_time_zone_null(Users::DeletedAt))
-                    .index(
-                        Index::create()
-                            .name("idx_email")
-                            .col(Users::Email)
-                            .index_type(IndexType::Hash),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_deleted_at")
-                            .col(Users::DeletedAt)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_is_admin")
-                            .col(Users::IsAdmin)
-                            .index_type(IndexType::Hash),
-                    )
                     .to_owned(),
             )
             .await?;
 
-        // Create users.username index
+        // Create users indices
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_email")
+                    .table(Users::Table)
+                    .col(Users::Email)
+                    .unique()
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_deleted_at")
+                    .table(Users::Table)
+                    .col(Users::DeletedAt)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_is_admin")
+                    .table(Users::Table)
+                    .col(Users::IsAdmin)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
         db.execute_unprepared(
             r#"CREATE UNIQUE INDEX idx_username_lower ON users (LOWER(username))"#,
         )
@@ -80,41 +95,68 @@ impl MigrationTrait for Migration {
                             .default(Expr::current_timestamp()),
                     )
                     .col(timestamp_with_time_zone_null(Albums::DeletedAt))
-                    .index(
-                        Index::create()
-                            .name("idx_owner_id")
-                            .col(Albums::OwnerId)
-                            .index_type(IndexType::Hash),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_name")
-                            .col(Albums::Name)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_created_at")
-                            .col(Albums::CreatedAt)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_modified_at")
-                            .col(Albums::ModifiedAt)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_deleted_at")
-                            .col(Albums::DeletedAt)
-                            .index_type(IndexType::BTree),
-                    )
                     .to_owned(),
             )
             .await?;
 
-        // Add albums.user_id foreign key constraint
+        // Create albums indices
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_owner_id")
+                    .table(Albums::Table)
+                    .col(Albums::OwnerId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_name")
+                    .table(Albums::Table)
+                    .col(Albums::Name)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_created_at")
+                    .table(Albums::Table)
+                    .col(Albums::CreatedAt)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_modified_at")
+                    .table(Albums::Table)
+                    .col(Albums::ModifiedAt)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_deleted_at")
+                    .table(Albums::Table)
+                    .col(Albums::DeletedAt)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+
+        // // Add albums.user_id foreign key constraint
         manager
             .create_foreign_key(
                 ForeignKey::create()
@@ -141,42 +183,72 @@ impl MigrationTrait for Migration {
                     .col(timestamp_with_time_zone(Assets::UploadedAt))
                     .col(timestamp_with_time_zone(Assets::ModifiedAt))
                     .col(timestamp_with_time_zone_null(Assets::DeletedAt))
-                    .index(
-                        Index::create()
-                            .name("idx_owner_id")
-                            .col(Assets::OwnerId)
-                            .index_type(IndexType::Hash),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_album_id")
-                            .col(Assets::AlbumId)
-                            .index_type(IndexType::Hash),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_date")
-                            .col(Assets::Date)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_uploaded_at")
-                            .col(Assets::UploadedAt)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_modified_at")
-                            .col(Assets::ModifiedAt)
-                            .index_type(IndexType::BTree),
-                    )
-                    .index(
-                        Index::create()
-                            .name("idx_deleted_at")
-                            .col(Assets::DeletedAt)
-                            .index_type(IndexType::BTree),
-                    )
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_owner_id")
+                    .table(Assets::Table)
+                    .col(Assets::OwnerId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_album_id")
+                    .table(Assets::Table)
+                    .col(Assets::AlbumId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_date")
+                    .table(Assets::Table)
+                    .col(Assets::Date)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_uploaded_at")
+                    .table(Assets::Table)
+                    .col(Assets::UploadedAt)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_modified_at")
+                    .table(Assets::Table)
+                    .col(Assets::ModifiedAt)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_deleted_at")
+                    .table(Assets::Table)
+                    .col(Assets::DeletedAt)
+                    .index_type(IndexType::BTree)
                     .to_owned(),
             )
             .await?;
