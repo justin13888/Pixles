@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      # These variables default to the specified values if not set externally.
+      POSTGRES_USER: pixles
+      POSTGRES_PASSWORD: pixles
+      POSTGRES_DB: pixles
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: docker.io/minio/minio:RELEASE.2025-02-28T09-55-16Z
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # Minio API port
+      - "9001:9001" # Minio Console port
+    environment:
+      # Default credentials; override via environment or .env file.
+      MINIO_ROOT_USER: pixles
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  minio_data:
