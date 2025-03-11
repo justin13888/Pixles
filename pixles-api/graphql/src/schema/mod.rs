@@ -2,9 +2,11 @@ use crate::loaders::Loaders;
 use crate::schema::album::{AlbumMutation, AlbumQuery};
 use crate::schema::asset::{AssetMutation, AssetQuery, AssetSubscription};
 use crate::schema::user::{UserMutation, UserQuery};
+use async_graphql::extensions::apollo_persisted_queries::{
+    ApolloPersistedQueries, LruCacheStorage,
+};
 use async_graphql::MergedSubscription;
 use async_graphql::{extensions::Logger, Object, Schema};
-
 pub mod album;
 pub mod asset;
 mod types;
@@ -75,6 +77,9 @@ pub fn create_schema(loaders: Loaders) -> AppSchema {
 
     #[cfg(debug_assertions)]
     let schema = schema.extension(Logger);
+
+    // TODO: Use Redis/memcached for distributed cache
+    let schema = schema.extension(ApolloPersistedQueries::new(LruCacheStorage::new(1024)));
 
     schema.data(loaders).finish()
 }

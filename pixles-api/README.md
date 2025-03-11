@@ -15,7 +15,7 @@ This is GraphQL API for all Pixles clients, written in Rust, async-graphql, and 
 ### Running
 
 - `RUST_BACKTRACE=full COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`
-- Open <http://localhost:3000/graphql> in your browser
+- Open <http://localhost:3000/playground> in your browser
 
 ### Building in Docker
 

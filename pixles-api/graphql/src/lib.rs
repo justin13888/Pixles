@@ -146,11 +146,9 @@ pub async fn start() -> Result<()> {
     let app = Router::new()
         .route(
             "/graphql",
-            #[cfg(debug_assertions)]
-            get(graphiql).post(graphql_handler).with_state(state),
-            #[cfg(not(debug_assertions))]
-            post(graphql_handler).with_state(state),
+            get(graphql_handler).post(graphql_handler).with_state(state),
         )
+        .route("/playground", get(graphiql))
         .layer(create_cors_layer());
 
     // Start server
