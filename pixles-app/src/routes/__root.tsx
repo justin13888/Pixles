@@ -1,59 +1,56 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { Outlet, createRootRoute } from "@tanstack/react-router";
 
-import {
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { Header } from '@/components/header'
-import React, { Suspense } from 'react'
+import { Header } from "@/components/header";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import React, { Suspense } from "react";
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 const TanStackRouterDevtools =
-  process.env.NODE_ENV === 'production'
-    ? () => null // Render nothing in production
-    : React.lazy(() =>
-        // Lazy load in development
-        import('@tanstack/router-devtools').then((res) => ({
-          default: res.TanStackRouterDevtools,
-          // For Embedded Mode
-          // default: res.TanStackRouterDevtoolsPanel
-        })),
-      )
+	process.env.NODE_ENV === "production"
+		? () => null // Render nothing in production
+		: React.lazy(() =>
+				// Lazy load in development
+				import("@tanstack/router-devtools").then((res) => ({
+					default: res.TanStackRouterDevtools,
+					// For Embedded Mode
+					// default: res.TanStackRouterDevtoolsPanel
+				})),
+			);
 
 const ReactQueryDevtoolsProduction = React.lazy(() =>
-  import('@tanstack/react-query-devtools/build/modern/production.js').then(
-    (d) => ({
-      default: d.ReactQueryDevtools,
-    }),
-  ),
-)
+	import("@tanstack/react-query-devtools/build/modern/production.js").then(
+		(d) => ({
+			default: d.ReactQueryDevtools,
+		}),
+	),
+);
 
 export const Route = createRootRoute({
-  component: () => {
-    const [showDevtools, setShowDevtools] = React.useState(false)
+	component: () => {
+		const [showDevtools, setShowDevtools] = React.useState(false);
 
-    React.useEffect(() => {
-      // @ts-expect-error
-      window.toggleDevtools = () => setShowDevtools((old) => !old)
-    }, [])
+		React.useEffect(() => {
+			// @ts-expect-error
+			window.toggleDevtools = () => setShowDevtools((old) => !old);
+		}, []);
 
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Header />
-        <Outlet />
-        <Suspense>
-          <TanStackRouterDevtools />
-        </Suspense>
+		return (
+			<QueryClientProvider client={queryClient}>
+				<Header />
+				<Outlet />
+				<Suspense>
+					<TanStackRouterDevtools />
+				</Suspense>
 
-        <ReactQueryDevtools initialIsOpen />
-        {showDevtools && (
-          <React.Suspense fallback={null}>
-            <ReactQueryDevtoolsProduction />
-          </React.Suspense>
-        )}
-      </QueryClientProvider>
-    )
-  },
-})
+				<ReactQueryDevtools initialIsOpen />
+				{showDevtools && (
+					<React.Suspense fallback={null}>
+						<ReactQueryDevtoolsProduction />
+					</React.Suspense>
+				)}
+			</QueryClientProvider>
+		);
+	},
+});
