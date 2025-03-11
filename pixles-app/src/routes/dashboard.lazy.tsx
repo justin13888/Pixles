@@ -6,7 +6,6 @@ import { capitalCase } from "change-case";
 import { useQuery } from '@tanstack/react-query'
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { Album, HardDrive, Image, type LucideIcon, } from "lucide-react"
-import { activityToDescription } from "@/lib/formatter"
 
 export const Route = createLazyFileRoute('/dashboard')({
   component: () => <Dashboard />
@@ -154,3 +153,28 @@ const Dashboard = () => {
   // )
 }
 // TODO: Tweak aesthetics a little bit more
+
+
+// export const activityToDescription = (activity: ActivityType): string => {
+//   switch (activity.type) {
+//       case 'photo':
+//       switch (activity.action) {
+//           case 'upload':
+//           return `Uploaded ${activity.photos.length} photo${activity.photos.length > 1 ? 's' : ''}`
+//           case 'delete':
+//           return `Deleted ${activity.photos.length} photo${activity.photos.length > 1 ? 's' : ''}`
+//       }
+//       break; // TODO: Biome needs to fix this false positive
+//       case 'album':
+//       switch (activity.action) {
+//           case 'create':
+//           return `Created album "${activity.albumName}"`
+//           case 'delete':
+//           return `Deleted album "${activity.albumName}"`
+//           case 'edit':
+//           return `Edited album "${activity.albumName}"`
+//           case 'share':
+//           return `Shared album "${activity.albumName}" with ${activity.users.length} user${activity.users.length > 1 ? 's' : ''}`
+//       }
+//   }
+// };
