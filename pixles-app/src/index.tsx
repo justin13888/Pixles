@@ -27,15 +27,18 @@ const storage = makeDefaultStorage({
 });
 
 exchanges.push(
+  // @populate retrieves data to merge into the cache
   populateExchange({
     schema,
   }),
+  // provides offline support
   offlineExchange({
     schema,
     storage,
     // updates: {},
     // optimistic: {},
   }),
+  // enables persisted queries
   persistedExchange({
     preferGetForPersistedQueries: true,
   }),
