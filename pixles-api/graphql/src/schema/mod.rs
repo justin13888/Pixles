@@ -78,7 +78,7 @@ pub fn create_schema(loaders: Loaders) -> AppSchema {
     #[cfg(debug_assertions)]
     let schema = schema.extension(Logger);
 
-    // TODO: Use Redis/memcached for distributed cache
+    // TODO: Setup twemproxy+memcached for distributed cache w/ r2d2-memcache
     let schema = schema.extension(ApolloPersistedQueries::new(LruCacheStorage::new(1024)));
 
     schema.data(loaders).finish()
