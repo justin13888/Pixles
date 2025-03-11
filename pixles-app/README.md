@@ -9,6 +9,8 @@ This is a fully-featured web client for Pixles. It is built using React, Rsbuild
     ```bash
     # Install dependencies
     bun install
+    # Generate GraphQL types
+    bun run codegen
     # Run development server
     bun dev
     # Build production build
