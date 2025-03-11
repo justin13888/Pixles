@@ -4,6 +4,13 @@ This is a fully-featured web client for Pixles. It is built using React, Rsbuild
 
 ## Development
 
+### Prerequisites
+
+- Install Bun
+- Get `pixles-api` setup and development server running (see [pixles-api/README.md](../pixles-api/README.md))
+
+### Starting
+
 1. Run
 
     ```bash
