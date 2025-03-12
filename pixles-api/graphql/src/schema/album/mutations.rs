@@ -1,4 +1,4 @@
-use super::{Album, CreateAlbumInput, UpdateAlbumInput};
+use super::{Album, CreateAlbumInput, ShareAlbumInput, UpdateAlbumInput};
 use async_graphql::*;
 
 pub struct AlbumMutation;
@@ -17,6 +17,11 @@ impl AlbumMutation {
 
     /// Delete an album
     async fn delete(&self, ctx: &Context<'_>, id: ID) -> Result<Album> {
+        todo!()
+    }
+
+    /// Share an album
+    async fn share(&self, ctx: &Context<'_>, id: ID, input: ShareAlbumInput) -> Result<Album> {
         todo!()
     }
 }

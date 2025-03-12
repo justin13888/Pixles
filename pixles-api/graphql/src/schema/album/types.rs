@@ -24,6 +24,11 @@ pub struct UpdateAlbumInput {
     email: Option<String>,
 }
 
+#[derive(InputObject)]
+pub struct ShareAlbumInput {
+    user_ids: Vec<ID>,
+} // TODO: Add permission level
+
 /// Filter for albums
 #[derive(InputObject)]
 pub struct AlbumFilter {
