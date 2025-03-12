@@ -11,7 +11,7 @@ import { filesize } from "filesize";
 import { toast } from "sonner"
 
 import { useQuery } from "urql";
-import { createLazyFileRoute } from "@tanstack/react-router";
+import { createLazyFileRoute, Link } from "@tanstack/react-router";
 import { Album, HardDrive, Image, Loader2, RotateCw, type LucideIcon } from "lucide-react";
 
 export const Route = createLazyFileRoute("/dashboard")({
@@ -132,15 +132,12 @@ const Dashboard = () => {
               <RotateCw className="h-4 w-4" />
             )}
           </button>
-          <div className="bg-white text-black dark:bg-gray-800 dark:text-white">
-            Theme-aware content
-          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {(() => {
             // TODO: Make buttons clickable
 
-            let content: { title: string, icon: LucideIcon, value: string, subValue?: string }[];
+            let content: { title: string, icon: LucideIcon, value: string, subValue?: string, link?: string }[];
             if (fetching) {
               content = [
                 { title: 'Photos', icon: Image, value: 'Loading...' },
@@ -155,21 +152,25 @@ const Dashboard = () => {
               ]
             } else if (!stats) {
               content = [
-                { title: 'Photos', icon: Image, value: 'No data' },
-                { title: 'Albums', icon: Album, value: 'No data' },
-                { title: 'Storage Used', icon: HardDrive, value: 'No data' },
+                { title: 'Photos', icon: Image, value: 'No data', link: '/albums' },
+                { title: 'Albums', icon: Album, value: 'No data', link: '/albums' },
+                { title: 'Storage Used', icon: HardDrive, value: 'No data', link: '/storage' },
               ]
             } else {
               content = [
-                { title: 'Photos', icon: Image, value: stats.totalPhotos.toLocaleString() },
-                { title: 'Albums', icon: Album, value: stats.totalAlbums.toLocaleString() },
+                { title: 'Photos', icon: Image, value: stats.totalPhotos.toLocaleString(), link: '/albums' },
+                { title: 'Albums', icon: Album, value: stats.totalAlbums.toLocaleString(), link: '/albums' },
                 {
-                  title: 'Storage Used', icon: HardDrive, value: filesize(
-                    stats.storageUsed, {
-                    base: 2,
-                    standard: 'jedec',
-                  }
-                  )
+                  title: 'Storage Used',
+                  icon: HardDrive,
+                  value: filesize(
+                    stats.storageUsed,
+                    {
+                      base: 2,
+                      standard: 'jedec',
+                    }
+                  ),
+                  link: '/storage',
                 },
               ]
             }
@@ -177,16 +178,18 @@ const Dashboard = () => {
             return (
               content.map((item) => {
                 return (
-                  <Card key={item.title}>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-                      <item.icon className="w-4 h-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{item.value}</div>
-                      <p className="text-xs text-muted-foreground">{item.subValue || ""}</p>
-                    </CardContent>
-                  </Card>
+                  <Link key={item.title} to={item.link || ""} disabled={!item.link}>
+                    <Card className="transition-colors hover:bg-muted/50">
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                        <item.icon className="w-4 h-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{item.value}</div>
+                        <p className="text-xs text-muted-foreground">{item.subValue || ""}</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 )
               })
             )
