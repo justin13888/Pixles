@@ -8,10 +8,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { filesize } from "filesize";
+import { toast } from "sonner"
 
 import { useQuery } from "urql";
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { Album, HardDrive, Image, type LucideIcon } from "lucide-react";
+import { Album, HardDrive, Image, Loader2, RotateCw, type LucideIcon } from "lucide-react";
 
 export const Route = createLazyFileRoute("/dashboard")({
   component: () => <Dashboard />,
@@ -19,7 +20,7 @@ export const Route = createLazyFileRoute("/dashboard")({
 
 import { graphql, useFragment } from "@/gql";
 import { formatDate } from "@/lib/formatter";
-import type { JSX } from "react";
+import { useEffect, type JSX } from "react";
 
 const DashboardQuery = graphql(`
   query DashboardQuery {
@@ -105,7 +106,36 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col w-full min-h-screen bg-background">
       <main className="flex flex-col gap-8 p-4 md:p-10">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <button
+            type="button"
+            onClick={async () => {
+              const toastId = toast.loading('Refetching...');
+              reexecuteQuery();
+
+              while (fetching) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+              }
+
+              if (error) {
+                toast.error('Error fetching data', { id: toastId });
+              } else {
+                toast.success('Data fetched successfully', { id: toastId, duration: 800 });
+              }
+            }}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10"
+          >
+            {fetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCw className="h-4 w-4" />
+            )}
+          </button>
+          <div className="bg-white text-black dark:bg-gray-800 dark:text-white">
+            Theme-aware content
+          </div>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {(() => {
             // TODO: Make buttons clickable
@@ -188,9 +218,9 @@ const Dashboard = () => {
                   </TableRow>
                 ) : (
                   activitieRefs.map((ref) => {
-                    console.log('dfdf', ref)
+                    // console.log('dfdf', ref)
                     const data = useFragment(RecentActivityFragment, ref);
-                    console.log('fdfd', data)
+                    // console.log('fdfd', data)
                     return (
                       <TableRow key={data.id}>
                         <TableCell className="font-bold">{formatDate(new Date(data.timestamp))}</TableCell>

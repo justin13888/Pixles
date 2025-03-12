@@ -5,7 +5,7 @@ import { persistedExchange } from "@urql/exchange-persisted";
 import { populateExchange } from "@urql/exchange-populate";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
-import { Client, Provider, fetchExchange } from "urql";
+import { Client, Provider as UrqlProvider, fetchExchange } from "urql";
 
 import schema from "./schema";
 
@@ -13,6 +13,8 @@ import schema from "./schema";
 import { routeTree } from "./routeTree.gen";
 
 import "./index.css";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider"
 
 const exchanges = [];
 
@@ -78,9 +80,12 @@ if (rootElement) {
 	const root = ReactDOM.createRoot(rootElement);
 	root.render(
 		<StrictMode>
-			<Provider value={client}>
-				<RouterProvider router={router} />
-			</Provider>
+			<UrqlProvider value={client}>
+				<ThemeProvider>
+					<RouterProvider router={router} />
+					<Toaster />
+				</ThemeProvider>
+			</UrqlProvider>
 		</StrictMode>,
 	);
 }

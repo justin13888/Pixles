@@ -12,12 +12,13 @@ import { Input } from "@/components/ui/input";
 import { APP_NAME } from "@/lib/constant";
 import { Link } from "@tanstack/react-router";
 import { BellIcon, MountainIcon, UploadIcon } from "lucide-react";
+import { ModeToggle } from "./ui/mode-toggle";
 
 // TODO: Implement interactivity
 export const Header = () => (
 	<header className="w-full bg-background px-4 py-3 shadow-sm dark:bg-muted">
 		<div className="container mx-auto flex items-center justify-between">
-			<Link href="#" className="flex items-center gap-2">
+			<Link to="/" className="flex items-center gap-2">
 				<MountainIcon className="h-6 w-6 text-primary" />
 				<span className="text-lg font-bold text-primary">{APP_NAME}</span>
 			</Link>
@@ -37,6 +38,7 @@ export const Header = () => (
 					<BellIcon className="h-5 w-5" />
 					<span className="sr-only">Notifications</span>
 				</Button>
+				<ModeToggle />
 				<div />
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
