@@ -1,7 +1,9 @@
-use super::{User, UserStatistics};
+use super::{statistics::UserStatisticsQuery, User, UserStatistics};
 use async_graphql::*;
 use chrono::Utc;
-pub struct UserQuery;
+pub struct UserQuery {
+    pub statistics: UserStatisticsQuery,
+}
 
 #[Object]
 impl UserQuery {
@@ -36,9 +38,9 @@ impl UserQuery {
         todo!()
     }
 
-    // /// Get current user's statistics
-    // async fn statistics(&self, ctx: &Context<'_>) -> Result<UserStatistics> {
-    //     // TODO: Make each field resolvable independently (need to implement UserStatistics as an Object)
-    //     todo!()
-    // }
+    /// Get current user's statistics
+    async fn statistics(&self) -> &UserStatisticsQuery {
+        // TODO: Implement auth for either yourself or admin
+        &self.statistics
+    }
 }

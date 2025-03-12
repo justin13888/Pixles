@@ -1,186 +1,282 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { capitalCase } from "change-case";
 import { filesize } from "filesize";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "urql";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Album, HardDrive, Image, type LucideIcon } from "lucide-react";
 
 export const Route = createLazyFileRoute("/dashboard")({
-	component: () => <Dashboard />,
+  component: () => <Dashboard />,
 });
 
+import { graphql, useFragment } from "@/gql";
+import { formatDate } from "@/lib/formatter";
+import type { JSX } from "react";
+
+const DashboardQuery = graphql(`
+  query DashboardQuery {
+    activity {
+      search {
+        ...RecentActivityFragment
+      }
+    }
+    user {
+      statistics {
+        totalPhotos
+        totalAlbums
+        storageUsed
+      }
+    }
+  }
+`);
+
+const RecentActivityFragment = graphql(`
+  fragment RecentActivityFragment on Activity {
+    __typename
+    id
+    type
+    action
+    timestamp
+    ... on CreateAlbumActivity {
+      albumId
+      albumName
+      userId
+    }
+    ... on DeleteAlbumActivity {
+      albumId
+      albumName
+      userId
+    }
+    ... on UpdateAlbumActivity {
+      albumId
+      oldName
+      newName
+      userId
+      changes
+    }
+    ... on UploadAssetsActivity {
+      destinationAlbumId
+      destinationAlbumName
+      assetCount
+      assetTotalSize
+    }
+    ... on DeleteAssetActivity {
+      assetId
+      assetName
+      sourceAlbumId
+      userId
+    }
+    ... on MoveAssetActivity {
+      assetId
+      assetName
+      userId
+      sourceAlbumId
+      sourceAlbumName
+      targetAlbumId
+      targetAlbumName
+      userId
+    }
+  }
+`);
+
 const Dashboard = () => {
-	return <div>Dashboard</div>;
-	// const {
-	//   data: statsData,
-	//   isLoading: isStatsLoading,
-	//   isError: isStatsError
-	// } = useQuery({
-	//   queryKey: ['stats'],
-	//   // queryFn: async () => api.v1.dashboard.stats.get(),
-	//   queryFn: async () => ({})
-	// });
+  const [{ data, fetching, error }, reexecuteQuery] = useQuery({
+    query: DashboardQuery,
+    // variables:
+  });
+  const activitieRefs = data?.activity.search;
+  const stats = data?.user.statistics;
 
-	// const {
-	//   data: recentActivityData,
-	//   isLoading: isRecentActivityLoading,
-	//   isError: isRecentActivityError,
-	// } = useQuery({
-	//   queryKey: ['recentActivity'],
-	//   // queryFn: async () => api.v1.dashboard['recent-activity'].get(),
-	//   queryFn: async () => ({})
-	// });
+  // return (
+  //   <div>
+  //     <h1>Dashboard</h1>
+  //     <pre>{JSON.stringify(data, null, 2)}</pre>
+  //   </div>
+  // );
 
-	// return (
-	//   // <div>
-	//   //   <h1>Dashboard</h1>
-	//   //   <div>
-	//   //     <h2>Stats</h2>
-	//   //     <pre>{statsQuery.data && JSON.stringify(statsQuery.data, null, 2)}</pre>
-	//   //   </div>
-	//   //   <div>
-	//   //     <h2>Recent Activity</h2>
-	//   //     <pre>{recentActivityQuery.data && JSON.stringify(recentActivityQuery.data, null, 2)}</pre>
-	//   //   </div>
-	//   // </div>
-	//   <div className="flex flex-col w-full min-h-screen bg-background">
-	//     <main className="flex flex-col gap-8 p-4 md:p-10">
-	//       <h1 className="text-3xl font-bold">Dashboard</h1>
-	//       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-	//         {(() => {
-	//           // totalPhotos: 100,
-	//           // totalAlbums: 10,
-	//           // storageUsed: 1000000,
+  return (
+    <div className="flex flex-col w-full min-h-screen bg-background">
+      <main className="flex flex-col gap-8 p-4 md:p-10">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {(() => {
+            // TODO: Make buttons clickable
 
-	//           let content: { title: string, icon: LucideIcon, value: string, subValue?: string }[];
-	//           if (isStatsLoading) {
-	//             content = [
-	//               { title: 'Photos', icon: Image, value: 'Loading...' },
-	//               { title: 'Albums', icon: Album, value: 'Loading...' },
-	//               { title: 'Storage Used', icon: HardDrive, value: 'Loading...' },
-	//             ]
-	//           } else if (isStatsError) {
-	//             content = [
-	//               { title: 'Photos', icon: Image, value: 'Error' },
-	//               { title: 'Albums', icon: Album, value: 'Error' },
-	//               { title: 'Storage Used', icon: HardDrive, value: 'Error' },
-	//             ]
-	//           } else if (!statsData || !statsData.data) {
-	//             content = [
-	//               { title: 'Photos', icon: Image, value: 'No data' },
-	//               { title: 'Albums', icon: Album, value: 'No data' },
-	//               { title: 'Storage Used', icon: HardDrive, value: 'No data' },
-	//             ]
-	//           } else {
-	//             content = [
-	//               { title: 'Photos', icon: Image, value: statsData.data.totalPhotos.toLocaleString() },
-	//               { title: 'Albums', icon: Album, value: statsData.data.totalAlbums.toLocaleString() },
-	//               {
-	//                 title: 'Storage Used', icon: HardDrive, value: filesize(
-	//                   statsData.data.storageUsed, {
-	//                   base: 2,
-	//                   standard: 'jedec',
-	//                 }
-	//                 )
-	//               },
-	//             ]
-	//           }
+            let content: { title: string, icon: LucideIcon, value: string, subValue?: string }[];
+            if (fetching) {
+              content = [
+                { title: 'Photos', icon: Image, value: 'Loading...' },
+                { title: 'Albums', icon: Album, value: 'Loading...' },
+                { title: 'Storage Used', icon: HardDrive, value: 'Loading...' },
+              ]
+            } else if (error) {
+              content = [
+                { title: 'Photos', icon: Image, value: 'Error' },
+                { title: 'Albums', icon: Album, value: 'Error' },
+                { title: 'Storage Used', icon: HardDrive, value: 'Error' },
+              ]
+            } else if (!stats) {
+              content = [
+                { title: 'Photos', icon: Image, value: 'No data' },
+                { title: 'Albums', icon: Album, value: 'No data' },
+                { title: 'Storage Used', icon: HardDrive, value: 'No data' },
+              ]
+            } else {
+              content = [
+                { title: 'Photos', icon: Image, value: stats.totalPhotos.toLocaleString() },
+                { title: 'Albums', icon: Album, value: stats.totalAlbums.toLocaleString() },
+                {
+                  title: 'Storage Used', icon: HardDrive, value: filesize(
+                    stats.storageUsed, {
+                    base: 2,
+                    standard: 'jedec',
+                  }
+                  )
+                },
+              ]
+            }
 
-	//           return (
-	//             content.map((item) => {
-	//               return (
-	//                 <Card key={item.title}>
-	//                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-	//                     <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-	//                     <item.icon className="w-4 h-4 text-muted-foreground" />
-	//                   </CardHeader>
-	//                   <CardContent>
-	//                     <div className="text-2xl font-bold">{item.value}</div>
-	//                     <p className="text-xs text-muted-foreground">{item.subValue || ""}</p>
-	//                   </CardContent>
-	//                 </Card>
-	//               )
-	//             })
-	//           )
-	//         })()}
-	//       </div>
+            return (
+              content.map((item) => {
+                return (
+                  <Card key={item.title}>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                      <item.icon className="w-4 h-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{item.value}</div>
+                      <p className="text-xs text-muted-foreground">{item.subValue || ""}</p>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )
+          })()}
+        </div>
 
-	//       <h2 className="text-2xl">Stats </h2>
-	//       <Card>
-	//         <Table>
-	//           <TableHeader>
-	//             <TableRow>
-	//               <TableHead className="w-[200px]">Date</TableHead>
-	//               <TableHead className="text-center">Type</TableHead>
-	//               <TableHead className="text-center">Action</TableHead>
-	//               <TableHead>Description</TableHead>
-	//             </TableRow>
-	//           </TableHeader>
-	//           <TableBody>
-	//             {
-	//               isRecentActivityLoading ? (
-	//                 <TableRow>
-	//                   <TableCell colSpan={4} className="text-center">Loading...</TableCell>
-	//                 </TableRow>
-	//               ) : isRecentActivityError ? (
-	//                 <TableRow>
-	//                   <TableCell colSpan={4} className="text-center">Error</TableCell>
-	//                 </TableRow>
-	//               ) : !recentActivityData || !recentActivityData.data ? (
-	//                 <TableRow>
-	//                   <TableCell colSpan={4} className="text-center">No data</TableCell>
-	//                 </TableRow>
-	//               ) : (
-	//                 recentActivityData.data.map((activity) => {
-	//                   return (
-	//                     <TableRow key={`${activity.date}${activity.type}`}>
-	//                       <TableCell className="font-bold">{activity.date.toLocaleString()}</TableCell>
-	//                       <TableCell className="text-center">{capitalCase(activity.type)}</TableCell>
-	//                       <TableCell className="text-center">{capitalCase(activity.action)}</TableCell>
-	//                       <TableCell>{activityToDescription(activity)}</TableCell>
-	//                     </TableRow>
-	//                   )
-	//                 })
-	//               )
-	//             }
-	//           </TableBody>
-	//         </Table>
-	//       </Card>
-	//     </main>
-	//   </div>
-	// )
+        <h2 className="text-2xl">Stats </h2>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Timestamp</TableHead>
+                <TableHead>Activity</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {
+                fetching ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">Error</TableCell>
+                  </TableRow>
+                ) : !activitieRefs ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">No data</TableCell>
+                  </TableRow>
+                ) : (
+                  activitieRefs.map((ref) => {
+                    console.log('dfdf', ref)
+                    const data = useFragment(RecentActivityFragment, ref);
+                    console.log('fdfd', data)
+                    return (
+                      <TableRow key={data.id}>
+                        <TableCell className="font-bold">{formatDate(new Date(data.timestamp))}</TableCell>
+                        <TableCell>
+                          {((): JSX.Element => {
+                            // TODO: Make links more obvious by styling
+                            switch (data.__typename) {
+                              case 'CreateAlbumActivity':
+                                return (
+                                  <p>
+                                    <span className="font-bold">Created album</span>
+                                    {" "}
+                                    <a href={`/albums/${data.albumId}`} className="text-muted-foreground">
+                                      {data.albumName}
+                                    </a>
+                                  </p>
+                                )
+                              case 'DeleteAlbumActivity':
+                                return (
+                                  <p>
+                                    <span className="font-bold">Deleted album</span>
+                                    {" "}
+                                    <a href={`/albums/${data.albumId}`} className="text-muted-foreground">
+                                      {data.albumName}
+                                    </a>
+                                  </p>
+                                )
+                              case 'UpdateAlbumActivity':
+                                return (
+                                  <p>
+                                    <span className="font-bold">Updated album</span>
+                                    {" "}
+                                    from
+                                    {" "}
+                                    <span className="text-muted-foreground">
+                                      {data.oldName}
+                                    </span>
+                                    {" "}
+                                    to
+                                    {" "}
+                                    <a href={`/albums/${data.albumId}`} className="text-muted-foreground">
+                                      {data.newName}
+                                    </a>
+                                  </p>
+                                )
+                              case 'UploadAssetsActivity':
+                                return (
+                                  <p>
+                                    <span className="font-bold">Uploaded assets</span>
+                                    {" "}
+                                    ({data.assetCount} qty., {filesize(data.assetTotalSize, { base: 2, standard: 'jedec' })})
+                                    {" "}
+                                    to
+                                    {" "}
+                                    <a href={`/albums/${data.destinationAlbumId}`} className="text-muted-foreground">
+                                      {data.destinationAlbumName}
+                                    </a>
+                                  </p>
+                                )
+                              case 'DeleteAssetActivity':
+                                return (
+                                  <p>
+                                    <span className="font-bold">Deleted asset</span>
+                                    {" "}
+                                    {data.assetName}
+                                  </p>
+                                )
+                              case 'MoveAssetActivity':
+                                return (
+                                  <p>
+                                    <span className="font-bold">Moved asset</span>
+                                    {" "}
+                                  </p>
+                                )
+                            }
+                          })()}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )
+              }
+            </TableBody>
+          </Table>
+        </Card>
+      </main>
+    </div>
+  )
 };
-// TODO: Tweak aesthetics a little bit more
-
-// export const activityToDescription = (activity: ActivityType): string => {
-//   switch (activity.type) {
-//       case 'photo':
-//       switch (activity.action) {
-//           case 'upload':
-//           return `Uploaded ${activity.photos.length} photo${activity.photos.length > 1 ? 's' : ''}`
-//           case 'delete':
-//           return `Deleted ${activity.photos.length} photo${activity.photos.length > 1 ? 's' : ''}`
-//       }
-//       break; // TODO: Biome needs to fix this false positive
-//       case 'album':
-//       switch (activity.action) {
-//           case 'create':
-//           return `Created album "${activity.albumName}"`
-//           case 'delete':
-//           return `Deleted album "${activity.albumName}"`
-//           case 'edit':
-//           return `Edited album "${activity.albumName}"`
-//           case 'share':
-//           return `Shared album "${activity.albumName}" with ${activity.users.length} user${activity.users.length > 1 ? 's' : ''}`
-//       }
-//   }
-// };

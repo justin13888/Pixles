@@ -1,5 +1,6 @@
 mod mutations;
 mod queries;
+pub mod statistics;
 mod types;
 
 pub use mutations::UserMutation;

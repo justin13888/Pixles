@@ -2,22 +2,26 @@ use crate::loaders::Loaders;
 use crate::schema::album::{AlbumMutation, AlbumQuery};
 use crate::schema::asset::{AssetMutation, AssetQuery, AssetSubscription};
 use crate::schema::user::{UserMutation, UserQuery};
+use activity::ActivityQuery;
 use async_graphql::extensions::apollo_persisted_queries::{
     ApolloPersistedQueries, LruCacheStorage,
 };
 use async_graphql::MergedSubscription;
 use async_graphql::{extensions::Logger, Object, Schema};
+pub mod activity;
 pub mod album;
 pub mod asset;
 mod types;
 pub mod user;
 
 pub use types::*;
+use user::statistics::UserStatisticsQuery;
 
 pub struct QueryRoot {
     pub user: UserQuery,
     pub album: AlbumQuery,
     pub asset: AssetQuery,
+    pub activity: ActivityQuery,
 }
 pub struct MutationRoot {
     pub user: UserMutation,
@@ -37,6 +41,10 @@ impl QueryRoot {
 
     async fn asset(&self) -> &AssetQuery {
         &self.asset
+    }
+
+    async fn activity(&self) -> &ActivityQuery {
+        &self.activity
     }
 }
 
@@ -63,9 +71,12 @@ pub type AppSchema = Schema<QueryRoot, MutationRoot, SubscriptionRoot>;
 pub fn create_schema(loaders: Loaders) -> AppSchema {
     let schema = Schema::build(
         QueryRoot {
-            user: UserQuery,
+            user: UserQuery {
+                statistics: UserStatisticsQuery,
+            },
             album: AlbumQuery,
             asset: AssetQuery,
+            activity: ActivityQuery,
         },
         MutationRoot {
             user: UserMutation,
