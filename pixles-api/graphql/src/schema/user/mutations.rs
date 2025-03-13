@@ -117,6 +117,7 @@ impl UserMutation {
 
     /// Refresh a user's token
     async fn refresh_token(&self, ctx: &Context<'_>, token: String) -> Result<AuthResponse> {
+        // TODO: Implement token rejection
         todo!()
     }
 
