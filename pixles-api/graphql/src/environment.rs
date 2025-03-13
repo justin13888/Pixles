@@ -37,6 +37,11 @@ pub struct ServerConfig {
     pub jwt_eddsa_encoding_key: EncodingKey,
     /// EdDSA decoding key
     pub jwt_eddsa_decoding_key: DecodingKey,
+
+    /// JWT refresh token duration in seconds
+    pub jwt_refresh_token_duration_seconds: usize,
+    /// JWT access token duration in seconds
+    pub jwt_access_token_duration_seconds: usize,
 }
 
 impl std::fmt::Debug for ServerConfig {
@@ -47,6 +52,14 @@ impl std::fmt::Debug for ServerConfig {
             .field("domain", &self.domain)
             .field("jwt_eddsa_encoding_key", &"REDACTED")
             .field("jwt_eddsa_decoding_key", &"REDACTED")
+            .field(
+                "jwt_refresh_token_duration_seconds",
+                &self.jwt_refresh_token_duration_seconds,
+            )
+            .field(
+                "jwt_access_token_duration_seconds",
+                &self.jwt_access_token_duration_seconds,
+            )
             .finish()
     }
 }
@@ -66,6 +79,13 @@ impl Environment {
             env::var(key).map_err(|_| EnvironmentError::MissingVariable(key.to_string()))
         };
         let load_env_int = |key: &str| {
+            load_env(key).and_then(|v| {
+                v.parse().map_err(|e: ParseIntError| {
+                    EnvironmentError::ParseError(key.to_string(), e.to_string())
+                })
+            })
+        };
+        let load_env_usize = |key: &str| {
             load_env(key).and_then(|v| {
                 v.parse().map_err(|e: ParseIntError| {
                     EnvironmentError::ParseError(key.to_string(), e.to_string())
@@ -111,6 +131,14 @@ impl Environment {
                 domain: load_env("SERVER_DOMAIN").unwrap_or("localhost".to_string()),
                 jwt_eddsa_encoding_key,
                 jwt_eddsa_decoding_key,
+                jwt_refresh_token_duration_seconds: load_env_usize(
+                    "JWT_REFRESH_TOKEN_DURATION_SECONDS",
+                )
+                .unwrap_or(60 * 60 * 24 * 30), // 30 days
+                jwt_access_token_duration_seconds: load_env_usize(
+                    "JWT_ACCESS_TOKEN_DURATION_SECONDS",
+                )
+                .unwrap_or(60 * 10), // 10 minutes
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {
                 LevelFilter::TRACE
