@@ -13,7 +13,8 @@
 		"dev:analyze": "cross-env BUNDLE_ANALYZE=true bun run dev",
 		"dev:doctor": "cross-env RSDOCTOR=true bun run dev",
 		"preview": "rsbuild preview",
-		"codegen": "graphql-codegen"
+		"codegen": "graphql-codegen",
+		"codegen:watch": "graphql-codegen --watch"
 	},
 	"dependencies": {
 		"@graphql-codegen/urql-introspection": "^3.0.0",
@@ -50,6 +51,7 @@
 		"@biomejs/biome": "^1.9.4",
 		"@graphql-codegen/cli": "^5.0.5",
 		"@graphql-codegen/client-preset": "^4.7.0",
+		"@parcel/watcher": "^2.5.1",
 		"@rsbuild/core": "^1.2.17",
 		"@rsbuild/plugin-react": "^1.1.1",
 		"@rsdoctor/rspack-plugin": "^0.4.13",

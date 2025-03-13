@@ -17,7 +17,7 @@ This is a fully-featured web client for Pixles. It is built using React, Rsbuild
     # Install dependencies
     bun install
     # Generate GraphQL types
-    bun run codegen
+    bun run codegen:watch
     # Run development server
     bun dev
     # Build production build
@@ -25,7 +25,7 @@ This is a fully-featured web client for Pixles. It is built using React, Rsbuild
     # Preview production build locally
     bun run preview
 
-    # After graphql queries are changed
+    # After graphql queries are changed (if not using watch mode)
     bun run codegen
     ```
 
