@@ -12,7 +12,7 @@ Photo sharing for all! Or you could think of it as what Google Photo wanted to b
 
 ## Screenshots
 
-<!-- TODO -->
+<!-- TODO: Add screenshots -->
 
 ## Who is Pixles for?
 
@@ -47,6 +47,24 @@ Pixles is open-source and designed to be friendly to self-host. See this [guide]
 <!-- TODO -->
 
 ## Development
+
+<!-- TODO: Add complete architecture diagram -->
+
+Components:
+
+- [Pixles API](pixles-api/README.md)
+- [Pixles Web](pixles-web/README.md)
+- [Pixles Desktop](pixles-desktop/README.md) (Planned)
+- [Pixles Android](pixles-android/README.md) (Planned)
+- [Pixles iOS](pixles-ios/README.md) (Planned)
+- [Pixles Media](pixles-media/README.md)
+
+External dependencies:
+
+- [PostgreSQL](https://www.postgresql.org/)
+- [Minio](https://min.io/)
+- [RabbitMQ](https://www.rabbitmq.com/)
+- [Memcached](https://memcached.org/)
 
 Reference the Development sections of each component's README for more information.
 
