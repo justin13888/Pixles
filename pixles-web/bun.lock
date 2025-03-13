@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "pixles-app",
+      "name": "pixles-web",
       "dependencies": {
         "@graphql-codegen/urql-introspection": "^3.0.0",
         "@radix-ui/react-avatar": "^1.1.3",
