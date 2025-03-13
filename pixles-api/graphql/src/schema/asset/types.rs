@@ -3,10 +3,22 @@ use chrono::{DateTime, Utc};
 
 use crate::schema::{user::User, Tag};
 
-/// Asset Metadata
+#[derive(Enum, Clone, Copy, Eq, PartialEq)]
+pub enum AssetType {
+    #[graphql(name = "photo")]
+    Photo,
+    #[graphql(name = "video")]
+    Video,
+    #[graphql(name = "sidecar")]
+    Sidecar,
+}
+
 pub struct AssetMetadata {
     id: ID,
-    user: User,
+    asset_type: AssetType,
+    file_name: String,
+    size: i64,
+    path: String,
     width: i32,
     height: i32,
     date: DateTime<Utc>,
@@ -14,6 +26,41 @@ pub struct AssetMetadata {
     modified_at: DateTime<Utc>,
     deleted_at: Option<DateTime<Utc>>,
     tags: Vec<Tag>,
+    user: User,
+}
+
+impl AssetMetadata {
+    pub fn new(
+        id: ID,
+        asset_type: AssetType,
+        file_name: String,
+        size: i64,
+        path: String,
+        width: i32,
+        height: i32,
+        date: DateTime<Utc>,
+        uploaded_at: DateTime<Utc>,
+        modified_at: DateTime<Utc>,
+        deleted_at: Option<DateTime<Utc>>,
+        tags: Vec<Tag>,
+        user: User,
+    ) -> Self {
+        Self {
+            id,
+            asset_type,
+            file_name,
+            size,
+            path,
+            width,
+            height,
+            date,
+            uploaded_at,
+            modified_at,
+            deleted_at,
+            tags,
+            user,
+        }
+    }
 }
 
 #[Object]
@@ -22,8 +69,24 @@ impl AssetMetadata {
         &self.id
     }
 
-    async fn user(&self) -> &User {
-        &self.user
+    #[graphql(name = "type")]
+    async fn asset_type(&self) -> &AssetType {
+        &self.asset_type
+    }
+
+    // TODO: Perhaps defer this calculation
+    async fn file_name(&self) -> &String {
+        &self.file_name
+    }
+
+    /// Size of the asset in bytes
+    async fn size(&self) -> i64 {
+        self.size
+    }
+
+    // TODO: Perhaps defer this calculation
+    async fn path(&self) -> &String {
+        &self.path
     }
 
     async fn width(&self) -> i32 {
@@ -77,6 +140,11 @@ impl AssetMetadata {
     /// RECOMMENDED to use with @defer
     async fn preview(&self, ctx: &Context<'_>, format: Option<ImageFormat>) -> Result<String> {
         self.url(ctx, 800, format).await
+    }
+
+    // TODO: defer querying this with dataloader
+    async fn user(&self) -> &User {
+        &self.user
     }
 }
 
@@ -136,12 +204,6 @@ pub struct UpdateAssetInput {
 }
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
-pub enum AssetType {
-    Image,
-    Video,
-}
-
-#[derive(Enum, Copy, Clone, Eq, PartialEq)]
 pub enum UploadMethod {
     /// Direct upload via GraphQL Upload scalar
     Direct,
@@ -178,6 +240,23 @@ pub enum UploadSessionCompletionStatus {
     Success,
     /// Unknown error
     Unknown,
+}
+
+/// Sort order for assets
+#[derive(Enum, Copy, Clone, Eq, PartialEq)]
+pub enum AssetSort {
+    /// Sort by date
+    Date,
+    /// Sort by uploaded at
+    UploadedAt,
+    /// Sort by modified at
+    ModifiedAt,
+    /// Sort by file name
+    FileName,
+    /// Sort by file size
+    FileSize,
+    /// Sort by file type
+    FileType,
 }
 
 /// Filter for assets

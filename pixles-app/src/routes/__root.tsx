@@ -39,6 +39,7 @@ export const Route = createRootRoute({
 		return (
 			<QueryClientProvider client={queryClient}>
 				<Header />
+				{/* TODO: Add alert card here (e.g. storage limit reached, user errors, concerning activity) */}
 				<Outlet />
 				<Suspense>
 					<TanStackRouterDevtools />

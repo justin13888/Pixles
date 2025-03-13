@@ -1,5 +1,8 @@
-use super::{AssetFilter, AssetMetadata, UploadSession, UploadSessionFilter};
+use crate::schema::{user::User, SortDirection};
+
+use super::{AssetFilter, AssetMetadata, AssetSort, AssetType, UploadSession, UploadSessionFilter};
 use async_graphql::*;
+use chrono::Utc;
 
 pub struct AssetQuery;
 
@@ -11,15 +14,34 @@ impl AssetQuery {
     }
 
     /// Search assets based on album ID, filter, and pagination
+    /// If sorting without a direction, assumes ascending order
     async fn search(
         &self,
         ctx: &Context<'_>,
-        album_id: Option<ID>,
-        filter: AssetFilter,
+        album_ids: Option<Vec<ID>>,
+        filter: Option<AssetFilter>,
+        sort: Option<AssetSort>,
+        sort_direction: Option<SortDirection>,
     ) -> Result<Vec<AssetMetadata>> {
         // TODO: Add sorting and pagination
         // TODO: Generate presigned URL for each asset on-the-fly
-        todo!()
+        // TODO: Sort appropriately
+        // Ok(vec![AssetMetadata::new(
+        //     ID::from("1"),
+        //     AssetType::Photo,
+        //     "test.jpg".to_string(),
+        //     100,
+        //     "/test.jpg".to_string(),
+        //     100,
+        //     100,
+        //     Utc::now(),
+        //     Utc::now(),
+        //     Utc::now(),
+        //     None,
+        //     vec![],
+        //     User::default(),
+        // )])
+        Ok(vec![])
     }
 
     /// Get upload session by ID

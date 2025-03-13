@@ -18,10 +18,17 @@ import { Route as AlbumsIdImport } from './routes/albums/$id'
 
 // Create Virtual Routes
 
+const StorageLazyImport = createFileRoute('/storage')()
 const DashboardLazyImport = createFileRoute('/dashboard')()
 const IndexLazyImport = createFileRoute('/')()
 
 // Create/Update Routes
+
+const StorageLazyRoute = StorageLazyImport.update({
+  id: '/storage',
+  path: '/storage',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/storage.lazy').then((d) => d.Route))
 
 const DashboardLazyRoute = DashboardLazyImport.update({
   id: '/dashboard',
@@ -65,6 +72,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardLazyImport
       parentRoute: typeof rootRoute
     }
+    '/storage': {
+      id: '/storage'
+      path: '/storage'
+      fullPath: '/storage'
+      preLoaderRoute: typeof StorageLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/albums/$id': {
       id: '/albums/$id'
       path: '/albums/$id'
@@ -87,6 +101,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
+  '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/albums': typeof AlbumsIndexRoute
 }
@@ -94,6 +109,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
+  '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/albums': typeof AlbumsIndexRoute
 }
@@ -102,22 +118,24 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
+  '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
   '/albums/': typeof AlbumsIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/albums/$id' | '/albums'
+  fullPaths: '/' | '/dashboard' | '/storage' | '/albums/$id' | '/albums'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/albums/$id' | '/albums'
-  id: '__root__' | '/' | '/dashboard' | '/albums/$id' | '/albums/'
+  to: '/' | '/dashboard' | '/storage' | '/albums/$id' | '/albums'
+  id: '__root__' | '/' | '/dashboard' | '/storage' | '/albums/$id' | '/albums/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   DashboardLazyRoute: typeof DashboardLazyRoute
+  StorageLazyRoute: typeof StorageLazyRoute
   AlbumsIdRoute: typeof AlbumsIdRoute
   AlbumsIndexRoute: typeof AlbumsIndexRoute
 }
@@ -125,6 +143,7 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   DashboardLazyRoute: DashboardLazyRoute,
+  StorageLazyRoute: StorageLazyRoute,
   AlbumsIdRoute: AlbumsIdRoute,
   AlbumsIndexRoute: AlbumsIndexRoute,
 }
@@ -141,6 +160,7 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/dashboard",
+        "/storage",
         "/albums/$id",
         "/albums/"
       ]
@@ -150,6 +170,9 @@ export const routeTree = rootRoute
     },
     "/dashboard": {
       "filePath": "dashboard.lazy.tsx"
+    },
+    "/storage": {
+      "filePath": "storage.lazy.tsx"
     },
     "/albums/$id": {
       "filePath": "albums/$id.tsx"

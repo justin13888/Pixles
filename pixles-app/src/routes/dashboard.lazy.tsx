@@ -33,7 +33,7 @@ const DashboardQuery = graphql(`
       statistics {
         totalPhotos
         totalAlbums
-        storageUsed
+        usedStorage
       }
     }
   }
@@ -164,7 +164,7 @@ const Dashboard = () => {
                   title: 'Storage Used',
                   icon: HardDrive,
                   value: filesize(
-                    stats.storageUsed,
+                    stats.usedStorage,
                     {
                       base: 2,
                       standard: 'jedec',
