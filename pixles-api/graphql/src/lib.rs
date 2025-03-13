@@ -34,6 +34,7 @@ use tracing_subscriber::fmt::format::FmtSpan;
 mod constants;
 mod context;
 mod environment;
+mod hash;
 mod jwt;
 mod loaders;
 mod schema;
