@@ -126,6 +126,17 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
+                    .name("idx_description")
+                    .table(Albums::Table)
+                    .col(Albums::Description)
+                    .index_type(IndexType::FullText)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
                     .name("idx_created_at")
                     .table(Albums::Table)
                     .col(Albums::CreatedAt)

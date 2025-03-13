@@ -48,7 +48,7 @@ Pixles is open-source and designed to be friendly to self-host. See this [guide]
 
 ## Development
 
-<!-- TODO -->
+Reference the Development sections of each component's README for more information.
 
 <!-- TODO: Add internationalization note -->
 

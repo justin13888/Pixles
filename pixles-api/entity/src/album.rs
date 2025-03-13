@@ -13,25 +13,25 @@ pub struct Model {
     pub owner_id: String,
     #[sea_orm(indexed)]
     pub name: String,
-    pub description: String, // TODO: make this full-text searchable
+    #[sea_orm(indexed, full_text)]
+    pub description: String,
     #[sea_orm(
         column_type = "TimestampWithTimeZone",
         default_value = "CURRENT_TIMESTAMP",
         indexed
     )]
-    pub created_at: DateTime<Utc>, // TODO: Index
+    pub created_at: DateTime<Utc>,
     #[sea_orm(
         column_type = "TimestampWithTimeZone",
         default_value = "CURRENT_TIMESTAMP",
         on_update = "CURRENT_TIMESTAMP",
         indexed
     )]
-    pub modified_at: DateTime<Utc>, // TODO: Index
+    pub modified_at: DateTime<Utc>,
     /// Date when the album was deleted if not NULL
     #[sea_orm(column_type = "TimestampWithTimeZone", nullable, indexed)]
     pub deleted_at: Option<DateTime<Utc>>,
 }
-// TODO: Index username, email
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
@@ -58,12 +58,4 @@ impl ActiveModelBehavior for ActiveModel {
     }
 }
 
-impl Entity {
-    // pub fn find_by_username(username: &str) -> Select<Entity> {
-    //     Self::find().filter(Column::Username.eq(username))
-    // }
-
-    // pub fn find_by_email(email: &str) -> Select<Entity> {
-    //     Self::find().filter(Column::Email.eq(email))
-    // }
-}
+impl Entity {}
