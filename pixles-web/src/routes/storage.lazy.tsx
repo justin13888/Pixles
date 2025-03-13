@@ -289,11 +289,11 @@ function AssetList({ assets }: { assets: AssetListSearchQueryQuery['asset']['sea
           ) : (
             <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
               {info.row.original.type === 'image' ? (
-                <Image className="h-6 w-6 text-blue-500" aria-label={`Image file: ${info.row.original.fileName}`} />
+                <Image className="size-6 text-blue-500" aria-label={`Image file: ${info.row.original.fileName}`} />
               ) : info.row.original.type === 'video' ? (
-                <FileVideo className="h-6 w-6 text-red-500" aria-label={`Video file: ${info.row.original.fileName}`} />
+                <FileVideo className="size-6 text-red-500" aria-label={`Video file: ${info.row.original.fileName}`} />
               ) : (
-                <FileText className="h-6 w-6 text-purple-500" aria-label={`Sidecar file: ${info.row.original.fileName}`} />
+                <FileText className="size-6 text-purple-500" aria-label={`Sidecar file: ${info.row.original.fileName}`} />
               )}
             </div>
           )}

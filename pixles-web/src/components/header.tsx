@@ -19,7 +19,7 @@ export const Header = () => (
 	<header className="w-full bg-background px-4 py-3 shadow-sm dark:bg-muted">
 		<div className="container mx-auto flex items-center justify-between">
 			<Link to="/" className="flex items-center gap-2">
-				<MountainIcon className="h-6 w-6 text-primary" />
+				<MountainIcon className="size-6 text-primary" />
 				<span className="text-lg font-bold text-primary">{APP_NAME}</span>
 			</Link>
 			<div className="flex flex-1 items-center justify-center px-4">
