@@ -58,6 +58,7 @@ Components:
 - [Pixles Android](pixles-android/README.md) (Planned)
 - [Pixles iOS](pixles-ios/README.md) (Planned)
 - [Pixles Media](pixles-media/README.md)
+- [Pixles Docs](pixles-docs/README.md)f
 
 External dependencies:
 
