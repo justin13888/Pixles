@@ -6,8 +6,9 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "preview": "wrangler pages dev ./dist",
+    "astro": "astro",
+    "deploy": "wrangler pages deploy ./dist"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.32.2",
@@ -18,5 +19,8 @@
     "starlight-links-validator": "^0.14.3",
     "starlight-versions": "^0.5.1",
     "tailwindcss": "^4.0.14"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }

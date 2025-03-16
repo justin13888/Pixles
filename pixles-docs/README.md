@@ -19,3 +19,10 @@ Build production site:
 bun run build
 bun preview
 ```
+
+Deploy to Cloudflare Pages:
+
+```bash
+bun run build
+bun run deploy
+```
