@@ -1,0 +1,37 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&display=swap");
+@import "tailwindcss";
+
+/* Dark mode colors. */
+:root {
+  --sl-color-accent-low: #0f2927;
+  --sl-color-accent: #007a75;
+  --sl-color-accent-high: #b2d0cd;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #eceeef;
+  --sl-color-gray-2: #c6c9c9;
+  --sl-color-gray-3: #9fa5a6;
+  --sl-color-gray-4: #54595a;
+  --sl-color-gray-5: #34393a;
+  --sl-color-gray-6: #232828;
+  --sl-color-black: #161919;
+
+  --sl-font: "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --sl-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+}
+/* Light mode colors. */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #c6dcda;
+  --sl-color-accent: #005854;
+  --sl-color-accent-high: #0d3a38;
+  --sl-color-white: #161919;
+  --sl-color-gray-1: #232828;
+  --sl-color-gray-2: #34393a;
+  --sl-color-gray-3: #54595a;
+  --sl-color-gray-4: #878d8e;
+  --sl-color-gray-5: #bfc3c3;
+  --sl-color-gray-6: #eceeef;
+  --sl-color-gray-7: #f5f6f7;
+  --sl-color-black: #ffffff;
+}
