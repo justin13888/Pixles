@@ -15,6 +15,9 @@ They can be packaged together or separately (recommended for production).
 
 ### Prerequisites
 
+*We assume Linux-based system for this service.*
+
+- Rust 1.86+ 
 - Populate `.env` file based on `.env.example`
 - `cargo install systemfd cargo-watch`
 - `cargo install sea-orm-cli`
