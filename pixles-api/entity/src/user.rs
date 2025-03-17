@@ -13,10 +13,11 @@ pub struct Model {
     pub username: String,
     pub name: String,
     #[sea_orm(unique, column_type = "String(StringLen::N(255))", indexed)]
-    pub email: String,
+    pub email: String, // TODO: Ensure uniqueness after normalization (see if standard disregards certain character)
     pub account_verified: bool,
     pub needs_onboarding: bool,
-    pub hashed_password: String,
+    pub hashed_password: String, // TODO: Rename to `password_hash`
+    // pub external_id: String,
     #[sea_orm(indexed)]
     pub is_admin: bool,
     #[sea_orm(

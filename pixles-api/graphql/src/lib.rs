@@ -35,7 +35,7 @@ mod constants;
 mod context;
 mod environment;
 mod hash;
-mod jwt;
+mod auth;
 mod loaders;
 mod schema;
 mod state;

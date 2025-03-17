@@ -93,6 +93,17 @@ pub fn convert_ed25519_der_to_jwt_keys(
 }
 // TODO: Test ^
 
+#[derive(Debug, Deserialize)]
+pub struct OIDCConfig {
+    pub client_id: String,
+    pub client_secret: String,
+    pub redirect_uri: String,
+    pub authorization_endpoint: String,
+    pub token_endpoint: String,
+    pub userinfo_endpoint: String,
+    pub jwks_uri: String,
+} // TODO: Load configs from env. Use this ^^
+
 #[cfg(test)]
 mod tests {
     use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};

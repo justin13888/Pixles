@@ -103,6 +103,7 @@ impl UserMutation {
         //     Ok((user, token)) => Ok(AuthResponse { token, user }),
         //     Err(_) => Err("Invalid email or password".into()),
         // }
+        // TODO: Add success/failure metrics
 
         Ok(AuthResponse { token, user: None })
     }
@@ -118,6 +119,7 @@ impl UserMutation {
     /// Refresh a user's token
     async fn refresh_token(&self, ctx: &Context<'_>, token: String) -> Result<AuthResponse> {
         // TODO: Implement token rejection
+        // TODO: Add metric for token usage patterns
         todo!()
     }
 
@@ -137,5 +139,36 @@ impl UserMutation {
     /// Requires admin privileges
     async fn revoke_token(&self, ctx: &Context<'_>, token: String) -> Result<AuthResponse> {
         todo!()
+        // TODO: Decide between token blacklist or whitelisting
     }
+
+    // TODO: Add these mutations vv
+    // #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+    // async fn oauth_start(
+    //     State(state): State<AppState>,
+    //     Path(provider): Path<String>,
+    // ) -> impl IntoResponse {
+    //     // 1. Generate PKCE challenge
+    //     // 2. Store state parameter in Redis
+    //     // 3. Redirect to authorization endpoint
+    // }
+    
+    // async fn oauth_callback(
+    //     State(state): State<AppState>,
+    //     Query(params): Query<OAuthCallbackParams>,
+    // ) -> impl IntoResponse {
+    //     // 1. Verify state parameter
+    //     // 2. Exchange code for tokens
+    //     // 3. Fetch user info
+    //     // 4. Create/update user record
+    //     // 5. Generate JWT
+    //     // 6. Redirect to client with token
+    // }
 }
+
+// TODO: Alerting
+// - Multiple failed login attempts
+// - Unusual authentication patterns
+// - Rate limit threshold breaches
+
+// TODO: Double check on implementation with best practices

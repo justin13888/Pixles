@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::environment::ServerConfig;
-use crate::jwt::{Claims, UserRole};
+use crate::auth::{Claims, UserRole};
 
 #[derive(Debug, Clone)]
 pub enum UserType {
