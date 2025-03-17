@@ -1,0 +1,29 @@
+[package]
+name = "pixles-api-upload"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "upload"
+path = "src/lib.rs"
+
+[dependencies]
+# pixles-api-entity = { path = "../entity" }
+pixles-api-environment = { path = "../environment" }
+axum = { workspace = true }
+eyre = { workspace = true }
+futures-util = "0.3.31"
+# jsonwebtoken = "9.3.0"
+sea-orm = { workspace = true }
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+thiserror = "2.0.3"
+tokio = { version = "1.44.1", features = ["full"] }
+tracing = { workspace = true }
+# tower-http = { workspace = true }
+# uuid = { version = "1.11.0", features = ["v4"] }
+# chrono = { version = "0.4.38", features = ["serde"] }
+ring = { workspace = true }
+base64 = "0.22.1"
+# secrecy = { workspace = true }
+# nanoid = { workspace = true }

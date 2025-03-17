@@ -7,7 +7,8 @@ edition = "2021"
 members = [".", "graphql", "service", "entity", "migration"]
 
 [dependencies]
-pixles-api-graphql = { path = "./graphql" }
+pixles-api-graphql = { path = "./graphql", optional = true }
+pixles-api-upload = { path = "./upload", optional = true }
 pixles-api-environment = { path = "./environment" }
 pixles-api-migration = { path = "./migration" }
 axum = { workspace = true }
@@ -40,3 +41,8 @@ thiserror = "2.0.12"
 [profile.release]
 lto = "thin"
 codegen-units = 1
+
+[features]
+default = ["graphql", "upload"]
+graphql = ["pixles-api-graphql"]
+upload = ["pixles-api-upload"]

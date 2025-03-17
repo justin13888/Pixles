@@ -12,6 +12,9 @@ use tokio::net::TcpListener;
 use tracing::{debug, info};
 use tracing_subscriber::fmt::format::FmtSpan;
 
+#[cfg(not(any(feature = "graphql", feature = "upload")))]
+compile_error!("At least one of the features \"graphql\" or \"upload\" must be enabled");
+
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
@@ -49,9 +52,17 @@ async fn main() -> Result<()> {
     let conn = Arc::new(Database::connect(env.database.url).await?);
     Migrator::up(conn.as_ref(), None).await?;
 
-    let graphql_router = graphql::get_graphql_router(conn, env.server.clone()).await?;
+    let mut router = Router::new();
+    #[cfg(feature = "graphql")]
+    {
+        router = router.merge(graphql::get_router(conn.clone(), env.server.clone()).await?);
+    }
+    #[cfg(feature = "upload")]
+    {
+        router = router.merge(upload::get_router(conn.clone(), env.server.clone()).await?);
+    }
 
-    let app = graphql_router.into_make_service();
+    let app = router.into_make_service();
 
     // Start server
     info!(

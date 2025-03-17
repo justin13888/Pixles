@@ -1,6 +1,15 @@
 # Pixles API
 
-This is GraphQL API for all Pixles clients, written in Rust, async-graphql, and SeaORM.
+This is API service for all Pixles clients, written in Rust.
+
+There are currently two servable components:
+
+- `graphql`: GraphQL API written with `async-graphql`
+- `upload`: Dedicated, optimized upload server
+
+<!-- TODO: Elaborate more on the responsibilities, goals, technical requirements of each component -->
+
+They can be packaged together or separately (recommended for production).
 
 ## Development
 
