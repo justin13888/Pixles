@@ -1,16 +1,13 @@
 use std::{collections::HashSet, sync::Arc};
 
+use crate::auth::{Claims, UserRole};
 use async_graphql::{Error, ErrorExtensions, ServerError};
 use axum::http::HeaderMap;
-use chrono::Utc;
-use jsonwebtoken::{decode, Algorithm, DecodingKey, TokenData, Validation};
+use environment::ServerConfig;
+use jsonwebtoken::TokenData;
 use sea_orm::DatabaseConnection;
 use secrecy::{ExposeSecret, SecretString};
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-use crate::environment::ServerConfig;
-use crate::auth::{Claims, UserRole};
 
 #[derive(Debug, Clone)]
 pub enum UserType {

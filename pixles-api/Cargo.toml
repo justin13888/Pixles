@@ -8,20 +8,34 @@ members = [".", "graphql", "service", "entity", "migration"]
 
 [dependencies]
 pixles-api-graphql = { path = "./graphql" }
+pixles-api-environment = { path = "./environment" }
+pixles-api-migration = { path = "./migration" }
+axum = { workspace = true }
 color-eyre = "0.6.3"
 eyre = "0.6.12"
-tokio = { version = "1.41.1", features = ["full"] }
+listenfd = "1.0.1"
+sea-orm = { workspace = true }
+tokio = { version = "1.44.1", features = ["full"] }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 futures-util = "0.3.31"
 async-stream = "0.3.6"
 
 [workspace.dependencies]
+axum = "0.8.1"
+eyre = "0.6.12"
 nanoid = "0.4.0"
-sea-orm = { version = "1.1.1", features = [
+ring = "0.17.14"
+sea-orm = { version = "1.1.7", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "debug-print",
 ] }
 secrecy = { version = "0.10.3", features = ["serde"] }
+tower-http = { version = "0.6.1", features = ["cors"] }
+tracing = "0.1.40"
+thiserror = "2.0.12"
 
 [profile.release]
 lto = "thin"

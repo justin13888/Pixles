@@ -1,0 +1,17 @@
+[package]
+name = "pixles-api-environment"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "environment"
+path = "src/lib.rs"
+
+[dependencies]
+base64 = "0.22.1"
+dotenvy = "0.15.7"
+eyre = { workspace = true }
+jsonwebtoken = "9.3.0"
+ring = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }

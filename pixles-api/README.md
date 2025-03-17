@@ -13,10 +13,14 @@ This is GraphQL API for all Pixles clients, written in Rust, async-graphql, and 
 
 ### Running
 
-- Spin up some dependencies: `docker compose up` (could spin up individual services manually based on definition if needed)
-    - Remove existing setup: `docker compose down -v`
-- `RUST_BACKTRACE=full COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`
-- Open <http://localhost:3000/playground> in your browser
+- Spin up some dependencies: `docker compose up` (could spin up individual services manually if needed)
+    - Remove existing data: `docker compose down -v`
+- Start development server: `RUST_BACKTRACE=1 COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`
+    - *Append feature flags to enable specific parts of server*
+- The following endpoints should be up:
+    - GraphQL: <http://localhost:3000/graphql>
+        - GraphiQL: <http://localhost:3000/playground>
+    - Upload: <http://localhost:3000/upload>
 
 ### Building in Docker
 

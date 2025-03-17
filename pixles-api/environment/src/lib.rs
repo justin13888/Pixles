@@ -7,7 +7,9 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use ring::signature::Ed25519KeyPair;
 
-use crate::auth::convert_ed25519_der_to_jwt_keys;
+use crate::jwt::convert_ed25519_der_to_jwt_keys;
+
+mod jwt;
 
 #[derive(Debug, Error)]
 pub enum EnvironmentError {

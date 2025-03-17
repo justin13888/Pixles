@@ -3,10 +3,14 @@ name = "pixles-api-graphql"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "graphql"
+path = "src/lib.rs"
+
 [dependencies]
 pixles-api-entity = { path = "../entity" }
+pixles-api-environment = { path = "../environment" }
 pixles-api-service = { path = "../service" }
-pixles-api-migration = { path = "../migration" }
 async-graphql = { version = "7.0.11", features = [
     "apollo_persisted_queries",
     "chrono",
@@ -20,23 +24,20 @@ async-graphql = { version = "7.0.11", features = [
     "url",
 ] }
 async-graphql-axum = "7.0.11"
-axum = "0.8.1"
-dotenvy = "0.15.7"
-eyre = "0.6.12"
+axum = { workspace = true }
+eyre = { workspace = true }
 futures-util = "0.3.31"
 jsonwebtoken = "9.3.0"
-listenfd = "1.0.1"
 sea-orm = { workspace = true }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 thiserror = "2.0.3"
-tokio = { version = "1.41.1", features = ["full"] }
-tower-http = { version = "0.6.1", features = ["cors"] }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
+tokio = { version = "1.44.1", features = ["full"] }
+tracing = { workspace = true }
+tower-http = { workspace = true }
 uuid = { version = "1.11.0", features = ["v4"] }
 chrono = { version = "0.4.38", features = ["serde"] }
-ring = "0.17.14"
+ring = { workspace = true }
 base64 = "0.22.1"
 secrecy = { workspace = true }
 nanoid = { workspace = true }
