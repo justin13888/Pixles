@@ -10,9 +10,9 @@ use axum::{
     routing::get,
     Router,
 };
+use config::GraphqlServerConfig;
 use context::{AppContext, DbContext, UserContext};
-use environment::{Environment, ServerConfig};
-use eyre::{eyre, Result};
+use eyre::Result;
 use loaders::Loaders;
 use schema::{create_schema, AppSchema};
 use sea_orm::DatabaseConnection;
@@ -22,6 +22,7 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 use tracing::trace;
 
 mod auth;
+mod config;
 mod constants;
 mod context;
 mod hash;
@@ -85,7 +86,10 @@ fn create_cors_layer() -> CorsLayer {
         .max_age(Duration::from_secs(7200)) // 5 minutes
 }
 
-pub async fn get_router(conn: Arc<DatabaseConnection>, config: ServerConfig) -> Result<Router> {
+pub async fn get_router(
+    conn: Arc<DatabaseConnection>,
+    config: GraphqlServerConfig,
+) -> Result<Router> {
     // Create loaders
     let loaders = Loaders::new(conn.clone());
 

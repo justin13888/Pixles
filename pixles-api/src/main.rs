@@ -55,11 +55,11 @@ async fn main() -> Result<()> {
     let mut router = Router::new();
     #[cfg(feature = "graphql")]
     {
-        router = router.merge(graphql::get_router(conn.clone(), env.server.clone()).await?);
+        router = router.merge(graphql::get_router(conn.clone(), env.server.clone().into()).await?);
     }
     #[cfg(feature = "upload")]
     {
-        router = router.merge(upload::get_router(conn.clone(), env.server.clone()).await?);
+        router = router.merge(upload::get_router(conn.clone(), env.server.clone().into()).await?);
     }
 
     let app = router.into_make_service();

@@ -1,9 +1,11 @@
 use std::{collections::HashSet, sync::Arc};
 
-use crate::auth::{Claims, UserRole};
+use crate::{
+    auth::{Claims, UserRole},
+    config::GraphqlServerConfig,
+};
 use async_graphql::{Error, ErrorExtensions, ServerError};
 use axum::http::HeaderMap;
-use environment::ServerConfig;
 use jsonwebtoken::TokenData;
 use sea_orm::DatabaseConnection;
 use secrecy::{ExposeSecret, SecretString};
@@ -26,7 +28,10 @@ pub struct UserContext {
 }
 
 impl UserContext {
-    pub fn from_headers(headers: &HeaderMap, config: &ServerConfig) -> Result<Self, AuthError> {
+    pub fn from_headers(
+        headers: &HeaderMap,
+        config: &GraphqlServerConfig,
+    ) -> Result<Self, AuthError> {
         let mut scopes = None;
         let user_type: UserType = match get_token_from_headers(headers) {
             Ok(token) => {
