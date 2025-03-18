@@ -55,13 +55,13 @@ pub struct ServerConfig {
     pub upload_dir: PathBuf,
     #[cfg(feature = "upload")]
     /// Maximum file size in bytes
-    pub max_file_size: u64,
+    pub max_file_size: usize,
     #[cfg(feature = "upload")]
     /// Maximum cache size in bytes
-    pub max_cache_size: u64,
+    pub max_cache_size: usize,
     #[cfg(feature = "upload")]
-    /// Sled database path
-    pub db_path: PathBuf,
+    /// Sled database directory
+    pub sled_db_dir: PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -86,14 +86,6 @@ impl Environment {
             })
         };
         let load_env_usize = |key: &str| {
-            load_env(key).and_then(|v| {
-                v.parse().map_err(|e: ParseIntError| {
-                    EnvironmentError::ParseError(key.to_string(), e.to_string())
-                })
-            })
-        };
-
-        let load_env_u64 = |key: &str| {
             load_env(key).and_then(|v| {
                 v.parse().map_err(|e: ParseIntError| {
                     EnvironmentError::ParseError(key.to_string(), e.to_string())
@@ -156,12 +148,12 @@ impl Environment {
                     .unwrap_or(String::from("./uploads"))
                     .into(),
                 #[cfg(feature = "upload")]
-                max_file_size: load_env_u64("MAX_FILE_SIZE").unwrap_or(1024 * 1024 * 1024 * 1024), // 1 TiB
+                max_file_size: load_env_usize("MAX_FILE_SIZE").unwrap_or(32 * 1024 * 1024 * 1024), // 32 GiB
                 #[cfg(feature = "upload")]
-                max_cache_size: load_env_u64("MAX_CACHE_SIZE").unwrap_or(4 * 1024 * 1024 * 1024), // 4 GiB
+                max_cache_size: load_env_usize("MAX_CACHE_SIZE").unwrap_or(64 * 1024 * 1024 * 1024), // 64 GiB
                 #[cfg(feature = "upload")]
-                db_path: load_env("DB_PATH")
-                    .unwrap_or(String::from("./metadata.db"))
+                sled_db_dir: load_env("SLED_DB_DIR")
+                    .unwrap_or(String::from("./.metadata"))
                     .into(),
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {

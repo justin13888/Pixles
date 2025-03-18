@@ -34,6 +34,7 @@ sea-orm = { version = "1.1.7", features = [
     "debug-print",
 ] }
 secrecy = { version = "0.10.3", features = ["serde"] }
+uuid = { version = "1.11.0", features = ["v4"] }
 tower-http = { version = "0.6.1", features = ["cors"] }
 tracing = "0.1.40"
 thiserror = "2.0.12"

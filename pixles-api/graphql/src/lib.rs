@@ -86,10 +86,11 @@ fn create_cors_layer() -> CorsLayer {
         .max_age(Duration::from_secs(7200)) // 5 minutes
 }
 
-pub async fn get_router(
+pub async fn get_router<C: Into<GraphqlServerConfig>>(
     conn: Arc<DatabaseConnection>,
-    config: GraphqlServerConfig,
+    config: C,
 ) -> Result<Router> {
+    let config = config.into();
     // Create loaders
     let loaders = Loaders::new(conn.clone());
 

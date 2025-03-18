@@ -11,23 +11,23 @@ pub struct UploadServerConfig {
     /// Upload directory
     pub upload_dir: PathBuf,
     /// Maximum file size in bytes
-    pub max_file_size: u64,
+    pub max_file_size: usize,
     /// Maximum cache size in bytes
-    pub max_cache_size: u64,
-    /// Sled database path
-    pub db_path: PathBuf,
+    pub max_cache_size: usize,
+    /// Sled database directory
+    pub sled_db_dir: PathBuf,
 }
 
-impl From<ServerConfig> for UploadServerConfig {
-    fn from(config: ServerConfig) -> Self {
+impl From<&ServerConfig> for UploadServerConfig {
+    fn from(config: &ServerConfig) -> Self {
         Self {
-            host: config.host,
+            host: config.host.clone(),
             port: config.port,
-            domain: config.domain,
-            upload_dir: config.upload_dir,
+            domain: config.domain.clone(),
+            upload_dir: config.upload_dir.clone(),
             max_file_size: config.max_file_size,
             max_cache_size: config.max_cache_size,
-            db_path: config.db_path,
+            sled_db_dir: config.sled_db_dir.clone(),
         }
     }
 }

@@ -55,18 +55,18 @@ async fn main() -> Result<()> {
     let mut router = Router::new();
     #[cfg(feature = "graphql")]
     {
-        router = router.merge(graphql::get_router(conn.clone(), env.server.clone().into()).await?);
+        router = router.merge(graphql::get_router(conn.clone(), &env.server).await?);
     }
     #[cfg(feature = "upload")]
     {
-        router = router.merge(upload::get_router(conn.clone(), env.server.clone().into()).await?);
+        router = router.merge(upload::get_router(conn.clone(), &env.server).await?);
     }
 
     let app = router.into_make_service();
 
     // Start server
     info!(
-        "GraphQL server running at http://{}:{}/graphql",
+        "Starting server on http://{}:{}/",
         env.server.host, env.server.port
     );
 
@@ -87,7 +87,7 @@ async fn main() -> Result<()> {
     };
 
     // run it
-    println!("listening on {}", listener.local_addr().unwrap());
+    info!("Server listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app)
         .await
         .map_err(|e| eyre!("Axum server error: {:?}", e))?;

@@ -1,6 +1,8 @@
-use axum::Router;
+use axum::{extract::DefaultBodyLimit, routing::post, Router};
 use config::UploadServerConfig;
 use eyre::{eyre, Result};
+use metadata::FileDatabase;
+use routes::upload_file;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tracing::info;
@@ -8,6 +10,9 @@ use tracing::info;
 use crate::state::AppState;
 
 mod config;
+mod error;
+mod metadata;
+mod routes;
 mod state;
 
 /// Validate the configuration
@@ -31,28 +36,41 @@ pub fn validate_config(config: &UploadServerConfig) -> Result<Vec<String>> {
         warnings.push("upload_dir is non-empty. This may be from server restarts.".to_string());
     }
 
-    // Warn if db_path is an existing file
-    if config.db_path.is_file() {
-        warnings.push("db_path is an existing file. This may be from server restarts.".to_string());
+    // Warn if sled_db_dir is an existing directory
+    if config.sled_db_dir.is_dir() {
+        warnings.push(
+            "sled_db_dir is an existing directory. This may be from server restarts.".to_string(),
+        );
     }
 
     Ok(warnings)
 }
 
-pub async fn get_router(
+pub async fn get_router<C: Into<UploadServerConfig>>(
     conn: Arc<DatabaseConnection>,
-    config: UploadServerConfig,
+    config: C,
 ) -> Result<Router> {
+    let config = config.into();
     let config_warnings = validate_config(&config)?;
     if !config_warnings.is_empty() {
-        info!("Config warnings: {:?}", config_warnings);
+        info!("Upload server config warnings: {:?}", config_warnings);
     }
 
-    // TODO: Add route to expose these configs
+    // Initialize database
+    let file_db = FileDatabase::new(config.clone()).await?;
+    // TODO: Read existing upload folder and db to ensure old stuff are recovered. Need to decide whether to attempt to recover whatever (e.g. intermittent, brief outages) or just restart everything
 
-    let state = AppState { conn, config };
+    let default_body_limit = DefaultBodyLimit::max(config.max_file_size);
+    let state = AppState {
+        conn,
+        config,
+        file_db,
+    };
 
-    let router = Router::new().with_state(state);
+    let router = Router::new()
+        .route("/upload", post(upload_file))
+        .layer(default_body_limit) // TODO: Ensure limit is respected
+        .with_state(Arc::new(state));
 
     // TODO: Complete implementation
 

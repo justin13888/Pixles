@@ -21,14 +21,14 @@ pub struct GraphqlServerConfig {
     pub jwt_access_token_duration_seconds: usize,
 }
 
-impl From<ServerConfig> for GraphqlServerConfig {
-    fn from(config: ServerConfig) -> Self {
+impl From<&ServerConfig> for GraphqlServerConfig {
+    fn from(config: &ServerConfig) -> Self {
         Self {
-            host: config.host,
+            host: config.host.clone(),
             port: config.port,
-            domain: config.domain,
-            jwt_eddsa_encoding_key: config.jwt_eddsa_encoding_key,
-            jwt_eddsa_decoding_key: config.jwt_eddsa_decoding_key,
+            domain: config.domain.clone(),
+            jwt_eddsa_encoding_key: (*config.jwt_eddsa_encoding_key).clone(),
+            jwt_eddsa_decoding_key: (*config.jwt_eddsa_decoding_key).clone(),
             jwt_refresh_token_duration_seconds: config.jwt_refresh_token_duration_seconds,
             jwt_access_token_duration_seconds: config.jwt_access_token_duration_seconds,
         }

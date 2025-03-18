@@ -21,3 +21,9 @@ Cargo.lock
 #.idea/
 
 .env
+
+# Upload directory
+uploads/
+
+# Default Sled database directory
+.metadata/
