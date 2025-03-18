@@ -1,7 +1,8 @@
 use dotenvy::dotenv;
-use std::{env, num::ParseIntError};
+use std::{env, num::ParseIntError, path::PathBuf};
 use thiserror::Error;
 use tracing::level_filters::LevelFilter;
+use wrapper::SecretKeyWrapper;
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use jsonwebtoken::{DecodingKey, EncodingKey};
@@ -10,6 +11,7 @@ use ring::signature::Ed25519KeyPair;
 use crate::jwt::convert_ed25519_der_to_jwt_keys;
 
 mod jwt;
+mod wrapper;
 
 #[derive(Debug, Error)]
 pub enum EnvironmentError {
@@ -26,7 +28,7 @@ pub struct DatabaseConfig {
     pub url: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ServerConfig {
     /// Server host (e.g. "0.0.0.0")
     pub host: String,
@@ -35,35 +37,31 @@ pub struct ServerConfig {
     /// Public domain (e.g. "api.pixles.com")
     pub domain: String,
 
+    #[cfg(feature = "graphql")]
     /// EdDSA encoding key
-    pub jwt_eddsa_encoding_key: EncodingKey,
+    pub jwt_eddsa_encoding_key: SecretKeyWrapper<EncodingKey>,
+    #[cfg(feature = "graphql")]
     /// EdDSA decoding key
-    pub jwt_eddsa_decoding_key: DecodingKey,
-
+    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>,
+    #[cfg(feature = "graphql")]
     /// JWT refresh token duration in seconds
     pub jwt_refresh_token_duration_seconds: usize,
+    #[cfg(feature = "graphql")]
     /// JWT access token duration in seconds
     pub jwt_access_token_duration_seconds: usize,
-}
 
-impl std::fmt::Debug for ServerConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ServerConfig")
-            .field("host", &self.host)
-            .field("port", &self.port)
-            .field("domain", &self.domain)
-            .field("jwt_eddsa_encoding_key", &"REDACTED")
-            .field("jwt_eddsa_decoding_key", &"REDACTED")
-            .field(
-                "jwt_refresh_token_duration_seconds",
-                &self.jwt_refresh_token_duration_seconds,
-            )
-            .field(
-                "jwt_access_token_duration_seconds",
-                &self.jwt_access_token_duration_seconds,
-            )
-            .finish()
-    }
+    #[cfg(feature = "upload")]
+    /// Upload directory
+    pub upload_dir: PathBuf,
+    #[cfg(feature = "upload")]
+    /// Maximum file size in bytes
+    pub max_file_size: u64,
+    #[cfg(feature = "upload")]
+    /// Maximum cache size in bytes
+    pub max_cache_size: u64,
+    #[cfg(feature = "upload")]
+    /// Sled database path
+    pub db_path: PathBuf,
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +86,14 @@ impl Environment {
             })
         };
         let load_env_usize = |key: &str| {
+            load_env(key).and_then(|v| {
+                v.parse().map_err(|e: ParseIntError| {
+                    EnvironmentError::ParseError(key.to_string(), e.to_string())
+                })
+            })
+        };
+
+        let load_env_u64 = |key: &str| {
             load_env(key).and_then(|v| {
                 v.parse().map_err(|e: ParseIntError| {
                     EnvironmentError::ParseError(key.to_string(), e.to_string())
@@ -131,16 +137,32 @@ impl Environment {
                 host: load_env("SERVER_HOST").unwrap_or("0.0.0.0".to_string()),
                 port: load_env_int("SERVER_PORT").unwrap_or(3000),
                 domain: load_env("SERVER_DOMAIN").unwrap_or("localhost".to_string()),
-                jwt_eddsa_encoding_key,
-                jwt_eddsa_decoding_key,
+                #[cfg(feature = "graphql")]
+                jwt_eddsa_encoding_key: SecretKeyWrapper::from(jwt_eddsa_encoding_key),
+                #[cfg(feature = "graphql")]
+                jwt_eddsa_decoding_key: SecretKeyWrapper::from(jwt_eddsa_decoding_key),
+                #[cfg(feature = "graphql")]
                 jwt_refresh_token_duration_seconds: load_env_usize(
                     "JWT_REFRESH_TOKEN_DURATION_SECONDS",
                 )
                 .unwrap_or(60 * 60 * 24 * 30), // 30 days
+                #[cfg(feature = "graphql")]
                 jwt_access_token_duration_seconds: load_env_usize(
                     "JWT_ACCESS_TOKEN_DURATION_SECONDS",
                 )
                 .unwrap_or(60 * 10), // 10 minutes
+                #[cfg(feature = "upload")]
+                upload_dir: load_env("UPLOAD_DIR")
+                    .unwrap_or(String::from("./uploads"))
+                    .into(),
+                #[cfg(feature = "upload")]
+                max_file_size: load_env_u64("MAX_FILE_SIZE").unwrap_or(1024 * 1024 * 1024 * 1024), // 1 TiB
+                #[cfg(feature = "upload")]
+                max_cache_size: load_env_u64("MAX_CACHE_SIZE").unwrap_or(4 * 1024 * 1024 * 1024), // 4 GiB
+                #[cfg(feature = "upload")]
+                db_path: load_env("DB_PATH")
+                    .unwrap_or(String::from("./metadata.db"))
+                    .into(),
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {
                 LevelFilter::TRACE

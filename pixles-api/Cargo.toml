@@ -44,5 +44,5 @@ codegen-units = 1
 
 [features]
 default = ["graphql", "upload"]
-graphql = ["pixles-api-graphql"]
-upload = ["pixles-api-upload"]
+graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
+upload = ["pixles-api-upload", "pixles-api-environment/upload"]

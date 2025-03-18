@@ -13,5 +13,11 @@ dotenvy = "0.15.7"
 eyre = { workspace = true }
 jsonwebtoken = "9.3.0"
 ring = { workspace = true }
+secrecy = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
+
+[features]
+default = []
+graphql = []
+upload = []
