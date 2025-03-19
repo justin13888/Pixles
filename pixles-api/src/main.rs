@@ -1,8 +1,9 @@
-use axum::Router;
+use axum::{routing::get, Router};
 use environment::Environment;
 use eyre::{eyre, Result};
 use listenfd::ListenFd;
 use migration::{Migrator, MigratorTrait};
+use routes::version::get_version;
 use sea_orm::Database;
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
@@ -14,6 +15,8 @@ use tracing_subscriber::fmt::format::FmtSpan;
 
 #[cfg(not(any(feature = "graphql", feature = "upload")))]
 compile_error!("At least one of the features \"graphql\" or \"upload\" must be enabled");
+
+mod routes;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -61,6 +64,8 @@ async fn main() -> Result<()> {
     {
         router = router.merge(upload::get_router(conn.clone(), &env.server).await?);
     }
+
+    router = router.route("/version", get(get_version));
 
     let app = router.into_make_service();
 

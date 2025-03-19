@@ -22,6 +22,7 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 futures-util = "0.3.31"
 async-stream = "0.3.6"
+serde = { version = "1.0.215", features = ["derive"] }
 
 [workspace.dependencies]
 axum = "0.8.1"
