@@ -5,6 +5,7 @@ use metadata::FileDatabase;
 use routes::upload_file;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing::info;
 
 use crate::state::AppState;
@@ -60,6 +61,10 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
     let file_db = FileDatabase::new(config.clone()).await?;
     // TODO: Read existing upload folder and db to ensure old stuff are recovered. Need to decide whether to attempt to recover whatever (e.g. intermittent, brief outages) or just restart everything
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
     let default_body_limit = DefaultBodyLimit::max(config.max_file_size);
     let state = AppState {
         conn,
@@ -69,6 +74,7 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
 
     let router = Router::new()
         .route("/upload", post(upload_file))
+        .layer(cors)
         .layer(default_body_limit) // TODO: Ensure limit is respected
         .with_state(Arc::new(state));
 
