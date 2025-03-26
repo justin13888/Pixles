@@ -2,6 +2,7 @@
 name = "pixles-api"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [workspace]
 members = [".", "graphql", "service", "entity", "migration"]
