@@ -9,7 +9,7 @@ pixles-api-entity = { path = "../entity" }
 sea-orm = { workspace = true }
 
 [dev-dependencies]
-tokio = { version = "1.34.0", features = ["macros", "rt"] }
+tokio = { workspace = true, features = ["macros", "rt"] }
 
 [features]
 mock = ["sea-orm/mock"]
