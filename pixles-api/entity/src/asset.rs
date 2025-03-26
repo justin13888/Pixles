@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, FixedOffset, Utc};
 use nanoid::nanoid;
 use sea_orm::{entity::prelude::*, Set};
 use serde::{Deserialize, Serialize};
@@ -29,7 +29,7 @@ pub struct Model {
         default_value = "CURRENT_TIMESTAMP",
         on_update = "CURRENT_TIMESTAMP"
     )]
-    pub modified_at: DateTime<Utc>,
+    pub modified_at: DateTime<FixedOffset>,
     /// Date when the album was deleted if not NULL
     #[sea_orm(column_type = "TimestampWithTimeZone", nullable)]
     pub deleted_at: Option<DateTime<Utc>>,
