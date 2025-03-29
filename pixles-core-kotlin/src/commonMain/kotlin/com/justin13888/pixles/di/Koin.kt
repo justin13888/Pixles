@@ -5,6 +5,7 @@ import com.justin13888.pixles.data.KtorMuseumApi
 import com.justin13888.pixles.data.MuseumApi
 import com.justin13888.pixles.data.MuseumRepository
 import com.justin13888.pixles.data.MuseumStorage
+import com.justin13888.pixles.data.user.UserRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.ContentType
@@ -32,6 +33,8 @@ val dataModule = module {
             initialize()
         }
     }
+
+    single<UserRepository> { UserRepository() }
 }
 
 fun initKoin() = initKoin(emptyList())

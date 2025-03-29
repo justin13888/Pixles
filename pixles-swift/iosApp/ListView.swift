@@ -12,8 +12,11 @@ struct ListView: View {
     let columns = [
         GridItem(.adaptive(minimum: 120), alignment: .top)
     ]
+    
+    let context: UserContext? = KoinDependencies().userRepository.getContextBlocking()
 
     var body: some View {
+        Text(context!.id + (context!.token ?? "null")) // TODO
         ZStack {
             if !viewModel.objects.isEmpty {
                 NavigationStack {
