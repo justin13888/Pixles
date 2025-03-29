@@ -53,12 +53,14 @@ Pixles is open-source and designed to be friendly to self-host. See this [guide]
 Components:
 
 - [Pixles API](pixles-api/README.md)
-- [Pixles Web](pixles-web/README.md)
+- [Pixles Web](pixles-web/README.md) (WIP)
 - [Pixles Desktop](pixles-desktop/README.md) (Planned)
 - [Pixles Android](pixles-android/README.md) (Planned)
-- [Pixles iOS](pixles-ios/README.md) (Planned)
-- [Pixles Media](pixles-media/README.md)
-- [Pixles Docs](pixles-docs/README.md)f
+- [Pixles Swift](pixles-swift/README.md) (WIP)
+- [Pixles Media](pixles-media/README.md) (WIP)
+- [Pixles Docs](pixles-docs/README.md)
+
+<!-- TODO: TO be updated ^^ -->
 
 External dependencies:
 
@@ -66,6 +68,19 @@ External dependencies:
 - [Minio](https://min.io/)
 - [RabbitMQ](https://www.rabbitmq.com/)
 - [Memcached](https://memcached.org/)
+
+<!-- TODO: To be updated ^^ -->
+
+Considering all the technologies used, you may have to switch between IDEs to develop various parts of the project. This is what I recommend:
+
+- `pixles-android`: Android Studio or IntelliJ IDEA with plugins
+- `pixles-api`: VS Code or similar
+- `pixles-core-kotlin`: Android Studio or IntelliJ IDEA with plugins
+- `pixles-desktop`: VS Code or similar
+- `pixles-docs`: VS Code or similar
+- `pixles-media`: VS Code or similar
+- `pixles-swift`: Xcode
+- `pixles-web`: VS Code or similar
 
 Reference the Development sections of each component's README for more information.
 
