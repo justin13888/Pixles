@@ -1,4 +1,4 @@
-name: Lint/Format
+name: Lint/Formatting
 on:
   push:
     branches:
@@ -10,7 +10,7 @@ jobs:
   lint-web:
     name: Lint Web
     runs-on: ubuntu-latest
-    steps:
+    steps: # TODO: Fix
       - name: Check out code
         uses: actions/checkout@v4
       - name: Setup Bun
