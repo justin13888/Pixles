@@ -1,0 +1,23 @@
+name: Lint/Format
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+# TODO: Add all the lint jobs
+jobs:
+  lint-web:
+    name: Lint Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Enter `pixles-web` directory
+        run: cd pixles-web
+      - name: Install dependencies
+        run: bun install
+      - name: Lint
+        run: bun lint
