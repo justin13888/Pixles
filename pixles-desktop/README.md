@@ -1,5 +1,7 @@
 # Pixles Desktop
 
+> Disclaimer: Development for this package is paused until other clients are stabilized (e.g. web, swift, kotlin)
+
 ## Development
 
 ### Prerequisites
