@@ -2,6 +2,8 @@
 
 Photo sharing for all! Or you could think of it as what Google Photo wanted to be.
 
+> Disclaimer: This project is still in active development. Star this repo to get the latest updates!
+
 ## Features
 
 - **Cross-platform**: Pixles is available on all common desktop and mobile platforms. They're fast on all.
@@ -9,6 +11,8 @@ Photo sharing for all! Or you could think of it as what Google Photo wanted to b
 - **Privacy**: Your data is yours and end-to-end encrypted.
 - **Asset-first**: Pixles implements several powerful features like real-time viewing, semantic search, AI organization, and more.
 - **Open-source**: Pixles is open-source forever and you can host your own server.
+
+<!-- TODO: Update this -->
 
 ## Screenshots
 
