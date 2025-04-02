@@ -34,10 +34,3 @@ assignees: ''
 
 ## Implementation Ideas
 <!-- Optional: If you have ideas about implementation details -->
-
-## Priority
-<!-- How important is this feature to you? -->
-- [ ] Critical: Blocking my use of the application
-- [ ] High: Would significantly improve my experience
-- [ ] Medium: Would be a nice addition
-- [ ] Low: Just an idea to consider
