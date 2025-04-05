@@ -37,6 +37,7 @@ val dataModule = module {
     single<UserRepository> { UserRepository() }
 }
 
+@Throws(org.koin.core.error.InstanceCreationException::class)
 fun initKoin() = initKoin(emptyList())
 
 fun initKoin(extraModules: List<Module>) {

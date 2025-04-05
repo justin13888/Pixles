@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+//import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -14,25 +15,50 @@ kotlin {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
+            optIn.set(listOf(
+                "kotlin.uuid.ExperimentalUuidApi",
+            ))
         }
     }
 
-    listOf(
+    jvm {
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
+
+    val macosTargets = listOf(
+        macosX64(),
+        macosArm64()
+    )
+    // linuxArm64("native") // on Linux
+    // mingwX64("native")   // on Windows
+
+    val iosTargets = listOf(
         iosX64(),
         iosArm64(),
         iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+    )
+
+    (iosTargets + macosTargets).forEach { target ->
+        target.binaries.framework {
             baseName = "Shared"
             isStatic = true
         }
     }
 
+//    @OptIn(ExperimentalSwiftExportDsl::class)
+//    swiftExport {
+//        // Root module name
+//        moduleName = "shared"
+//        flattenPackage = "com.justin13888.pixles"
+//    }
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
         }
-        iosMain.dependencies {
+        appleMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
         commonMain.dependencies {
@@ -43,6 +69,10 @@ kotlin {
             implementation(libs.koin.core)
             api(libs.kmp.observable.viewmodel)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+
 
         // Required by KMM-ViewModel
         all {

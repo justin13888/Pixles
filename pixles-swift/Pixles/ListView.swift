@@ -16,7 +16,7 @@ struct ListView: View {
     let context: UserContext? = KoinDependencies().userRepository.getContextBlocking()
 
     var body: some View {
-        Text(context!.id + (context!.token ?? "null")) // TODO
+        Text(context!.id + (context!.token ?? "sdf")) // TODO
         ZStack {
             if !viewModel.objects.isEmpty {
                 NavigationStack {
