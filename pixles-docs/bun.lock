@@ -5,7 +5,7 @@
       "name": "pixles-docs",
       "dependencies": {
         "@astrojs/starlight": "^0.32.2",
-        "@astrojs/starlight-tailwind": "^3.0.0",
+        "@astrojs/starlight-tailwind": "^3.0.1",
         "@tailwindcss/vite": "^4.0.14",
         "astro": "^5.1.5",
         "sharp": "^0.33.5",
@@ -33,7 +33,7 @@
 
     "@astrojs/starlight": ["@astrojs/starlight@0.32.2", "", { "dependencies": { "@astrojs/mdx": "^4.0.5", "@astrojs/sitemap": "^3.2.1", "@pagefind/default-ui": "^1.3.0", "@types/hast": "^3.0.4", "@types/js-yaml": "^4.0.9", "@types/mdast": "^4.0.4", "astro-expressive-code": "^0.40.0", "bcp-47": "^2.1.0", "hast-util-from-html": "^2.0.1", "hast-util-select": "^6.0.2", "hast-util-to-string": "^3.0.0", "hastscript": "^9.0.0", "i18next": "^23.11.5", "js-yaml": "^4.1.0", "klona": "^2.0.6", "mdast-util-directive": "^3.0.0", "mdast-util-to-markdown": "^2.1.0", "mdast-util-to-string": "^4.0.0", "pagefind": "^1.3.0", "rehype": "^13.0.1", "rehype-format": "^5.0.0", "remark-directive": "^3.0.0", "unified": "^11.0.5", "unist-util-visit": "^5.0.0", "vfile": "^6.0.2" }, "peerDependencies": { "astro": "^5.1.5" } }, "sha512-FLz8Y8R+GsD0jD/G64bYijwwVsAq99Ugk2bJYRmH2k1reYMh83GRma2IaKGgSI2fLNEu7tdyG4cpkwrwP3W02A=="],
 
-    "@astrojs/starlight-tailwind": ["@astrojs/starlight-tailwind@3.0.0", "", { "peerDependencies": { "@astrojs/starlight": ">=0.30.0", "@astrojs/tailwind": "^5.1.3", "tailwindcss": "^3.3.3" } }, "sha512-oYHG9RY+VaOSeAhheVZfm9HDA892qvcQA82VT86POYmg1OsgBuWwdf1ZbofV8iq/z5kO06ajcSdzhPE8lhEx8g=="],
+    "@astrojs/starlight-tailwind": ["@astrojs/starlight-tailwind@3.0.1", "", { "peerDependencies": { "@astrojs/starlight": ">=0.30.0", "@astrojs/tailwind": "^5.1.3 || ^6.0.0", "tailwindcss": "^3.3.3" } }, "sha512-9gPBaglNYuD3gLSF+4RvmbO3DxMMMby/AYFuwZkS+BLo67WQWyBIdYtmof814Gi750qSnt0sCvhqFAURqbA1Cw=="],
 
     "@astrojs/tailwind": ["@astrojs/tailwind@6.0.0", "", { "dependencies": { "autoprefixer": "^10.4.20", "postcss": "^8.5.1", "postcss-load-config": "^4.0.2" }, "peerDependencies": { "astro": "^3.0.0 || ^4.0.0 || ^5.0.0", "tailwindcss": "^3.0.24" } }, "sha512-GbEK2/h0nvY8i6g1GZT5ddHAgj71lQIf34/j7+jPLhUti3xDxKcWElApDe2jWvqAaKl2oKEh045ITSm8mU9BVQ=="],
 
