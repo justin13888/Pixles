@@ -1,5 +1,5 @@
 {
-  "originHash" : "db79fcc1e89ddda40b63c6b4784113d9a3818a7e51c1cbcb2a074b98d190aa0f",
+  "originHash" : "ea1faa3f91fe5e4f2bc6ad9426eb7d087ee79e689dd1f5cf532c452b7ead7f7f",
   "pins" : [
     {
       "identity" : "kmp-nativecoroutines",
@@ -17,6 +17,15 @@
       "state" : {
         "branch" : "v1.0.0-BETA-7",
         "revision" : "805c41ff1305b02909c3b50a7e34a46b3c029c04"
+      }
+    },
+    {
+      "identity" : "swiftlintplugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/SwiftLintPlugin",
+      "state" : {
+        "revision" : "3825ebf8d55bb877c91bc897e8e3d0c001f16fba",
+        "version" : "0.58.2"
       }
     }
   ],

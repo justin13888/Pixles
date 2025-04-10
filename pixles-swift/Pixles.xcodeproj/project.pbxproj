@@ -10,6 +10,7 @@
 		340383962DA7822800F05E7B /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 340383952DA7822000F05E7B /* .swiftlint.yml */; };
 		3403880E2DA787D800F05E7B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3403880D2DA787D800F05E7B /* README.md */; };
 		340388122DA7882500F05E7B /* .swiftversion in Resources */ = {isa = PBXBuildFile; fileRef = 340388112DA7882200F05E7B /* .swiftversion */; };
+		340391272DA78D5200F05E7B /* .swiftformat in Resources */ = {isa = PBXBuildFile; fileRef = 340391262DA78D4D00F05E7B /* .swiftformat */; };
 		34F523152D97E9D500D31338 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523142D97E9D500D31338 /* KMPNativeCoroutinesAsync */; };
 		34F523172D97E9D500D31338 /* KMPNativeCoroutinesCore in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523162D97E9D500D31338 /* KMPNativeCoroutinesCore */; };
 		34F5231A2D97E9E800D31338 /* KMPObservableViewModelCore in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523192D97E9E800D31338 /* KMPObservableViewModelCore */; };
@@ -38,6 +39,7 @@
 		3403880D2DA787D800F05E7B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		340388112DA7882200F05E7B /* .swiftversion */ = {isa = PBXFileReference; lastKnownFileType = text; path = .swiftversion; sourceTree = "<group>"; };
 		340391252DA78B8000F05E7B /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		340391262DA78D4D00F05E7B /* .swiftformat */ = {isa = PBXFileReference; lastKnownFileType = text; path = .swiftformat; sourceTree = "<group>"; };
 		34F5203B2D97DC7400D31338 /* Pixles.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pixles.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34F5204E2D97DC7500D31338 /* PixlesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PixlesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		34F520582D97DC7500D31338 /* PixlesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PixlesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,6 +103,7 @@
 		34F520322D97DC7400D31338 = {
 			isa = PBXGroup;
 			children = (
+				340391262DA78D4D00F05E7B /* .swiftformat */,
 				340391242DA78B7200F05E7B /* BuildTools */,
 				340388112DA7882200F05E7B /* .swiftversion */,
 				3403880D2DA787D800F05E7B /* README.md */,
@@ -138,6 +141,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				3403912A2DA7922E00F05E7B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				34F5203D2D97DC7400D31338 /* Pixles */,
@@ -164,6 +168,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				3403912C2DA7923300F05E7B /* PBXTargetDependency */,
 				34F520502D97DC7500D31338 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -187,6 +192,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				3403912E2DA7923600F05E7B /* PBXTargetDependency */,
 				34F5205A2D97DC7500D31338 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -234,6 +240,7 @@
 			packageReferences = (
 				34F523132D97E9D500D31338 /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */,
 				34F523182D97E9E800D31338 /* XCRemoteSwiftPackageReference "KMP-ObservableViewModel" */,
+				340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 34F5203C2D97DC7400D31338 /* Products */;
@@ -253,6 +260,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3403880E2DA787D800F05E7B /* README.md in Resources */,
+				340391272DA78D5200F05E7B /* .swiftformat in Resources */,
 				340388122DA7882500F05E7B /* .swiftversion in Resources */,
 				340383962DA7822800F05E7B /* .swiftlint.yml in Resources */,
 			);
@@ -291,7 +299,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd BuildTools\nSDKROOT=$(xcrun --sdk macosx --show-sdk-path)\n#swift package update #Uncomment this line temporarily to update the version used to the latest matching your BuildTools/Package.swift file\nswift run -c release swiftformat \"$SRCROOT\"\n";
+			shellScript = "SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\nswift run -c release --package-path BuildTools swiftformat \"$SRCROOT\"\n";
 		};
 		34FC34F22DA101A000697C92 /* Build pixles-core-kotlin */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -338,6 +346,18 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		3403912A2DA7922E00F05E7B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 340391292DA7922E00F05E7B /* SwiftLint */;
+		};
+		3403912C2DA7923300F05E7B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 3403912B2DA7923300F05E7B /* SwiftLint */;
+		};
+		3403912E2DA7923600F05E7B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 3403912D2DA7923600F05E7B /* SwiftLint */;
+		};
 		34F520502D97DC7500D31338 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 34F5203A2D97DC7400D31338 /* Pixles */;
@@ -683,6 +703,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/lukepistrol/SwiftLintPlugin";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.58.2;
+			};
+		};
 		34F523132D97E9D500D31338 /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rickclephas/KMP-NativeCoroutines.git";
@@ -702,6 +730,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		340391292DA7922E00F05E7B /* SwiftLint */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */;
+			productName = "plugin:SwiftLint";
+		};
+		3403912B2DA7923300F05E7B /* SwiftLint */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */;
+			productName = "plugin:SwiftLint";
+		};
+		3403912D2DA7923600F05E7B /* SwiftLint */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */;
+			productName = "plugin:SwiftLint";
+		};
 		34F523142D97E9D500D31338 /* KMPNativeCoroutinesAsync */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 34F523132D97E9D500D31338 /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */;
