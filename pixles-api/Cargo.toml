@@ -26,7 +26,7 @@ async-stream = "0.3.6"
 serde = { version = "1.0.215", features = ["derive"] }
 
 [workspace.dependencies]
-axum = "0.8.1"
+axum = "0.8.3"
 eyre = "0.6.12"
 nanoid = "0.4.0"
 ring = "0.17.14"
