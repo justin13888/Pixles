@@ -11,6 +11,7 @@
 		3403880E2DA787D800F05E7B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3403880D2DA787D800F05E7B /* README.md */; };
 		340388122DA7882500F05E7B /* .swift-version in Resources */ = {isa = PBXBuildFile; fileRef = 340388112DA7882200F05E7B /* .swift-version */; };
 		340391272DA78D5200F05E7B /* .swiftformat in Resources */ = {isa = PBXBuildFile; fileRef = 340391262DA78D4D00F05E7B /* .swiftformat */; };
+		3403917F2DA7992C00F05E7B /* RswiftLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 3403917E2DA7992C00F05E7B /* RswiftLibrary */; };
 		34F523152D97E9D500D31338 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523142D97E9D500D31338 /* KMPNativeCoroutinesAsync */; };
 		34F523172D97E9D500D31338 /* KMPNativeCoroutinesCore in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523162D97E9D500D31338 /* KMPNativeCoroutinesCore */; };
 		34F5231A2D97E9E800D31338 /* KMPObservableViewModelCore in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523192D97E9E800D31338 /* KMPObservableViewModelCore */; };
@@ -68,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3403917F2DA7992C00F05E7B /* RswiftLibrary in Frameworks */,
 				34F523172D97E9D500D31338 /* KMPNativeCoroutinesCore in Frameworks */,
 				34F5231C2D97E9E800D31338 /* KMPObservableViewModelSwiftUI in Frameworks */,
 				34F523152D97E9D500D31338 /* KMPNativeCoroutinesAsync in Frameworks */,
@@ -141,6 +143,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				340391812DA7994500F05E7B /* PBXTargetDependency */,
 				3403912A2DA7922E00F05E7B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -152,6 +155,7 @@
 				34F523162D97E9D500D31338 /* KMPNativeCoroutinesCore */,
 				34F523192D97E9E800D31338 /* KMPObservableViewModelCore */,
 				34F5231B2D97E9E800D31338 /* KMPObservableViewModelSwiftUI */,
+				3403917E2DA7992C00F05E7B /* RswiftLibrary */,
 			);
 			productName = Pixles;
 			productReference = 34F5203B2D97DC7400D31338 /* Pixles.app */;
@@ -241,6 +245,7 @@
 				34F523132D97E9D500D31338 /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */,
 				34F523182D97E9E800D31338 /* XCRemoteSwiftPackageReference "KMP-ObservableViewModel" */,
 				340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */,
+				3403917D2DA7992C00F05E7B /* XCRemoteSwiftPackageReference "R" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 34F5203C2D97DC7400D31338 /* Products */;
@@ -357,6 +362,10 @@
 		3403912E2DA7923600F05E7B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 3403912D2DA7923600F05E7B /* SwiftLint */;
+		};
+		340391812DA7994500F05E7B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 340391802DA7994500F05E7B /* RswiftGenerateInternalResources */;
 		};
 		34F520502D97DC7500D31338 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -713,6 +722,14 @@
 				minimumVersion = 0.58.2;
 			};
 		};
+		3403917D2DA7992C00F05E7B /* XCRemoteSwiftPackageReference "R" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mac-cain13/R.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.8.0;
+			};
+		};
 		34F523132D97E9D500D31338 /* XCRemoteSwiftPackageReference "KMP-NativeCoroutines" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rickclephas/KMP-NativeCoroutines.git";
@@ -746,6 +763,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 340391282DA7920100F05E7B /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */;
 			productName = "plugin:SwiftLint";
+		};
+		3403917E2DA7992C00F05E7B /* RswiftLibrary */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3403917D2DA7992C00F05E7B /* XCRemoteSwiftPackageReference "R" */;
+			productName = RswiftLibrary;
+		};
+		340391802DA7994500F05E7B /* RswiftGenerateInternalResources */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3403917D2DA7992C00F05E7B /* XCRemoteSwiftPackageReference "R" */;
+			productName = "plugin:RswiftGenerateInternalResources";
 		};
 		34F523142D97E9D500D31338 /* KMPNativeCoroutinesAsync */ = {
 			isa = XCSwiftPackageProductDependency;
