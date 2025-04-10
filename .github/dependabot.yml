@@ -7,7 +7,7 @@ updates:
     directory: "/pixles-docs"
     schedule:
       interval: "weekly"
-  - package-ecosystem: ""
+  - package-ecosystem: "bun"
     directory: "/pixles-web"
     schedule:
       interval: "weekly"
