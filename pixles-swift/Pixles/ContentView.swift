@@ -1,5 +1,6 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
@@ -17,15 +18,15 @@ struct ContentView: View {
 //                }
 //                .onDelete(perform: deleteItems)
 //            }
-//#if os(macOS)
+        // #if os(macOS)
 //            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-//#endif
+        // #endif
 //            .toolbar {
-//#if os(iOS)
+        // #if os(iOS)
 //                ToolbarItem(placement: .navigationBarTrailing) {
 //                    EditButton()
 //                }
-//#endif
+        // #endif
 //                ToolbarItem {
 //                    Button(action: addItem) {
 //                        Label("Add Item", systemImage: "plus")
