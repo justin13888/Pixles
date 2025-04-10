@@ -15,11 +15,11 @@ analyzer_rules:
 opt_in_rules:
   - all
 disabled_rules:
+  - contrasted_opening_brace
   - todo
   # - anonymous_argument_in_multiline_closure
   # - async_without_await
   # - conditional_returns_on_newline
-  # - contrasted_opening_brace
   # - convenience_type
   # - discouraged_optional_collection
   # - explicit_acl
