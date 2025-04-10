@@ -1,8 +1,8 @@
 import Foundation
-import SwiftUI
-import Shared
 import KMPNativeCoroutinesAsync
 import KMPObservableViewModelSwiftUI
+import Shared
+import SwiftUI
 
 struct DetailView: View {
     @StateViewModel
@@ -29,13 +29,12 @@ struct ObjectDetails: View {
 
     var body: some View {
         ScrollView {
-
             VStack {
                 AsyncImage(url: URL(string: obj.primaryImageSmall)) { phase in
                     switch phase {
                     case .empty:
                         ProgressView()
-                    case .success(let image):
+                    case let .success(image):
                         image
                             .resizable()
                             .scaledToFill()

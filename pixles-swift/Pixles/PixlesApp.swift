@@ -1,6 +1,6 @@
-import SwiftUI
-import SwiftData
 import Shared
+import SwiftData
+import SwiftUI
 
 @main
 struct PixlesApp: App {
@@ -8,12 +8,12 @@ struct PixlesApp: App {
         do {
             try KoinKt.doInitKoin()
         } catch {
-            print("Error initializing Koin: \(error)") // TODO
+            print("Error initializing Koin: \(error)") // TODO:
             // You might want to handle this more gracefully depending on your app's requirements
             // For example, showing an error UI or attempting recovery
         }
     }
-    
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,

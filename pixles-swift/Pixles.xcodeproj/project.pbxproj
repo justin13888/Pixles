@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		340383962DA7822800F05E7B /* .swiftlint.yml in Resources */ = {isa = PBXBuildFile; fileRef = 340383952DA7822000F05E7B /* .swiftlint.yml */; };
+		3403880E2DA787D800F05E7B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 3403880D2DA787D800F05E7B /* README.md */; };
+		340388122DA7882500F05E7B /* .swiftversion in Resources */ = {isa = PBXBuildFile; fileRef = 340388112DA7882200F05E7B /* .swiftversion */; };
 		34F523152D97E9D500D31338 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523142D97E9D500D31338 /* KMPNativeCoroutinesAsync */; };
 		34F523172D97E9D500D31338 /* KMPNativeCoroutinesCore in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523162D97E9D500D31338 /* KMPNativeCoroutinesCore */; };
 		34F5231A2D97E9E800D31338 /* KMPObservableViewModelCore in Frameworks */ = {isa = PBXBuildFile; productRef = 34F523192D97E9E800D31338 /* KMPObservableViewModelCore */; };
@@ -31,6 +34,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		340383952DA7822000F05E7B /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
+		3403880D2DA787D800F05E7B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		340388112DA7882200F05E7B /* .swiftversion */ = {isa = PBXFileReference; lastKnownFileType = text; path = .swiftversion; sourceTree = "<group>"; };
+		340391252DA78B8000F05E7B /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		34F5203B2D97DC7400D31338 /* Pixles.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pixles.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34F5204E2D97DC7500D31338 /* PixlesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PixlesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		34F520582D97DC7500D31338 /* PixlesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PixlesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,9 +90,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		340391242DA78B7200F05E7B /* BuildTools */ = {
+			isa = PBXGroup;
+			children = (
+				340391252DA78B8000F05E7B /* Package.swift */,
+			);
+			path = BuildTools;
+			sourceTree = "<group>";
+		};
 		34F520322D97DC7400D31338 = {
 			isa = PBXGroup;
 			children = (
+				340391242DA78B7200F05E7B /* BuildTools */,
+				340388112DA7882200F05E7B /* .swiftversion */,
+				3403880D2DA787D800F05E7B /* README.md */,
+				340383952DA7822000F05E7B /* .swiftlint.yml */,
 				34F5203D2D97DC7400D31338 /* Pixles */,
 				34F520512D97DC7500D31338 /* PixlesTests */,
 				34F5205B2D97DC7500D31338 /* PixlesUITests */,
@@ -110,7 +129,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 34F520622D97DC7500D31338 /* Build configuration list for PBXNativeTarget "Pixles" */;
 			buildPhases = (
-				34FC34F22DA101A000697C92 /* ShellScript */,
+				34FC34F22DA101A000697C92 /* Build pixles-core-kotlin */,
+				340383972DA7837200F05E7B /* ShellScript */,
 				34F520372D97DC7400D31338 /* Sources */,
 				34F520382D97DC7400D31338 /* Frameworks */,
 				34F520392D97DC7400D31338 /* Resources */,
@@ -232,6 +252,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3403880E2DA787D800F05E7B /* README.md in Resources */,
+				340388122DA7882500F05E7B /* .swiftversion in Resources */,
+				340383962DA7822800F05E7B /* .swiftlint.yml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,7 +275,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		34FC34F22DA101A000697C92 /* ShellScript */ = {
+		340383972DA7837200F05E7B /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd BuildTools\nSDKROOT=$(xcrun --sdk macosx --show-sdk-path)\n#swift package update #Uncomment this line temporarily to update the version used to the latest matching your BuildTools/Package.swift file\nswift run -c release swiftformat \"$SRCROOT\"\n";
+		};
+		34FC34F22DA101A000697C92 /* Build pixles-core-kotlin */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -261,6 +302,7 @@
 			);
 			inputPaths = (
 			);
+			name = "Build pixles-core-kotlin";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -457,10 +499,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.justin13888.Pixles;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
@@ -499,10 +542,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.justin13888.Pixles;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;

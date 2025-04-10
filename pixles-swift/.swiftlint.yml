@@ -1,0 +1,28 @@
+disabled_rules:
+  - trailing_whitespace
+  - line_length
+  
+included:
+  - Sources
+  - Tests
+  
+excluded:
+  - .build
+  - DerivedData
+  - Pods
+  - Carthage
+  
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - fatal_error_message
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - missing_docs
+  - sorted_imports
+  - unneeded_parentheses_in_closure_argument
+
+identifier_name:
+  min_length: 2
+  
+reporter: "xcode"
