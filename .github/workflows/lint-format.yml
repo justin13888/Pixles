@@ -14,7 +14,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Setup Bun
-        run: cd pixles-web
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
       - name: Install dependencies
         working-directory: pixles-web
         run: bun install
