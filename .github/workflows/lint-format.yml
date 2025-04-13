@@ -14,10 +14,10 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-      - name: Enter `pixles-web` directory
         run: cd pixles-web
       - name: Install dependencies
+        working-directory: pixles-web
         run: bun install
       - name: Lint
+        working-directory: pixles-web
         run: bun lint
