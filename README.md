@@ -75,7 +75,7 @@ External dependencies:
 - [RabbitMQ](https://www.rabbitmq.com/)
 - [Memcached](https://memcached.org/)
 
-- [NGINX](https://github.com/nginx/nginx) ([ingress](https://github.com/kubernetes/ingress-nginx))
+- [NGINX](https://github.com/nginx/nginx) ([ingress-nginx](https://github.com/kubernetes/ingress-nginx))
 - [Envoy](https://github.com/envoyproxy/envoy)
 - [Istio](https://github.com/istio/istio)
 
