@@ -56,14 +56,16 @@ Pixles is open-source and designed to be friendly to self-host. See this [guide]
 
 Components:
 
-- [Pixles API](pixles-api/README.md)
-- [Pixles Web](pixles-web/README.md) (WIP)
-- [Pixles Desktop](pixles-desktop/README.md) (Planned)
-- [Pixles Android](pixles-android/README.md) (Planned)
-- [Pixles Swift](pixles-swift/README.md) (WIP)
-- [Pixles Media](pixles-media/README.md) (WIP)
-- [Pixles Docs](pixles-docs/README.md)
+- [Pixles API](pixles-api/README.md): All API services (deployed via Kubernetes/Docker)
+- [Pixles Web](pixles-web/README.md) (WIP): Web client in React
+- [Pixles Core Kotlin](pixles-core-kotlin/README.md): Shared core Kotlin multiplatform library for client-specific logic
+- [Pixles Desktop](pixles-desktop/README.md) (Planned): Windows/Linux desktop client
+- [Pixles Android](pixles-android/README.md) (WIP): Jetpack Compose App
+- [Pixles Swift](pixles-swift/README.md): SwiftUI client for iOS/macOS
+- [Pixles Media](pixles-media/README.md) (Beta): C++ library for certain offloading
+- [Pixles Docs](pixles-docs/README.md): Documentation website in Starlight (Astro)
 
+<!-- TODO: ensure readme links work ^^ -->
 <!-- TODO: TO be updated ^^ -->
 
 External dependencies:
@@ -73,9 +75,12 @@ External dependencies:
 - [RabbitMQ](https://www.rabbitmq.com/)
 - [Memcached](https://memcached.org/)
 
+- [NGINX](https://github.com/nginx/nginx) ([ingress](https://github.com/kubernetes/ingress-nginx))
+- [Envoy](https://github.com/envoyproxy/envoy)
+
 <!-- TODO: To be updated ^^ -->
 
-Considering all the technologies used, you may have to switch between IDEs to develop various parts of the project. This is what I recommend:
+Considering all the technologies used, you may have to switch between IDEs to develop various parts of the project. This is what we recommend:
 
 - `pixles-android`: Android Studio or IntelliJ IDEA with plugins
 - `pixles-api`: VS Code or similar
