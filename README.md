@@ -88,6 +88,10 @@ Considering all the technologies used, you may have to switch between IDEs to de
 
 Reference the Development sections of each component's README for more information.
 
+### Style and Guidelines
+
+- Due to the numerous languages in this monorepo, we use multiple linters/formatters, each native to each language/technology. CI/CD will enforce these and it is recommended to use the same tools in the IDE of your choice to reduce merge conflicts. (Also, all code is standardized to 4 spaces as some languages have specific guidelines while others (e.g. TypeScript) have mixed guides.)
+
 <!-- TODO: Add internationalization note -->
 
 ## FAQ
