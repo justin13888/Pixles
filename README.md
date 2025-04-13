@@ -77,6 +77,7 @@ External dependencies:
 
 - [NGINX](https://github.com/nginx/nginx) ([ingress](https://github.com/kubernetes/ingress-nginx))
 - [Envoy](https://github.com/envoyproxy/envoy)
+- [Istio](
 
 <!-- TODO: To be updated ^^ -->
 
