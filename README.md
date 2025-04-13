@@ -1,8 +1,8 @@
 # Pixles
 
-Photo sharing for all! Or you could think of it as what Google Photo wanted to be.
+Open Asset Management Scaled to Millions.
 
-> Disclaimer: This project is still in active development. Star this repo to get the latest updates!
+> Disclaimer: This project continues to be in active development. Star this repo to get the latest updates!
 
 ## Features
 
