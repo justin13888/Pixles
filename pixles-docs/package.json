@@ -16,7 +16,7 @@
     "@tailwindcss/vite": "^4.0.14",
     "astro": "^5.1.5",
     "sharp": "^0.33.5",
-    "starlight-links-validator": "^0.14.3",
+    "starlight-links-validator": "^0.16.0",
     "starlight-versions": "^0.5.1",
     "tailwindcss": "^4.0.14"
   },
