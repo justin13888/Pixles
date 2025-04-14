@@ -11,7 +11,7 @@
     "deploy": "wrangler pages deploy ./dist"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.32.2",
+    "@astrojs/starlight": "^0.33.1",
     "@astrojs/starlight-tailwind": "^3.0.0",
     "@tailwindcss/vite": "^4.0.14",
     "astro": "^5.1.5",
