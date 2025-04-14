@@ -11,7 +11,7 @@
         "sharp": "^0.33.5",
         "starlight-links-validator": "^0.14.3",
         "starlight-versions": "^0.5.1",
-        "tailwindcss": "^4.0.14",
+        "tailwindcss": "^4.1.3",
       },
       "devDependencies": {
         "wrangler": "^4.0.0",
@@ -913,7 +913,7 @@
 
     "style-to-object": ["style-to-object@1.0.8", "", { "dependencies": { "inline-style-parser": "0.2.4" } }, "sha512-xT47I/Eo0rwJmaXC4oilDGDWLohVhR6o/xAQcPQN8q6QBuZVL8qMYL85kLmST5cPjAorwvqIA4qXTRQoYHaL6g=="],
 
-    "tailwindcss": ["tailwindcss@4.0.14", "", {}, "sha512-92YT2dpt671tFiHH/e1ok9D987N9fHD5VWoly1CdPD/Cd1HMglvZwP3nx2yTj2lbXDAHt8QssZkxTLCCTNL+xw=="],
+    "tailwindcss": ["tailwindcss@4.1.3", "", {}, "sha512-2Q+rw9vy1WFXu5cIxlvsabCwhU2qUwodGq03ODhLJ0jW4ek5BUtoCsnLB0qG+m8AHgEsSJcJGDSDe06FXlP74g=="],
 
     "tapable": ["tapable@2.2.1", "", {}, "sha512-GNzQvQTOIP6RyTfE2Qxb8ZVlNmw0n88vp1szwWRimP02mnTsx3Wtn5qRdqY9w2XduFNUgvOwhNnQsjwCp+kqaQ=="],
 
@@ -1018,6 +1018,10 @@
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
 
     "@rollup/pluginutils/estree-walker": ["estree-walker@2.0.2", "", {}, "sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w=="],
+
+    "@tailwindcss/node/tailwindcss": ["tailwindcss@4.0.14", "", {}, "sha512-92YT2dpt671tFiHH/e1ok9D987N9fHD5VWoly1CdPD/Cd1HMglvZwP3nx2yTj2lbXDAHt8QssZkxTLCCTNL+xw=="],
+
+    "@tailwindcss/vite/tailwindcss": ["tailwindcss@4.0.14", "", {}, "sha512-92YT2dpt671tFiHH/e1ok9D987N9fHD5VWoly1CdPD/Cd1HMglvZwP3nx2yTj2lbXDAHt8QssZkxTLCCTNL+xw=="],
 
     "ansi-align/string-width": ["string-width@4.2.3", "", { "dependencies": { "emoji-regex": "^8.0.0", "is-fullwidth-code-point": "^3.0.0", "strip-ansi": "^6.0.1" } }, "sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g=="],
 
