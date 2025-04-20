@@ -15,51 +15,13 @@ To achieve this, Pixles employs a **hybrid API strategy** that balances performa
 - **Network Efficiency:** Use binary formats where necessary to reduce payload size and energy use, especially on mobile.
 - **Scalability:** Decoupled subsystems (sync, search, uploads, UI) with differing performance requirements and domains must be able to scale independently.
 
-## Design
+## Technology Stack
 
-### gRPC + Protocol Buffers
-
-- **Used for:** Bulk metadata sync, initial sync, delta updates  
-- **Why:**  
-  - 60–80% smaller payloads than JSON  
-  - Highly efficient for syncing thousands of records  
-  - Strongly typed to reduce data corruption  
-
-### GraphQL
-
-- **Used for:** UI queries, search, and filtering  
-- **Why:**  
-  - Ideal for flexible UI data needs  
-  - Reduces API iteration cycles  
-  - Great developer experience for frontend teams  
-
-### HTTP + TUS Protocol
-
-- **Used for:** Uploading and downloading original photo assets  
-- **Why:**  
-  - Resume-capable uploads for poor networks  
-  - CDN-compatible  
-  - Built for large file transfers  
-
-### WebSockets + Protocol Buffers
-
-- **Used for:** Real-time sync status, presence, notifications  
-- **Why:**  
-  - Efficient binary messaging  
-  - Reuses existing protobuf models  
-  - Low-latency delivery for system-level events  
-
-### GraphQL Subscriptions
-
-- **Used for:** User-facing real-time events (comments, shares, collab)  
-- **Why:**  
-  - Easy to use in UI clients  
-  - Strong typing  
-  - Filtering and selective subscriptions  
-
-### Offline-First Architecture
-
-- **Used for:** Local caching, editing, and sync  
-- **Why:**  
-  - Guarantees smooth experience regardless of connectivity  
-  - Local-first UX with background resolution and merge  
+| Technology | Use Case | Benefits |
+|------------|----------|----------|
+| **gRPC + Protocol Buffers** | Bulk metadata sync, initial sync, delta updates | - 60–80% smaller payloads than JSON<br>- Highly efficient for syncing thousands of records<br>- Strongly typed to reduce data corruption |
+| **GraphQL** | UI queries, search, and filtering | - Ideal for flexible UI data needs<br>- Reduces API iteration cycles<br>- Great developer experience for frontend teams |
+| **HTTP + TUS Protocol** | Uploading and downloading original photo assets | - Resume-capable uploads for poor networks<br>- CDN-compatible<br>- Built for large file transfers |
+| **WebSockets + Protocol Buffers** | Real-time sync status, presence, notifications | - Efficient binary messaging<br>- Reuses existing protobuf models<br>- Low-latency delivery for system-level events |
+| **GraphQL Subscriptions** | User-facing real-time events (comments, shares, collab) | - Easy to use in UI clients<br>- Strong typing<br>- Filtering and selective subscriptions |
+| **Offline-First Architecture** | Local caching, editing, and sync | - Guarantees smooth experience regardless of connectivity<br>- Local-first UX with background resolution and merge |
