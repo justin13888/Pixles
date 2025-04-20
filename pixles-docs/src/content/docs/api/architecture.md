@@ -9,17 +9,11 @@ To achieve this, Pixles employs a **hybrid API strategy** that balances performa
 
 ## Requirements
 
-- **Performance Optimization:**  
-  Each data channel should use the best-fit protocol:
-  - Metadata → gRPC (compact, fast)
-  - Assets → TUS (reliable, resumable)
-  - UI Data → GraphQL (targeted queries)
+- **Performance Optimization:** Each data channel should use the best-fit protocol:
 - **Developer Experience:** UI and backend teams can move independently with tools tailored to their workflows.
 - **Cross-Platform Consistency:** Various data models should be serializable and deserializable across platforms.
 - **Network Efficiency:** Use binary formats where necessary to reduce payload size and energy use, especially on mobile.
 - **Scalability:** Decoupled subsystems (sync, search, uploads, UI) with differing performance requirements and domains must be able to scale independently.
-
-In summary, the architecture should enable Pixles to deliver both the **performance** needed for large-scale photo workflows and the **flexibility** required for modern app development.
 
 ## Design
 
