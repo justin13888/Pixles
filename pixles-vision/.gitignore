@@ -8,3 +8,7 @@ wheels/
 
 # venv
 .venv
+
+# rye lock files
+requirements.lock
+requirements-dev.lock
