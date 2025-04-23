@@ -4,7 +4,9 @@ This package implements experiemental computer vision features for Pixles (not a
 
 ## Setup
 
-Prerequisite: This project uses [rye](https://github.com/astral-sh/rye#installation) for ease of Python dependency management.
+Prerequisite:
+- This project uses [rye](https://github.com/astral-sh/rye#installation) for ease of Python dependency management.
+- Since many ML packages are platform-specific, we assume development is done on Linux.
 
 ```bash
 # Sync dependencies
