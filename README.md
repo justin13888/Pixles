@@ -86,7 +86,15 @@ Considering all the technologies used, you may have to switch between IDEs to de
 - `pixles-swift`: Xcode
 - `pixles-web`: VS Code or similar
 
-Reference the Development sections of each component's README for more information.
+### Setup
+
+We use [Bazel](https://bazel.build) as our build system due to its strong multi-language support. As of writing, there are 5+ programming languages used (Rust, TypeScript, Kotlin, Swift/Objective-C, C/C++, Python). Various tools will need to be setup based on services you need to work on.
+
+Setup in the following order:
+
+- Install [Bazelisk](https://bazel.build/install/bazelisk) for development.
+- Setup all necessary tools related to Kotlin Multiplatform: <https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-setup.html>
+- Setup each of the following tools in the Development sections of each component's README.
 
 <!-- TODO: Add internationalization note -->
 
@@ -101,6 +109,12 @@ A: Pixles is designed from the ground up with performance, usability, and compat
 A: While there are multiple great open-source solutions, they lack a lot of the involved functions that professionals and prosumers need. For prosumers interested in an open-source and self-hosted solution, we have a robust, and highly scalable solution. For professionals looking to host all their assets in a seamless and integrated service, we have a solution that may be a better fit than some proprietary options.
 
 Side note: The original author loves open-source and has contributed to various projects. The reason for starting from the ground up is that many of the technical decisions to achieve the goals with user experience and performance require multiple critical design decisions.
+
+## How to contribute
+
+Pixles primarily benefits from active contributions and feedback.More instructions to come!
+
+<!-- TODO -->
 
 ## License
 
