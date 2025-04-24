@@ -66,11 +66,12 @@ async fn main() -> Result<()> {
     let mut router = Router::new();
     #[cfg(feature = "graphql")]
     {
-        router = router.merge(graphql::get_router(conn.clone(), &env.server).await?);
+        router = router.nest("/v1", graphql::get_router(conn.clone(), &env.server).await?);
     }
     #[cfg(feature = "upload")]
     {
-        openapi_router = openapi_router.merge(upload::get_router(conn.clone(), &env.server).await?);
+        openapi_router =
+            openapi_router.nest("/v1", upload::get_router(conn.clone(), &env.server).await?);
     }
 
     use crate::routes::version::__path_get_version;
