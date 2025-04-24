@@ -53,7 +53,12 @@ async fn main() -> Result<()> {
 
     // Initialize database connection
     let conn = Arc::new(Database::connect(env.database.url).await?);
-    Migrator::up(conn.as_ref(), None).await?;
+
+    // Run auto migration in dev
+    #[cfg(debug_assertions)]
+    {
+        Migrator::up(conn.as_ref(), None).await?;
+    }
 
     let mut router = Router::new();
     #[cfg(feature = "graphql")]
