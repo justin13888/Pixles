@@ -9,7 +9,7 @@ pub struct VersionResponse {
     pub version: String,
 }
 
-/// Get API verison info
+/// Get API version info
 #[utoipa::path(
     get,
     path = "/version",
