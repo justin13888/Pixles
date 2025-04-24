@@ -92,6 +92,8 @@ Considering all the technologies used, you may have to switch between IDEs to de
 - `pixles-swift`: Xcode
 - `pixles-web`: VS Code or similar
 
+<!-- TODO: Update list of components ^^ -->
+
 ### Setup
 
 We use [Bazel](https://bazel.build) as our build system due to its strong multi-language support. As of writing, there are 5+ programming languages used (Rust, TypeScript, Kotlin, Swift/Objective-C, C/C++, Python). Various tools will need to be setup based on services you need to work on.

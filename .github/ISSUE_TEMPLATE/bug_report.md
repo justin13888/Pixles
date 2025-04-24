@@ -13,6 +13,7 @@ assignees: ''
 <!-- Please select the affected component(s) -->
 - [ ] pixles-android
 - [ ] pixles-api
+- [ ] pixles-cli
 - [ ] pixles-core-kotlin
 - [ ] pixles-desktop
 - [ ] pixles-docs

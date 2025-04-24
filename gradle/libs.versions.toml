@@ -4,16 +4,17 @@ androidx-activityCompose = "1.10.1"
 androidx-navigationCompose = "2.8.9"
 androidx-ui-tooling = "1.7.8"
 androidx-viewmodelCompose = "2.8.7"
+clikt = "5.0.3"
 coil = "3.1.0"
 compose-multiplatform = "1.7.0"
 kmpObservableViewmodel = "1.0.0-BETA-7"
 kmpNativeCoroutines = "1.0.0-ALPHA-37"
-koin = "4.0.0"
-kotlin = "2.0.21"
+koin = "4.0.4"
+kotlin = "2.1.20"
 kotlinx-datetime = "0.6.2"
-kotlinx-serialization = "1.7.3"
-ksp = "2.0.21-1.0.25"
-ktor = "3.0.3"
+kotlinx-serialization = "1.8.1"
+ksp = "2.1.20-2.0.0"
+ktor = "3.1.2"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -21,6 +22,7 @@ androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", versi
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-ui-tooling" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigationCompose" }
 androidx-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-viewmodelCompose" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
 kmp-observable-viewmodel = { module = "com.rickclephas.kmp:kmp-observableviewmodel-core", version.ref = "kmpObservableViewmodel" }
