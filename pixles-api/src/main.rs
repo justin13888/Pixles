@@ -12,6 +12,7 @@ use std::{
 use tokio::net::TcpListener;
 use tracing::{debug, info};
 use tracing_subscriber::fmt::format::FmtSpan;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 #[cfg(not(any(feature = "graphql", feature = "upload")))]
 compile_error!("At least one of the features \"graphql\" or \"upload\" must be enabled");
@@ -60,17 +61,24 @@ async fn main() -> Result<()> {
         Migrator::up(conn.as_ref(), None).await?;
     }
 
+    let mut openapi_router = OpenApiRouter::new();
+
     let mut router = Router::new();
     #[cfg(feature = "graphql")]
     {
-        router = router.merge(graphql::get_router(conn.clone(), &env.server).await?);
+        router = router.nest("/v1", graphql::get_router(conn.clone(), &env.server).await?);
     }
     #[cfg(feature = "upload")]
     {
-        router = router.merge(upload::get_router(conn.clone(), &env.server).await?);
+        openapi_router =
+            openapi_router.nest("/v1", upload::get_router(conn.clone(), &env.server).await?);
     }
 
-    router = router.route("/version", get(get_version));
+    use crate::routes::version::__path_get_version;
+    openapi_router = openapi_router.routes(routes!(get_version)); // TODO: Add this to OpenAPI
+
+    let docs_router = docs::get_router(openapi_router); // Should include docs only if 'openapi' feature is enabled
+    let router = router.merge(docs_router);
 
     let app = router.into_make_service();
 
@@ -80,6 +88,7 @@ async fn main() -> Result<()> {
         env.server.host, env.server.port
     );
 
+    // Setup listenfd
     let mut listenfd = ListenFd::from_env();
     let listener = match listenfd.take_tcp_listener(0).unwrap() {
         // if we are given a tcp listener on listen fd 0, we use that one
@@ -96,7 +105,7 @@ async fn main() -> Result<()> {
         .unwrap(),
     };
 
-    // run it
+    // Serve
     info!("Server listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app)
         .await

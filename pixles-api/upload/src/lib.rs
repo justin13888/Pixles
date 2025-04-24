@@ -1,12 +1,12 @@
-use axum::{extract::DefaultBodyLimit, routing::post, Router};
+use axum::{extract::DefaultBodyLimit, Router};
 use config::UploadServerConfig;
 use eyre::{eyre, Result};
 use metadata::FileDatabase;
-use routes::upload_file;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing::info;
+use utoipa_axum::router::OpenApiRouter;
 
 use crate::state::AppState;
 
@@ -50,7 +50,7 @@ pub fn validate_config(config: &UploadServerConfig) -> Result<Vec<String>> {
 pub async fn get_router<C: Into<UploadServerConfig>>(
     conn: Arc<DatabaseConnection>,
     config: C,
-) -> Result<Router> {
+) -> Result<OpenApiRouter> {
     let config = config.into();
     let config_warnings = validate_config(&config)?;
     if !config_warnings.is_empty() {
@@ -72,13 +72,10 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
         file_db,
     };
 
-    let router = Router::new()
-        .route("/upload", post(upload_file))
-        .layer(cors)
-        .layer(default_body_limit) // TODO: Ensure limit is respected
-        .with_state(Arc::new(state));
-
-    // TODO: Complete implementation
-
-    Ok(router)
+    Ok(
+        OpenApiRouter::new()
+            .nest("/upload", routes::get_router(state))
+            .layer(cors)
+            .layer(default_body_limit), // TODO: Ensure limit is respected
+    )
 }

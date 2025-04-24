@@ -10,6 +10,11 @@ impl MigrationTrait for Migration {
 
         let db = manager.get_connection();
 
+        db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+            .await?;
+        db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS btree_gin;")
+            .await?;
+
         // Create the users table
         manager
             .create_table(
@@ -85,7 +90,7 @@ impl MigrationTrait for Migration {
                     .col(char_len(Albums::Id, 21).primary_key())
                     .col(char_len(Albums::OwnerId, 21))
                     .col(string(Albums::Name))
-                    .col(string(Albums::Description))
+                    .col(text(Albums::Description))
                     .col(
                         timestamp_with_time_zone(Albums::CreatedAt)
                             .default(Expr::current_timestamp()),

@@ -1,0 +1,21 @@
+[package]
+name = "pixles-api-docs"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "docs"
+path = "src/lib.rs"
+
+[dependencies]
+axum = { workspace = true }
+tracing = { workspace = true }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+utoipa-scalar = { workspace = true }
+
+[features]
+default = []
+upload = []
+openapi = []

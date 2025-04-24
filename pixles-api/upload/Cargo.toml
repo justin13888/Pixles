@@ -9,11 +9,13 @@ name = "upload"
 path = "src/lib.rs"
 
 [dependencies]
+pixles-api-docs = { path = "../docs" }
 # pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment" }
 axum = { workspace = true, features = ["multipart"] }
 eyre = { workspace = true }
 futures-util = "0.3.31"
+hyper = { workspace = true }
 # jsonwebtoken = "9.3.0"
 sea-orm = { workspace = true }
 serde = { workspace = true }
@@ -31,4 +33,3 @@ base64 = "0.22.1"
 sled = "0.34.7"
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
-utoipa-scalar = { workspace = true }

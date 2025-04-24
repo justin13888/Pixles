@@ -13,7 +13,7 @@ pub struct Model {
     pub owner_id: String,
     #[sea_orm(indexed)]
     pub name: String,
-    #[sea_orm(indexed, full_text)]
+    #[sea_orm(column_type = "Text", indexed, full_text)]
     pub description: String,
     #[sea_orm(
         column_type = "TimestampWithTimeZone",

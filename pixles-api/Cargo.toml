@@ -8,6 +8,7 @@ publish = false
 members = [".", "graphql", "service", "entity", "migration"]
 
 [dependencies]
+pixles-api-docs = { path = "./docs", optional = true }
 pixles-api-graphql = { path = "./graphql", optional = true }
 pixles-api-upload = { path = "./upload", optional = true }
 pixles-api-environment = { path = "./environment" }
@@ -24,10 +25,13 @@ tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 futures-util = "0.3.31"
 async-stream = "0.3.6"
 serde = { workspace = true, features = ["derive"] }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
 
 [workspace.dependencies]
 axum = "0.8.1"
 eyre = "0.6.12"
+hyper = { version = "1.6.0", features = ["full"] }
 nanoid = "0.4.0"
 ring = "0.17.14"
 sea-orm = { version = "1.1.7", features = [
@@ -36,7 +40,7 @@ sea-orm = { version = "1.1.7", features = [
     "debug-print",
 ] }
 secrecy = { version = "0.10.3", features = ["serde"] }
-serde = { version = "1.0.215", features = ["derive"]}
+serde = { version = "1.0.215", features = ["derive"] }
 tokio = { version = "1.44.2", features = ["full"] }
 utoipa = { version = "5.3.1", features = [
     "axum_extras",
@@ -59,4 +63,9 @@ codegen-units = 1
 [features]
 default = ["graphql", "upload"]
 graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
-upload = ["pixles-api-upload", "pixles-api-environment/upload"]
+upload = [
+    "pixles-api-upload",
+    "pixles-api-docs/upload",
+    "pixles-api-environment/upload",
+]
+openapi = ["pixles-api-docs/openapi"]
