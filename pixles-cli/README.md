@@ -19,7 +19,7 @@ For now, CLI has not been packaged with package managers but could be compiled f
 ## Development
 
 - Run dev binary:
-  - Build binary continuously: `./gradlew linkDebugExecutableNative --continuous`
+  - Build binary continuously: `./gradlew :cli:linkDebugExecutableNative --continuous`
   - Run binary as a regular command:
   
     ```pwsh
