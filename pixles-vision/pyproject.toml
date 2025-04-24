@@ -1,0 +1,42 @@
+[project]
+name = "pixles-vision"
+version = "0.1.0"
+description = "Cutting-edge computer vision features for Pixles"
+authors = [
+    { name = "Justin Chung", email = "20733699+justin13888@users.noreply.github.com" }
+]
+dependencies = [
+    "ultralytics>=8.3.114",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[project.optional-dependencies]
+rocm = [
+    # We'll use direct URL dependencies
+    "torch @ https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torch-2.4.0%2Brocm6.3.4.git7cecbf6d-cp312-cp312-linux_x86_64.whl",
+    "torchvision @ https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torchvision-0.19.0%2Brocm6.3.4.gitfab84886-cp312-cp312-linux_x86_64.whl",
+    "torchaudio @ https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torchaudio-2.4.0%2Brocm6.3.4.git69d40773-cp312-cp312-linux_x86_64.whl",
+    "pytorch-triton-rocm @ https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/pytorch_triton_rocm-3.0.0%2Brocm6.3.4.git75cc27c2-cp312-cp312-linux_x86_64.whl",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "jupyter>=1.1.1",
+    "notebook>=7.4.1",
+    "onnx>=1.17.0",
+]
+
+[tool.rye.scripts]
+hello = "src.pixles_vision:hello"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pixles_vision"]

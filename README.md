@@ -1,8 +1,8 @@
 # Pixles
 
-Photo sharing for all! Or you could think of it as what Google Photo wanted to be.
+Open Asset Management Scaled to Millions.
 
-> Disclaimer: This project is still in active development. Star this repo to get the latest updates!
+> Disclaimer: This project continues to be in active development. Star this repo to get the latest updates!
 
 ## Features
 
@@ -56,14 +56,16 @@ Pixles is open-source and designed to be friendly to self-host. See this [guide]
 
 Components:
 
-- [Pixles API](pixles-api/README.md)
-- [Pixles Web](pixles-web/README.md) (WIP)
-- [Pixles Desktop](pixles-desktop/README.md) (Planned)
-- [Pixles Android](pixles-android/README.md) (Planned)
-- [Pixles Swift](pixles-swift/README.md) (WIP)
-- [Pixles Media](pixles-media/README.md) (WIP)
-- [Pixles Docs](pixles-docs/README.md)
+- [Pixles API](pixles-api/README.md): All API services (deployed via Kubernetes/Docker)
+- [Pixles Web](pixles-web/README.md) (WIP): Web client in React
+- [Pixles Core Kotlin](pixles-core-kotlin/README.md): Shared core Kotlin multiplatform library for client-specific logic
+- [Pixles Desktop](pixles-desktop/README.md) (Planned): Windows/Linux desktop client
+- [Pixles Android](pixles-android/README.md) (WIP): Jetpack Compose App
+- [Pixles Swift](pixles-swift/README.md): SwiftUI client for iOS/macOS
+- [Pixles Media](pixles-media/README.md) (Beta): C++ library for certain offloading
+- [Pixles Docs](pixles-docs/README.md): Documentation website in Starlight (Astro)
 
+<!-- TODO: ensure readme links work ^^ -->
 <!-- TODO: TO be updated ^^ -->
 
 External dependencies:
@@ -73,9 +75,13 @@ External dependencies:
 - [RabbitMQ](https://www.rabbitmq.com/)
 - [Memcached](https://memcached.org/)
 
+- [NGINX](https://github.com/nginx/nginx) ([ingress-nginx](https://github.com/kubernetes/ingress-nginx))
+- [Envoy](https://github.com/envoyproxy/envoy)
+- [Istio](https://github.com/istio/istio)
+
 <!-- TODO: To be updated ^^ -->
 
-Considering all the technologies used, you may have to switch between IDEs to develop various parts of the project. This is what I recommend:
+Considering all the technologies used, you may have to switch between IDEs to develop various parts of the project. This is what we recommend:
 
 - `pixles-android`: Android Studio or IntelliJ IDEA with plugins
 - `pixles-api`: VS Code or similar
@@ -96,6 +102,10 @@ Setup in the following order:
 - Setup all necessary tools related to Kotlin Multiplatform: <https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-setup.html>
 - Setup each of the following tools in the Development sections of each component's README.
 
+### Style and Guidelines
+
+- Due to the numerous languages in this monorepo, we use multiple linters/formatters, each native to each language/technology. CI/CD will enforce these and it is recommended to use the same tools in the IDE of your choice to reduce merge conflicts. (Also, all code is standardized to 4 spaces as some languages have specific guidelines while others (e.g. TypeScript) have mixed guides.)
+
 <!-- TODO: Add internationalization note -->
 
 ## FAQ
@@ -109,10 +119,13 @@ A: Pixles is designed from the ground up with performance, usability, and compat
 A: While there are multiple great open-source solutions, they lack a lot of the involved functions that professionals and prosumers need. For prosumers interested in an open-source and self-hosted solution, we have a robust, and highly scalable solution. For professionals looking to host all their assets in a seamless and integrated service, we have a solution that may be a better fit than some proprietary options.
 
 Side note: The original author loves open-source and has contributed to various projects. The reason for starting from the ground up is that many of the technical decisions to achieve the goals with user experience and performance require multiple critical design decisions.
+**Q: For the API, were languages other than Rust considered?**
+
+A: Yes, we considered many languages. Some other languages considered included Go, TypeScript, Kotlin/Java. In fact, the first PoC was as a single REST API written in TypeScript. However, the current development has developed into multiple APIs (GraphQL, REST, gRPC) and processing logic offloaded to clients of various platforms. Rust offers both the memory-safety and performance requirements, as well as the cross-platform flexiblity that some other languages may equally excel at. On the APIs, Rust libraries also tend to be newer and allowed for Linux-specific optimizations such as using `io_uring` for high-performance async I/O. Additonally, note that several other languages with other strengths are embraced.
 
 ## How to contribute
 
-Pixles primarily benefits from active contributions and feedback.More instructions to come!
+Pixles primarily benefits from active contributions and feedback. More instructions to come!
 
 <!-- TODO -->
 

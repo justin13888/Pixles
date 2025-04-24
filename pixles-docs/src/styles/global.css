@@ -35,3 +35,8 @@
   --sl-color-gray-7: #f5f6f7;
   --sl-color-black: #ffffff;
 }
+
+ul, ol {
+  list-style: revert;
+  margin-left: 1.5rem;
+}

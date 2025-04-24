@@ -1,7 +1,7 @@
-import SwiftUI
 import KMPNativeCoroutinesAsync
 import KMPObservableViewModelSwiftUI
 import Shared
+import SwiftUI
 
 struct ListView: View {
     @StateViewModel
@@ -10,13 +10,13 @@ struct ListView: View {
     )
 
     let columns = [
-        GridItem(.adaptive(minimum: 120), alignment: .top)
+        GridItem(.adaptive(minimum: 120), alignment: .top),
     ]
-    
+
     let context: UserContext? = KoinDependencies().userRepository.getContextBlocking()
 
     var body: some View {
-        Text(context!.id + (context!.token ?? "sdf")) // TODO
+        Text(context!.id + (context!.token ?? "sdf")) // TODO:
         ZStack {
             if !viewModel.objects.isEmpty {
                 NavigationStack {
@@ -51,7 +51,7 @@ struct ObjectFrame: View {
                     case .empty:
                         ProgressView()
                             .frame(width: geometry.size.width, height: geometry.size.width)
-                    case .success(let image):
+                    case let .success(image):
                         image
                             .resizable()
                             .scaledToFill()
