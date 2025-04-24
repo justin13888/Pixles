@@ -7,6 +7,9 @@ authors = [
 ]
 dependencies = [
     "ultralytics>=8.3.114",
+    "transformers>=4.51.3",
+    "accelerate>=1.6.0",
+    "pillow>=11.2.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
