@@ -9,6 +9,7 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
 #[allow(non_snake_case)]
 pub mod TAGS {
+    pub const API: &str = "api";
     #[cfg(feature = "upload")]
     pub const UPLOAD: &str = "upload";
 }
@@ -17,7 +18,7 @@ pub mod TAGS {
 #[openapi(
     modifiers(&SecurityAddon),
     tags(
-        (name = "", description = "Pixles API"),
+        (name = TAGS::API, description = "Pixles API"),
         (name = TAGS::UPLOAD, description = "Pixles Upload API"),
     )
 )]

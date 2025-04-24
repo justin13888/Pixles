@@ -12,7 +12,7 @@ use std::{
 use tokio::net::TcpListener;
 use tracing::{debug, info};
 use tracing_subscriber::fmt::format::FmtSpan;
-use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 #[cfg(not(any(feature = "graphql", feature = "upload")))]
 compile_error!("At least one of the features \"graphql\" or \"upload\" must be enabled");
@@ -73,7 +73,8 @@ async fn main() -> Result<()> {
         openapi_router = openapi_router.merge(upload::get_router(conn.clone(), &env.server).await?);
     }
 
-    router = router.route("/version", get(get_version)); // TODO: Add this to OpenAPI
+    use crate::routes::version::__path_get_version;
+    openapi_router = openapi_router.routes(routes!(get_version)); // TODO: Add this to OpenAPI
 
     let docs_router = docs::get_router(openapi_router); // Should include docs only if 'openapi' feature is enabled
     let router = router.merge(docs_router);
