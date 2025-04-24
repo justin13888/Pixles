@@ -28,6 +28,6 @@ For now, CLI has not been packaged with package managers but could be compiled f
     ```
     
     ```sh
-    ./build/bin/native/debugExecutable/pixles-cli
+    ./build/bin/native/debugExecutable/pixles-cli.kexe
     ```
 - Build all native binaries: `./gradlew :cli:nativeBinaries`
