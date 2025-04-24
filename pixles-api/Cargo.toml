@@ -23,7 +23,7 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 futures-util = "0.3.31"
 async-stream = "0.3.6"
-serde = { version = "1.0.215", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 
 [workspace.dependencies]
 axum = "0.8.1"
@@ -36,7 +36,17 @@ sea-orm = { version = "1.1.7", features = [
     "debug-print",
 ] }
 secrecy = { version = "0.10.3", features = ["serde"] }
-tokio = { version = "1.44.1", features = ["full"] }
+serde = { version = "1.0.215", features = ["derive"]}
+tokio = { version = "1.44.2", features = ["full"] }
+utoipa = { version = "5.3.1", features = [
+    "axum_extras",
+    "chrono",
+    "debug",
+    "url",
+    "uuid",
+] }
+utoipa-axum = { version = "0.2.0" }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }
 uuid = { version = "1.11.0", features = ["v4"] }
 tower-http = { version = "0.6.1", features = ["cors"] }
 tracing = "0.1.40"
