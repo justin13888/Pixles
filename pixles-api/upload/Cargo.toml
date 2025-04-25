@@ -25,7 +25,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 tower-http = { workspace = true }
 uuid = { workspace = true }
-# chrono = { version = "0.4.38", features = ["serde"] }
+# chrono = { workspace = true }
 ring = { workspace = true }
 base64 = "0.22.1"
 # secrecy = { workspace = true }

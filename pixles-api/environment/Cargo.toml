@@ -9,10 +9,10 @@ name = "environment"
 path = "src/lib.rs"
 
 [dependencies]
-base64 = "0.22.1"
+base64 = { workspace = true }
 dotenvy = "0.15.7"
 eyre = { workspace = true }
-jsonwebtoken = "9.3.0"
+jsonwebtoken = { workspace = true }
 ring = { workspace = true }
 secrecy = { workspace = true }
 tracing = { workspace = true }

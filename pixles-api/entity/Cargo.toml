@@ -9,7 +9,7 @@ name = "entity"
 path = "src/lib.rs"
 
 [dependencies]
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { workspace = true }
 nanoid = { workspace = true }
 serde = { workspace = true }
 sea-orm = { workspace = true }
