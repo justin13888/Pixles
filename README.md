@@ -71,7 +71,7 @@ Components:
 External dependencies:
 
 - [PostgreSQL](https://www.postgresql.org/)
-- [Minio](https://min.io/)
+- [MinIO](https://min.io/)
 - [RabbitMQ](https://www.rabbitmq.com/)
 - [Memcached](https://memcached.org/)
 
