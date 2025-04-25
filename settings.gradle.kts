@@ -28,6 +28,9 @@ dependencyResolutionManagement {
     }
 }
 
+//plugins {
+//    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+//}
 
 include(":android")
 project(":android").projectDir = file("pixles-android")
@@ -36,3 +39,5 @@ include(":core")
 project(":core").projectDir = file("pixles-core-kotlin")
 include(":cli")
 project(":cli").projectDir = file("pixles-cli")
+include(":desktop")
+project(":desktop").projectDir = file("pixles-desktop")

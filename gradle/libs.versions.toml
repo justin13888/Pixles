@@ -2,15 +2,16 @@
 agp = "8.9.2"
 androidx-activityCompose = "1.10.1"
 androidx-navigationCompose = "2.8.9"
-androidx-ui-tooling = "1.7.8"
+androidx-ui-tooling = "1.8.0"
 androidx-viewmodelCompose = "2.8.7"
 clikt = "5.0.3"
 coil = "3.1.0"
-compose-multiplatform = "1.7.0"
+compose-multiplatform = "1.7.3"
 kmpObservableViewmodel = "1.0.0-BETA-7"
 kmpNativeCoroutines = "1.0.0-ALPHA-37"
 koin = "4.0.4"
 kotlin = "2.1.20"
+kotlinx-coroutines = "1.10.2"
 kotlinx-datetime = "0.6.2"
 kotlinx-serialization = "1.8.1"
 ksp = "2.1.20-2.0.0"
@@ -28,8 +29,10 @@ coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", v
 kmp-observable-viewmodel = { module = "com.rickclephas.kmp:kmp-observableviewmodel-core", version.ref = "kmpObservableViewmodel" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
