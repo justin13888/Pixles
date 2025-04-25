@@ -29,9 +29,10 @@ dependencyResolutionManagement {
 }
 
 
-include(":pixles-android")
+include(":android")
+project(":android").projectDir = file("pixles-android")
 //include(":pixles-core-kotlin")
-include(":shared")
-project(":shared").projectDir = file("pixles-core-kotlin")
+include(":core")
+project(":core").projectDir = file("pixles-core-kotlin")
 include(":cli")
 project(":cli").projectDir = file("pixles-cli")
