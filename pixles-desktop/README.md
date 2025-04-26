@@ -4,14 +4,9 @@
 
 ## Development
 
-### Prerequisites
+*Prerequisite: Kotlin development for entire monorepo is setup.*
+<!-- TODO: Redirect to centralized page in pixles-docs -->
 
-- Rust 1.86+
-- Bun
-
-### Setup
-
-```bash
-bun install
-bun run tauri dev # desktop
-```
+- Run app for development: `./gradlew desktop:run`
+- Build native desktop distribution: `./gradlew :desktop:packageDistributionForCurrentOS`
+  - Outputs are written to `build/compose/binaries`

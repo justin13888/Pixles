@@ -28,18 +28,19 @@ async-graphql-axum = "7.0.11"
 axum = { workspace = true }
 eyre = { workspace = true }
 futures-util = "0.3.31"
-jsonwebtoken = "9.3.0"
+jsonwebtoken = { workspace = true }
 sea-orm = { workspace = true }
 serde = { workspace = true }
-serde_json = "1.0.133"
-thiserror = "2.0.3"
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tower-http = { workspace = true }
 uuid = { workspace = true }
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { workspace = true }
 ring = { workspace = true }
-base64 = "0.22.1"
+base64 = { workspace = true }
 secrecy = { workspace = true }
 nanoid = { workspace = true }
-argon2 = "0.5.3"
+argon2 = { workspace = true }
+# TODO: argon2 could be removed in the near future from graphql package
