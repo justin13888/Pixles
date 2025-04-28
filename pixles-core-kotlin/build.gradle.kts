@@ -79,7 +79,7 @@ kotlin {
              implementation(compose.foundation)
              implementation(compose.material)
              implementation(compose.components.resources)
-             implementation("org.jetbrains.compose.material:material-icons-core:1.6.11")
+             implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
              implementation(libs.kotlinx.serialization.core)
              implementation(libs.kotlinx.serialization.json)
              implementation(libs.kotlinx.datetime)
