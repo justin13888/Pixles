@@ -8,6 +8,6 @@ We will always ensure the latest major.minor version receives updates. Minor ver
 
 ## Reporting a Vulnerability
 
-This section has yet to be firmed but **GitHub Issues** indicating need for private communication about vulnerability concerns will be read.
+Click [here](https://github.com/justin13888/Pixles/security/advisories/new) to report a vulnerability.
 
-<!-- TODO: Add contacts discreetly -->
+See [this](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability) for more info.
