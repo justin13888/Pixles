@@ -5,13 +5,14 @@ edition = "2024"
 publish = false
 
 [workspace]
-members = [".", "graphql", "service", "entity", "migration"]
+members = [".", "graphql", "service", "entity", "metadata", "migration"]
 
 [dependencies]
 pixles-api-docs = { path = "./docs", optional = true }
 pixles-api-graphql = { path = "./graphql", optional = true }
 pixles-api-upload = { path = "./upload", optional = true }
 pixles-api-environment = { path = "./environment" }
+pixles-api-metadata = { path = "./metadata", optional = true }
 pixles-api-migration = { path = "./migration" }
 axum = { workspace = true }
 color-eyre = "0.6.3"
@@ -70,8 +71,9 @@ lto = "thin"
 codegen-units = 1
 
 [features]
-default = ["graphql", "upload"]
+default = ["graphql", "upload", "metadata"]
 graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
+metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]
 upload = [
     "pixles-api-upload",
     "pixles-api-docs/upload",

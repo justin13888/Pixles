@@ -14,9 +14,6 @@ use tracing::{debug, info};
 use tracing_subscriber::fmt::format::FmtSpan;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-#[cfg(not(any(feature = "graphql", feature = "upload")))]
-compile_error!("At least one of the features \"graphql\" or \"upload\" must be enabled");
-
 mod routes;
 
 #[tokio::main]
@@ -67,6 +64,10 @@ async fn main() -> Result<()> {
     #[cfg(feature = "graphql")]
     {
         router = router.nest("/v1", graphql::get_router(conn.clone(), &env.server).await?);
+    }
+    #[cfg(feature = "metadata")]
+    {
+        router = router.nest("/v1", metadata::get_router(conn.clone(), &env.server).await?);
     }
     #[cfg(feature = "upload")]
     {

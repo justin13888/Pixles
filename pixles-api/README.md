@@ -23,6 +23,23 @@ _We assume Linux-based system for this service._
 - `cargo install systemfd cargo-watch`
 - `cargo install sea-orm-cli`
 - Docker and Docker Compose
+- Protobuf compiler
+
+  ```bash
+  # Ubuntu/Debian
+  sudo apt update && sudo apt upgrade -y
+  sudo apt install -y protobuf-compiler libprotobuf-dev
+  ```
+
+  ```bash
+  # Arch Linux
+  sudo pacman -S protobuf
+  ```
+
+  ```bash
+  # macOS
+  brew install protobuf
+  ```
 
 ### Running
 
@@ -34,6 +51,7 @@ _We assume Linux-based system for this service._
   - GraphQL: <http://localhost:3000/graphql>
     - GraphiQL: <http://localhost:3000/playground>
   - Upload: <http://localhost:3000/upload>
+  - Metadata: <http://localhost:3000/metadata>
   - OpenAPI: <http://localhost:3000/openapi>
 
 ### Building in Docker
