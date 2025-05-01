@@ -9,12 +9,17 @@ name = "auth"
 path = "src/lib.rs"
 
 [dependencies]
+pixles-api-docs = { path = "../docs", optional = true }
+pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment" }
+pixles-api-service = { path = "../service" }
 axum = { workspace = true }
 chrono = { workspace = true }
 eyre = { workspace = true }
 jsonwebtoken = { workspace = true }
+nanoid = { workspace = true }
 sea-orm = { workspace = true }
+secrecy = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
@@ -23,8 +28,15 @@ tracing = { workspace = true }
 tower-http = { workspace = true }
 uuid = { workspace = true }
 ring = { workspace = true }
-base64 = { workspace = true }
-sled = "0.34.7" # TODO: Remove this later
+base64 = { workspace = true }                           # TODO: Remove this later
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+strum = { version = "0.27.1", features = ["derive"] }
+strum_macros = "0.27.1"
 
 [build-dependencies]
 tonic-build = { version = "0.13.0", features = ["prost"] }
+
+[features]
+default = ["server"]
+server = ["pixles-api-docs"]

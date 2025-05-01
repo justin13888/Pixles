@@ -1,8 +1,8 @@
 use axum::Router;
 use tracing::debug;
 use utoipa::{
-    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify, OpenApi,
+    openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
 };
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
@@ -10,7 +10,7 @@ use utoipa_scalar::{Scalar, Servable as ScalarServable};
 #[allow(non_snake_case)]
 pub mod TAGS {
     pub const API: &str = "api";
-    #[cfg(feature = "upload")]
+    pub const AUTH: &str = "auth";
     pub const UPLOAD: &str = "upload";
 }
 
@@ -19,6 +19,7 @@ pub mod TAGS {
     modifiers(&SecurityAddon),
     tags(
         (name = TAGS::API, description = "Pixles API"),
+        (name = TAGS::AUTH, description = "Pixles Authentication API"),
         (name = TAGS::UPLOAD, description = "Pixles Upload API"),
     )
 )]

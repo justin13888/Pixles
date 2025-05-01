@@ -1,6 +1,7 @@
 use environment::ServerConfig;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
+#[derive(Clone)]
 pub struct AuthConfig {
     /// Server host (e.g. "0.0.0.0")
     pub host: String,

@@ -45,7 +45,7 @@ pub fn validate_config(config: &UploadServerConfig) -> Result<Vec<String>> {
     }
 
     Ok(warnings)
-}
+} // TODO: Move this to config module ^^
 
 pub async fn get_router<C: Into<UploadServerConfig>>(
     conn: Arc<DatabaseConnection>,

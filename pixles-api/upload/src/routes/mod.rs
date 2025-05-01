@@ -11,21 +11,19 @@
 //     Router,
 // };
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     response::IntoResponse,
-    Json, Router,
 };
 use docs::TAGS;
 use hyper::{HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, info};
 use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
-use uuid::Uuid;
 
-use crate::{error::UploadError, metadata::FileMetadata, state::AppState};
+use crate::state::AppState;
 
 mod files;
 
@@ -118,17 +116,6 @@ mod files;
 //         ))
 //     }
 // }
-
-pub(super) fn get_router(state: AppState) -> OpenApiRouter {
-    // TODO: Complete implementation
-    let store = Arc::new(Store::default());
-    OpenApiRouter::new()
-        .routes(routes!(list_todos, create_todo))
-        .routes(routes!(search_todos))
-        .routes(routes!(mark_done, delete_todo))
-        .with_state(store)
-    // .with_state(Arc::new(state))
-}
 
 // TODO: Check all code below this line vv
 
@@ -353,4 +340,15 @@ fn check_api_key(
         )),
         _ => Ok(()),
     }
+}
+
+pub(super) fn get_router(state: AppState) -> OpenApiRouter {
+    // TODO: Complete implementation
+    let store = Arc::new(Store::default());
+    OpenApiRouter::new()
+        .routes(routes!(list_todos, create_todo))
+        .routes(routes!(search_todos))
+        .routes(routes!(mark_done, delete_todo))
+        .with_state(store)
+    // .with_state(Arc::new(state))
 }

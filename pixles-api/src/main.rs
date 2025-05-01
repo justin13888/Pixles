@@ -1,6 +1,6 @@
 use axum::Router;
 use environment::Environment;
-use eyre::{eyre, Result};
+use eyre::{Result, eyre};
 use listenfd::ListenFd;
 use migration::{Migrator, MigratorTrait};
 use routes::version::get_version;
@@ -59,15 +59,26 @@ async fn main() -> Result<()> {
     }
 
     let mut openapi_router = OpenApiRouter::new();
-
     let mut router = Router::new();
+
+    #[cfg(feature = "auth")]
+    {
+        openapi_router =
+            openapi_router.nest("/v1", auth::get_router(conn.clone(), &env.server).await?);
+    }
     #[cfg(feature = "graphql")]
     {
-        router = router.nest("/v1", graphql::get_router(conn.clone(), &env.server, (&env.server).into()).await?);
+        router = router.nest(
+            "/v1",
+            graphql::get_router(conn.clone(), &env.server, (&env.server).into()).await?,
+        );
     }
     #[cfg(feature = "metadata")]
     {
-        router = router.nest("/v1", metadata::get_router(conn.clone(), &env.server).await?);
+        router = router.nest(
+            "/v1",
+            metadata::get_router(conn.clone(), &env.server).await?,
+        );
     }
     #[cfg(feature = "upload")]
     {

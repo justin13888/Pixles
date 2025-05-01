@@ -74,7 +74,7 @@ lto = "thin"
 codegen-units = 1
 
 [features]
-default = ["graphql", "upload", "metadata"]
+default = ["auth", "graphql", "upload", "metadata"]
 auth = ["pixles-api-auth", "pixles-api-environment/auth"]
 graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
 metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]

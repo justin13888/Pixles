@@ -1,10 +1,13 @@
 use std::{collections::HashSet, sync::Arc};
 
 use async_graphql::{Error, ErrorExtensions, ServerError};
-use auth::{error::JWTValidationError, service::AuthService, claims::Claims, roles::UserRole};
+use auth::{
+    claims::Scope, error::ClaimValidationError, roles::UserRole, service::AuthService,
+    utils::get_token_from_headers,
+};
 use axum::http::HeaderMap;
 use sea_orm::DatabaseConnection;
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::ExposeSecret;
 
 #[derive(Debug, Clone)]
 pub enum UserType {
@@ -19,7 +22,7 @@ pub enum UserType {
 #[derive(Debug, Clone)]
 pub struct UserContext {
     user_type: UserType,
-    scopes: HashSet<String>,
+    scopes: HashSet<Scope>,
 }
 
 impl UserContext {
@@ -39,7 +42,7 @@ impl UserContext {
                     UserRole::Admin => UserType::Admin(claims.sub),
                 }
             }
-            Err(JWTValidationError::TokenMissing) => UserType::Guest,
+            Err(ClaimValidationError::TokenMissing) => UserType::Guest,
             Err(e) => return Err(e.into()),
         };
 
@@ -61,10 +64,10 @@ pub struct AppContext {
     pub db: DbContext,
 }
 
-pub struct UserContextError(JWTValidationError);
+pub struct UserContextError(ClaimValidationError);
 
-impl From<JWTValidationError> for UserContextError {
-    fn from(err: JWTValidationError) -> Self {
+impl From<ClaimValidationError> for UserContextError {
+    fn from(err: ClaimValidationError) -> Self {
         Self(err)
     }
 }
@@ -74,10 +77,15 @@ impl ErrorExtensions for UserContextError {
     fn extend(&self) -> Error {
         let error = &self.0;
         Error::new(format!("{}", error)).extend_with(|err, e| match error {
-            JWTValidationError::TokenExpired => e.set("code", "TOKEN_MISSING"),
-            JWTValidationError::TokenInvalid(msg) => e.set("code", format!("TOKEN_INVALID ({})", msg)),
-            JWTValidationError::TokenMissing => e.set("code", "TOKEN_EXPIRED"),
-            JWTValidationError::UnexpectedHeaderFormat => e.set("code", "UNEXPECTED_HEADER_FORMAT"),
+            ClaimValidationError::TokenExpired => e.set("code", "TOKEN_MISSING"),
+            ClaimValidationError::TokenInvalid(msg) => {
+                e.set("code", format!("TOKEN_INVALID ({})", msg))
+            }
+            ClaimValidationError::TokenMissing => e.set("code", "TOKEN_EXPIRED"),
+            ClaimValidationError::UnexpectedHeaderFormat => {
+                e.set("code", "UNEXPECTED_HEADER_FORMAT")
+            }
+            ClaimValidationError::InvalidScopes => e.set("code", "INVALID_SCOPES"),
         })
     }
 }
@@ -87,23 +95,6 @@ impl From<UserContextError> for ServerError {
         let field_error = err.extend();
         ServerError::new(field_error.message.as_str(), None)
     }
-}
-
-/// Get the token from the Authorization header
-fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, JWTValidationError> {
-    let auth_header = headers
-        .get("Authorization")
-        .ok_or(JWTValidationError::TokenMissing)?
-        .to_str()
-        .map_err(|_| JWTValidationError::UnexpectedHeaderFormat)?;
-
-    // Check if it's a Bearer token
-    if !auth_header.starts_with("Bearer ") {
-        return Err(JWTValidationError::UnexpectedHeaderFormat);
-    }
-
-    // Extract the token part
-    Ok(SecretString::from(&auth_header[7..]))
 }
 
 // TODO: Bench all the functions here (used in each context)
