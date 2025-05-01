@@ -78,16 +78,16 @@ impl Environment {
         let load_env = |key: &str| {
             env::var(key).map_err(|_| EnvironmentError::MissingVariable(key.to_string()))
         };
-        let load_env_int = |key: &str| {
+        let load_env_u16 = |key: &str| {
             load_env(key).and_then(|v| {
-                v.parse().map_err(|e: ParseIntError| {
+                v.parse::<u16>().map_err(|e: ParseIntError| {
                     EnvironmentError::ParseError(key.to_string(), e.to_string())
                 })
             })
         };
         let load_env_usize = |key: &str| {
             load_env(key).and_then(|v| {
-                v.parse().map_err(|e: ParseIntError| {
+                v.parse::<usize>().map_err(|e: ParseIntError| {
                     EnvironmentError::ParseError(key.to_string(), e.to_string())
                 })
             })
@@ -127,7 +127,7 @@ impl Environment {
             },
             server: ServerConfig {
                 host: load_env("SERVER_HOST").unwrap_or("0.0.0.0".to_string()),
-                port: load_env_int("SERVER_PORT").unwrap_or(3000),
+                port: load_env_u16("SERVER_PORT").unwrap_or(3000),
                 domain: load_env("SERVER_DOMAIN").unwrap_or("localhost".to_string()),
                 #[cfg(feature = "graphql")]
                 jwt_eddsa_encoding_key: SecretKeyWrapper::from(jwt_eddsa_encoding_key),
