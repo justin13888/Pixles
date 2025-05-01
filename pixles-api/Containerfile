@@ -8,3 +8,4 @@ COPY --from=build-env /app/target/release/pixles-api /
 EXPOSE 3000
 CMD ["./pixles-api"]
 # TODO: sql dependencies are failing to execute in distroless image
+#  TODO: Separate different images based on features

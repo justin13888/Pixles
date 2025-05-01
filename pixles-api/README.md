@@ -22,7 +22,9 @@ _We assume Linux-based system for this service._
 - Populate `.env` file based on `.env.example`
 - `cargo install systemfd cargo-watch`
 - `cargo install sea-orm-cli`
-- Docker and Docker Compose
+- Podman
+  - Note: Most OCI runtimes should work identically in theory but our recommended deployment methods are Kubernetes and Podman.
+- Nerdctl (for occasionally building images locally)
 - Protobuf compiler
 
   ```bash
@@ -43,8 +45,8 @@ _We assume Linux-based system for this service._
 
 ### Running
 
-- Spin up some dependencies: `docker compose up` (could spin up individual services manually if needed)
-  - Remove existing data: `docker compose down -v`
+- Spin up some dependencies: `podman compose up` (could spin up individual services manually if needed)
+  - Remove existing data: `podman compose down -v`
 - Start development server: `RUST_BACKTRACE=1 COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`
   - _Append feature flags to enable specific parts of server_
 - The following endpoints should be up:
@@ -54,7 +56,9 @@ _We assume Linux-based system for this service._
   - Metadata: <http://localhost:3000/metadata>
   - OpenAPI: <http://localhost:3000/openapi>
 
-### Building in Docker
+### Building with Nerdctl
 
-- Build local image: `docker build -t pixles-api:latest -f Containerfile .`
-- Run local build: `docker run --env-file ./.env -p 3000:3000 pixles-api:latest`
+_Note: These commands usually work similarly across other OCI tools like Podman/Docker. But prefer building with containerd._
+
+- Build local image: `nerdctl build -t pixles-api:latest -f Containerfile .`
+- Run local build: `nerdctl run --env-file ./.env -p 3000:3000 pixles-api:latest`
