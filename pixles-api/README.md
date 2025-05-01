@@ -24,7 +24,6 @@ _We assume Linux-based system for this service._
 - `cargo install sea-orm-cli`
 - Podman
   - Note: Most OCI runtimes should work identically in theory but our recommended deployment methods are Kubernetes and Podman.
-- Nerdctl (for occasionally building images locally)
 - Protobuf compiler
 
   ```bash
@@ -57,9 +56,9 @@ _We assume Linux-based system for this service._
   - Metadata: <http://localhost:3000/metadata>
   - OpenAPI: <http://localhost:3000/openapi>
 
-### Building with Nerdctl
+### Building with Podman
 
 _Note: These commands usually work similarly across other OCI tools like Podman/Docker. But prefer building with containerd._
 
-- Build local image: `nerdctl build -t pixles-api:latest -f Containerfile .`
-- Run local build: `nerdctl run --env-file ./.env -p 3000:3000 pixles-api:latest`
+- Build local image: `podman build -t pixles-api:latest -f Containerfile .`
+- Run local build: `podman run --network host --env-file ./.env pixles-api:latest`
