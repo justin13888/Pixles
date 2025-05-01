@@ -16,15 +16,15 @@ eyre = { workspace = true }
 jsonwebtoken = { workspace = true }
 sea-orm = { workspace = true }
 serde = { workspace = true }
-serde_json = "1.0.133"
-thiserror = "2.0.3"
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tower-http = { workspace = true }
 uuid = { workspace = true }
 ring = { workspace = true }
-base64 = "0.22.1"
-sled = "0.34.7"
+base64 = { workspace = true }
+sled = "0.34.7" # TODO: Remove this later
 
 [build-dependencies]
 tonic-build = { version = "0.13.0", features = ["prost"] }

@@ -28,7 +28,7 @@ async-graphql = { version = "7.0.11", features = [
 async-graphql-axum = "7.0.11"
 axum = { workspace = true }
 eyre = { workspace = true }
-futures-util = "0.3.31"
+futures-util = { workspace = true }
 jsonwebtoken = { workspace = true }
 sea-orm = { workspace = true }
 serde = { workspace = true }

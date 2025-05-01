@@ -17,7 +17,7 @@ pixles-api-metadata = { path = "./metadata", optional = true }
 pixles-api-migration = { path = "./migration" }
 axum = { workspace = true }
 color-eyre = "0.6.3"
-eyre = "0.6.12"
+eyre = { workspace = true }
 listenfd = "1.0.1"
 sea-orm = { workspace = true }
 tokio = { workspace = true }
@@ -31,11 +31,13 @@ utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
 
 [workspace.dependencies]
+anyhow = "1.0.98"
 argon2 = "0.5.3"
 axum = "0.8.1"
 base64 = "0.22.1"
 chrono = { version = "0.4.38", features = ["serde"] }
 eyre = "0.6.12"
+futures-util = "0.3.31"
 hyper = { version = "1.6.0", features = ["full"] }
 jsonwebtoken = "9.3.0"
 nanoid = "0.4.0"
