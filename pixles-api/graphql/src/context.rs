@@ -1,15 +1,10 @@
 use std::{collections::HashSet, sync::Arc};
 
-use crate::{
-    auth::{Claims, UserRole},
-    config::GraphqlServerConfig,
-};
 use async_graphql::{Error, ErrorExtensions, ServerError};
+use auth::{error::JWTValidationError, service::AuthService, claims::Claims, roles::UserRole};
 use axum::http::HeaderMap;
-use jsonwebtoken::TokenData;
 use sea_orm::DatabaseConnection;
 use secrecy::{ExposeSecret, SecretString};
-use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub enum UserType {
@@ -30,13 +25,12 @@ pub struct UserContext {
 impl UserContext {
     pub fn from_headers(
         headers: &HeaderMap,
-        config: &GraphqlServerConfig,
-    ) -> Result<Self, AuthError> {
+        auth_service: &AuthService,
+    ) -> Result<Self, UserContextError> {
         let mut scopes = None;
         let user_type: UserType = match get_token_from_headers(headers) {
             Ok(token) => {
-                let TokenData { claims, .. } =
-                    Claims::decode(token.expose_secret(), &config.jwt_eddsa_decoding_key)?;
+                let claims = auth_service.get_claims(&token.expose_secret())?;
 
                 scopes = Some(claims.scopes);
 
@@ -45,13 +39,13 @@ impl UserContext {
                     UserRole::Admin => UserType::Admin(claims.sub),
                 }
             }
-            Err(AuthError::TokenMissing) => UserType::Guest,
-            Err(e) => return Err(e),
+            Err(JWTValidationError::TokenMissing) => UserType::Guest,
+            Err(e) => return Err(e.into()),
         };
 
         Ok(Self {
             user_type,
-            scopes: scopes.unwrap_or_default(),
+            scopes: scopes.map_or_else(HashSet::new, |scopes| scopes.into_iter().collect()),
         })
     }
 }
@@ -67,49 +61,45 @@ pub struct AppContext {
     pub db: DbContext,
 }
 
-// JWT validation error
-#[derive(Error, Debug)]
-pub enum AuthError {
-    #[error("Missing token")]
-    TokenMissing,
-    #[error("Invalid token: {0}")]
-    TokenInvalid(#[from] jsonwebtoken::errors::Error),
-    #[error("Expired token")]
-    TokenExpired,
-    #[error("Unexpected authorization header format")]
-    UnexpectedHeaderFormat,
+pub struct UserContextError(JWTValidationError);
+
+impl From<JWTValidationError> for UserContextError {
+    fn from(err: JWTValidationError) -> Self {
+        Self(err)
+    }
 }
 
-impl ErrorExtensions for AuthError {
+impl ErrorExtensions for UserContextError {
     // lets define our base extensions
     fn extend(&self) -> Error {
-        Error::new(format!("{}", self)).extend_with(|err, e| match self {
-            AuthError::TokenExpired => e.set("code", "TOKEN_MISSING"),
-            AuthError::TokenInvalid(msg) => e.set("code", format!("TOKEN_INVALID ({})", msg)),
-            AuthError::TokenMissing => e.set("code", "TOKEN_EXPIRED"),
-            AuthError::UnexpectedHeaderFormat => e.set("code", "UNEXPECTED_HEADER_FORMAT"),
+        let error = &self.0;
+        Error::new(format!("{}", error)).extend_with(|err, e| match error {
+            JWTValidationError::TokenExpired => e.set("code", "TOKEN_MISSING"),
+            JWTValidationError::TokenInvalid(msg) => e.set("code", format!("TOKEN_INVALID ({})", msg)),
+            JWTValidationError::TokenMissing => e.set("code", "TOKEN_EXPIRED"),
+            JWTValidationError::UnexpectedHeaderFormat => e.set("code", "UNEXPECTED_HEADER_FORMAT"),
         })
     }
 }
 
-impl From<AuthError> for ServerError {
-    fn from(err: AuthError) -> Self {
+impl From<UserContextError> for ServerError {
+    fn from(err: UserContextError) -> Self {
         let field_error = err.extend();
         ServerError::new(field_error.message.as_str(), None)
     }
 }
 
 /// Get the token from the Authorization header
-fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, AuthError> {
+fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, JWTValidationError> {
     let auth_header = headers
         .get("Authorization")
-        .ok_or(AuthError::TokenMissing)?
+        .ok_or(JWTValidationError::TokenMissing)?
         .to_str()
-        .map_err(|_| AuthError::UnexpectedHeaderFormat)?;
+        .map_err(|_| JWTValidationError::UnexpectedHeaderFormat)?;
 
     // Check if it's a Bearer token
     if !auth_header.starts_with("Bearer ") {
-        return Err(AuthError::UnexpectedHeaderFormat);
+        return Err(JWTValidationError::UnexpectedHeaderFormat);
     }
 
     // Extract the token part

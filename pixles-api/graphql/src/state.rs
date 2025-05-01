@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use auth::service::AuthService;
 use sea_orm::DatabaseConnection;
 
 use crate::{config::GraphqlServerConfig, schema::AppSchema};
@@ -9,4 +10,5 @@ pub struct AppState {
     pub schema: AppSchema,
     pub conn: Arc<DatabaseConnection>,
     pub config: GraphqlServerConfig,
+    pub auth_service: Arc<AuthService>,
 }

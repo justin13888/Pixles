@@ -1,18 +1,10 @@
 use chrono::Utc;
 use jsonwebtoken::{
-    decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
+    decode, encode, Algorithm, DecodingKey, EncodingKey, TokenData, Validation,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum UserRole {
-    /// A normal user
-    User,
-    /// An admin user
-    Admin,
-}
+use crate::roles::UserRole;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Claims {
@@ -32,12 +24,13 @@ pub struct Claims {
     /// User type
     pub role: UserRole,
     /// Permissions/scopes granted to this token
-    pub scopes: HashSet<String>, // TODO: Work out specifics of what scopes are needed
+    pub scopes: Vec<String>, // TODO: Work out specifics of what scopes are needed
 }
 
 impl Claims {
     /// Creates a standard Claims
-    pub fn new(user_id: String, user_role: UserRole, scopes: HashSet<String>) -> Self {
+    pub fn new<S: Into<Vec<String>>>(user_id: String, user_role: UserRole, scopes: S) -> Self {
+        let scopes = scopes.into();
         let iat = Utc::now().timestamp() as usize;
         let exp = iat + 3600; // 1 hour
 
@@ -60,7 +53,7 @@ impl Claims {
 
     /// Checks if a specific scope is present
     pub fn has_scope(&self, scope: &str) -> bool {
-        self.scopes.contains(scope)
+        self.scopes.iter().any(|s| s == scope)
     }
 
     /// Decode from a token string
@@ -80,20 +73,10 @@ impl Claims {
 }
 // TODO: Test ^^
 
-#[derive(Debug, Deserialize)]
-pub struct OIDCConfig {
-    pub client_id: String,
-    pub client_secret: String,
-    pub redirect_uri: String,
-    pub authorization_endpoint: String,
-    pub token_endpoint: String,
-    pub userinfo_endpoint: String,
-    pub jwks_uri: String,
-} // TODO: Load configs from env. Use this ^^
-
 #[cfg(test)]
 mod tests {
     use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+    use ring::signature::{Ed25519KeyPair, KeyPair};
 
     use super::*;
 
@@ -101,18 +84,24 @@ mod tests {
     #[test]
     fn test_encode_decode() {
         // Generate test keypair
-        let doc = BASE64
+        let doc: Vec<u8> = BASE64
             .decode("MC4CAQAwBQYDK2VwBCIEIG73KilXg8qazIq8mNGzuPEHYPLY3WXR1uOS7ZxNkefV")
             .unwrap();
-        let (encoding_key, decoding_key) = convert_ed25519_der_to_jwt_keys(doc.as_ref()).unwrap();
+        let pair = Ed25519KeyPair::from_pkcs8_maybe_unchecked(&doc).unwrap();
+        let encoding_key = EncodingKey::from_ed_der(&doc);
+        let decoding_key = DecodingKey::from_ed_der(pair.public_key().as_ref());
 
-        let claims = Claims::new("user_id".to_string(), UserRole::User, HashSet::new());
+        // Create claims
+        let claims = Claims::new("user_id".to_string(), UserRole::User, vec![]);
 
+        // Encode and decode
         let token = claims.encode(&encoding_key).unwrap();
         let decoded = Claims::decode(&token, &decoding_key).unwrap();
+
+        // Check header and claims
         assert_eq!(decoded.header.alg, Algorithm::EdDSA);
         assert_eq!(decoded.claims, claims);
     }
 }
 
-// TODO: Bench core functions (being used many times in context.rs)
+// TODO: Bench core functions (being used many times for authorization)

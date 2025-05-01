@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::Router;
 use environment::Environment;
 use eyre::{eyre, Result};
 use listenfd::ListenFd;
@@ -63,7 +63,7 @@ async fn main() -> Result<()> {
     let mut router = Router::new();
     #[cfg(feature = "graphql")]
     {
-        router = router.nest("/v1", graphql::get_router(conn.clone(), &env.server).await?);
+        router = router.nest("/v1", graphql::get_router(conn.clone(), &env.server, (&env.server).into()).await?);
     }
     #[cfg(feature = "metadata")]
     {

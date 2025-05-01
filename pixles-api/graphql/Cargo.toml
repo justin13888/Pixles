@@ -9,6 +9,7 @@ name = "graphql"
 path = "src/lib.rs"
 
 [dependencies]
+pixles-api-auth = { path = "../auth" }
 pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment" }
 pixles-api-service = { path = "../service" }

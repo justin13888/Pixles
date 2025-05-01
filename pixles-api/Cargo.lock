@@ -2143,6 +2143,7 @@ dependencies = [
  "eyre",
  "futures-util",
  "listenfd",
+ "pixles-api-auth",
  "pixles-api-docs",
  "pixles-api-environment",
  "pixles-api-graphql",
@@ -2157,6 +2158,29 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-axum",
+]
+
+[[package]]
+name = "pixles-api-auth"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "base64",
+ "chrono",
+ "eyre",
+ "jsonwebtoken",
+ "pixles-api-environment",
+ "ring",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "sled",
+ "thiserror 2.0.12",
+ "tokio",
+ "tonic-build",
+ "tower-http",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -2208,6 +2232,7 @@ dependencies = [
  "futures-util",
  "jsonwebtoken",
  "nanoid",
+ "pixles-api-auth",
  "pixles-api-entity",
  "pixles-api-environment",
  "pixles-api-service",
@@ -2229,16 +2254,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "base64",
  "eyre",
  "futures-util",
  "pixles-api-environment",
  "prost",
- "ring",
  "sea-orm",
  "serde",
  "serde_json",
- "sled",
  "thiserror 2.0.12",
  "tokio",
  "tonic",
@@ -2247,9 +2269,6 @@ dependencies = [
  "tonic-types",
  "tower-http",
  "tracing",
- "utoipa",
- "utoipa-axum",
- "uuid",
 ]
 
 [[package]]

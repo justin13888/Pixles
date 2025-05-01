@@ -63,6 +63,7 @@ pub struct ServerConfig {
     /// Sled database directory
     pub sled_db_dir: PathBuf,
 }
+// TODO: Separate out these configs into environment variables struct ^^
 
 #[derive(Debug, Clone)]
 pub struct Environment {

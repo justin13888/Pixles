@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use async_graphql::{http::GraphiQLSource, Response};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use auth::config::{AuthConfig};
+use auth::service::AuthService;
 use axum::http::{header, HeaderName};
 use axum::{
     extract::State,
@@ -21,7 +23,6 @@ use std::time::Duration;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 use tracing::trace;
 
-mod auth;
 mod config;
 mod constants;
 mod context;
@@ -35,12 +36,13 @@ async fn graphql_handler(
         schema,
         conn,
         config,
+        auth_service,
     }): State<AppState>,
     headers: HeaderMap,
     req: GraphQLRequest,
 ) -> impl IntoResponse {
     // Create user context
-    let user_context = match UserContext::from_headers(&headers, &config) {
+    let user_context = match UserContext::from_headers(&headers, &auth_service) {
         Ok(user_context) => user_context,
         Err(e) => return GraphQLResponse::from(Response::from_errors(vec![e.into()])),
     };
@@ -89,6 +91,7 @@ fn create_cors_layer() -> CorsLayer {
 pub async fn get_router<C: Into<GraphqlServerConfig>>(
     conn: Arc<DatabaseConnection>,
     config: C,
+    auth_config: AuthConfig,
 ) -> Result<Router> {
     let config = config.into();
     // Create loaders
@@ -102,6 +105,7 @@ pub async fn get_router<C: Into<GraphqlServerConfig>>(
         schema,
         conn,
         config,
+        auth_service: Arc::new(AuthService::new(auth_config)),
     };
 
     // Build router
