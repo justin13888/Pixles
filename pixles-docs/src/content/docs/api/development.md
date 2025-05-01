@@ -15,7 +15,7 @@ While there is no one size-fits-all to setting up a development environment for 
 - Support for Kubernetes-specific tests
 - Lightweight resource footprint for development
 - Support for service mesh communication patterns (using existing Istio)
-- Routing through existing ingress controllers (Nginx for HTTP, Envoy for gRPC/HTTP2)
+- Routing through production-equivalent ingress (Envoy which is used internally by Istio)
 
 ### Technology Choices: Key Motivations
 

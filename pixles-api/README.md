@@ -50,6 +50,7 @@ _We assume Linux-based system for this service._
 - Start development server: `RUST_BACKTRACE=1 COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`
   - _Append feature flags to enable specific parts of server_
 - The following endpoints should be up:
+  - Auth: <http://localhost:3000/auth>
   - GraphQL: <http://localhost:3000/graphql>
     - GraphiQL: <http://localhost:3000/playground>
   - Upload: <http://localhost:3000/upload>
