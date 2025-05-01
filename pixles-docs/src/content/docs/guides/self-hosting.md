@@ -1,5 +1,5 @@
 ---
-title: Self-Hosting Pixles Server
+title: Self-Hosting
 description: Get control of your data
 ---
 
@@ -31,6 +31,7 @@ The Pixles API is written almost entirely in Rust with several binary components
 - [Metadata](/pixles-api/metadata/): Used for efficient metadata fetching and updating. Consists of two parts:
   - A gRPC (web) service for efficient fetching and updating metadata. We strictly prefer binary-based protocols (i.e. no JSON) for lower-serialization costs with mobile clients.
   - WebSocket + ProtoBuf service for efficient real-time updates
+<!-- TODO: this section is outdated ^^ -->
 
 *Note: These components may be combined into a single web server for low-resource environments. It is used in the one-click Docker installer as well.*
 

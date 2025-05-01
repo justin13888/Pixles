@@ -1,11 +1,11 @@
 ---
-title: Development
-description: How to set up your development environment for Pixles API.
+title: Local Development
+description: How to set up your local development environment for Pixles API.
 ---
 
 While there is no one size-fits-all to setting up a development environment for all the packages in the Pixles API, there are some essential tools necessary to validate certain aspects during development. This page mentions tools developers should be aware of to incorporate into development, especially towards finalizing issues/PRs.
 
-## How development for Kubernetes works?
+## How local development works?
 
 ### Requirements Summary
 

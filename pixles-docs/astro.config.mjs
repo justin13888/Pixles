@@ -12,13 +12,9 @@ export default defineConfig({
 		starlight({
 			title: 'Pixles',
 			description: 'Photo sharing for all!',
-			// logo: {
-			// 	src: './src/assets/logo.svg', // TODO: missing logo
-			//  replacesTitle: true,
-			// },
-			social: {
-				github: 'https://github.com/justin13888/Pixles',
-			},
+			social: [
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/justin13888/Pixles' },
+			],
 			editLink: {
 				baseUrl: 'https://github.com/justin13888/Pixles/tree/master/pixles-docs',
 			},
@@ -28,11 +24,12 @@ export default defineConfig({
 					items: [
 						// Each item here is one entry in the navigation menu.
 						{ label: 'Getting Started', slug: 'guides/getting-started' },
+						{ slug: 'guides/self-hosting' },
 					],
 				},
 				{
-					label: 'API',
-					autogenerate: { directory: 'api' },
+					label: 'Development',
+					autogenerate: { directory: 'development' },
 				},
 				{
 					label: 'Reference',
