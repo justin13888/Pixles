@@ -3,7 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use async_graphql::{Error, ErrorExtensions, ServerError};
 use auth::{
     claims::Scope, error::ClaimValidationError, roles::UserRole, service::AuthService,
-    utils::get_token_from_headers,
+    utils::headers::get_token_from_headers,
 };
 use axum::http::HeaderMap;
 use sea_orm::DatabaseConnection;

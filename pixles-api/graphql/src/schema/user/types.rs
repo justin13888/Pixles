@@ -54,13 +54,6 @@ impl From<user::Model> for User {
 }
 
 #[derive(InputObject)]
-pub struct RegisterUserInput {
-    pub name: String,
-    pub email: String,
-    pub password: SecretString,
-}
-
-#[derive(InputObject)]
 pub struct LoginUserInput {
     pub email: String,
     pub password: SecretString,

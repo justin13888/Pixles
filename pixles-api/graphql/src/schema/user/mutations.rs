@@ -1,8 +1,8 @@
 use crate::loaders::Loaders;
 
 use super::{
-    types::{RegisterUserInput, UpdateUserInput, User},
     AuthResponse, LoginUserInput, RegisterUserResponse,
+    types::{RegisterUserInput, UpdateUserInput, User},
 };
 use async_graphql::*;
 use secrecy::ExposeSecret;
@@ -11,73 +11,6 @@ pub struct UserMutation;
 
 #[Object]
 impl UserMutation {
-    /// Register a new user
-    async fn register(
-        &self,
-        ctx: &Context<'_>,
-        input: RegisterUserInput,
-    ) -> Result<RegisterUserResponse> {
-        let RegisterUserInput {
-            name,
-            email,
-            password,
-        } = input;
-        // TODO: Check username availability and doesn't break username rules, nor is reserved
-        // E.g. cannot be "admin", "root", "pixles", "admin*", etc.
-        let password = password.expose_secret();
-
-        let mut errors = vec![];
-
-        // Validate email format
-        if !email.contains('@') {
-            errors.push("Invalid email format".to_string());
-        }
-
-        // Validate password strength
-        if password.len() < 8 {
-            errors.push("Password must be at least 8 characters long".to_string());
-        } // TODO: Add more validation rules
-
-        if !errors.is_empty() {
-            return Ok(RegisterUserResponse {
-                success: false,
-                data: None,
-                errors,
-            });
-        }
-
-        // Get your service from the context
-        // let auth_service = ctx.data::<YourAuthService>()?;
-
-        // Call your existing service function
-        // TOOD: Normalize email, username
-        // TODO: Hash with argon2id
-        // let (user, token) = auth_service.register_user(email, password).await?;
-
-        let token = "foo".to_string();
-        let user = User {
-            id: "1".into(),
-            name,
-            username: "fsdf".into(),
-            email,
-            account_verified: false,
-            is_admin: false,
-            created_at: chrono::Utc::now(),
-            deleted_at: None,
-            modified_at: chrono::Utc::now(),
-            needs_onboarding: true,
-        }; // TODO
-
-        Ok(RegisterUserResponse {
-            success: true,
-            data: Some(AuthResponse {
-                token,
-                user: Some(user),
-            }),
-            errors: vec![],
-        })
-    }
-
     /// Login a user
     async fn login(&self, ctx: &Context<'_>, input: LoginUserInput) -> Result<AuthResponse> {
         let LoginUserInput { email, password } = input;
@@ -152,7 +85,7 @@ impl UserMutation {
     //     // 2. Store state parameter in Redis
     //     // 3. Redirect to authorization endpoint
     // }
-    
+
     // async fn oauth_callback(
     //     State(state): State<AppState>,
     //     Query(params): Query<OAuthCallbackParams>,

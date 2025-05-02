@@ -1,3 +1,13 @@
+use crate::{
+    claims::{Claims, Scope},
+    error::{ApiError, AuthError, RegisterUserError},
+    models::*,
+    state::AppState,
+    utils::{
+        hash::{hash_password, verify_password},
+        headers::get_token_from_headers,
+    },
+};
 use axum::{
     Json,
     extract::State,
@@ -6,15 +16,9 @@ use axum::{
 use docs::TAGS;
 use jsonwebtoken::EncodingKey;
 use secrecy::ExposeSecret;
+use service::user as UserService;
+use tracing::trace;
 use utoipa_axum::{router::OpenApiRouter, routes};
-
-use crate::{
-    claims::{Claims, Scope},
-    error::AuthError,
-    models::*,
-    state::AppState,
-    utils::get_token_from_headers,
-};
 
 // TODO: Verify utoipa actually matches the docs
 
@@ -32,9 +36,9 @@ use crate::{
     tags = ["Pixles Authentication API"]
 )]
 async fn register_user(
-    State(AppState { config, .. }): State<AppState>,
-    Json(payload): Json<RegisterRequest>,
-) -> Result<(StatusCode, Json<TokenResponse>), AuthError> {
+    State(AppState { config, conn, .. }): State<AppState>,
+    Json(request): Json<RegisterRequest>,
+) -> Result<(StatusCode, Json<TokenResponse>), RegisterUserError> {
     // In a real implementation, you would:
     // 1. Validate input
     // 2. Check if user already exists
@@ -44,10 +48,53 @@ async fn register_user(
 
     // TODO
 
-    // For this example, we'll simulate a successful registration
-    let user_id = "user123"; // In real app, this would be from DB
+    // Validate request
+    let RegisterRequest {
+        username,
+        name,
+        email,
+        password,
+    } = request;
 
-    let token_response = generate_tokens(user_id, &config.jwt_eddsa_encoding_key)?;
+    // Check if user is allowed
+    if !UserService::is_valid_username(&username) {
+        trace!("Invalid username: {}", username);
+        return Err(RegisterUserError::InvalidUsername);
+    }
+
+    // Validate email format
+    if !UserService::is_valid_email(&email) {
+        trace!("Invalid email: {}", email);
+        return Err(RegisterUserError::InvalidEmail);
+    }
+
+    // Validate password strength
+    if let Err(e) = UserService::is_valid_password(&password) {
+        trace!("Invalid password: {}", e);
+        return Err(RegisterUserError::InvalidPassword);
+    }
+
+    // Check if email already exists
+    let user = UserService::Query::find_user_by_email(&conn, &email).await?;
+    if user.is_some() {
+        trace!("User with email {} already exists", email);
+        return Err(RegisterUserError::EmailAlreadyExists);
+    }
+
+    // Check if username already exists
+    let user = UserService::Query::find_user_by_username(&conn, &username).await?;
+    if user.is_some() {
+        trace!("User with username {} already exists", username);
+        return Err(RegisterUserError::UserAlreadyExists);
+    }
+
+    // After validation, now create user
+    let hashed_password = hash_password(&password).await?;
+    let user =
+        UserService::Mutation::create_user(&conn, email, name, username, hashed_password).await?;
+    let user_id = &user.id;
+
+    let token_response = generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)?;
 
     Ok((StatusCode::CREATED, Json(token_response)))
 }

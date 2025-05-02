@@ -1,22 +1,22 @@
 use std::sync::Arc;
 
-use async_graphql::{http::GraphiQLSource, Response};
+use async_graphql::{Response, http::GraphiQLSource};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use auth::config::{AuthConfig};
+use auth::config::AuthConfig;
 use auth::service::AuthService;
-use axum::http::{header, HeaderName};
+use axum::http::{HeaderName, header};
 use axum::{
+    Router,
     extract::State,
     http::{HeaderMap, Method},
     response::{Html, IntoResponse},
     routing::get,
-    Router,
 };
 use config::GraphqlServerConfig;
 use context::{AppContext, DbContext, UserContext};
 use eyre::Result;
 use loaders::Loaders;
-use schema::{create_schema, AppSchema};
+use schema::{AppSchema, create_schema};
 use sea_orm::DatabaseConnection;
 use state::AppState;
 use std::time::Duration;
@@ -26,7 +26,6 @@ use tracing::trace;
 mod config;
 mod constants;
 mod context;
-mod hash;
 mod loaders;
 mod schema;
 mod state;

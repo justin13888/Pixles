@@ -4,6 +4,7 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RegisterRequest {
     pub username: String,
+    pub name: String,
     pub email: String,
     pub password: String,
 }
@@ -61,11 +62,4 @@ pub struct UpdateProfileRequest {
     pub email: Option<String>,
     pub current_password: Option<String>,
     pub new_password: Option<String>,
-}
-
-// TODO: is this necessary vv
-#[derive(Serialize, Deserialize, ToSchema)]
-pub struct ApiError {
-    pub message: String,
-    pub status_code: u16,
 }

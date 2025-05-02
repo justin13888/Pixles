@@ -2,16 +2,14 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use utoipa::ToSchema;
 
 #[derive(Error, Debug)]
 pub enum AuthError {
-    #[error("User already exists")]
-    UserAlreadyExists,
     #[error("User not found or invalid credentials")]
     InvalidCredentials,
-    #[error("Internal error")]
-    InternalError,
     #[error("Invalid token")]
     InvalidToken(#[from] ClaimValidationError),
 }
@@ -19,14 +17,7 @@ pub enum AuthError {
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
-            AuthError::UserAlreadyExists => {
-                (StatusCode::CONFLICT, "User already exists".to_string())
-            }
             AuthError::InvalidCredentials => (StatusCode::NOT_FOUND, "User not found".to_string()),
-            AuthError::InternalError => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_string(),
-            ),
             AuthError::InvalidToken(e) => (StatusCode::UNAUTHORIZED, e.to_string()),
         };
 
@@ -70,4 +61,25 @@ impl From<jsonwebtoken::errors::Error> for AuthError {
     fn from(error: jsonwebtoken::errors::Error) -> Self {
         AuthError::InvalidToken(ClaimValidationError::TokenInvalid(error))
     }
+}
+
+#[derive(Error, Debug)]
+pub enum RegisterUserError {
+    #[error("Invalid username")]
+    InvalidUsername,
+    #[error("Invalid email")]
+    InvalidEmail,
+    #[error("Email already exists")]
+    EmailAlreadyExists,
+    #[error("Invalid password")]
+    InvalidPassword,
+    #[error("Username already exists")]
+    UserAlreadyExists,
+} // TODO: Ensure these errors aren't too descriptive for security reasons
+
+// TODO: is this necessary vv
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct ApiError {
+    pub message: String,
+    pub status_code: u16,
 }

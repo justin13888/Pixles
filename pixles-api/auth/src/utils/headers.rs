@@ -1,8 +1,3 @@
-use axum::http::HeaderMap;
-use secrecy::SecretString;
-
-use crate::error::ClaimValidationError;
-
 /// Get the token from the Authorization header
 pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, ClaimValidationError> {
     let auth_header = headers
