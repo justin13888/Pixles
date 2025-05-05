@@ -35,7 +35,7 @@ anyhow = "1.0.98"
 argon2 = "0.5.3"
 axum = "0.8.1"
 base64 = "0.22.1"
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { version = "0.4.41", features = ["serde"] }
 eyre = "0.6.12"
 futures-util = "0.3.31"
 hyper = { version = "1.6.0", features = ["full"] }
