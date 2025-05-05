@@ -33,7 +33,7 @@ utoipa-axum = { workspace = true }
 [workspace.dependencies]
 anyhow = "1.0.98"
 argon2 = "0.5.3"
-axum = "0.8.1"
+axum = "0.8.4"
 base64 = "0.22.1"
 chrono = { version = "0.4.38", features = ["serde"] }
 eyre = "0.6.12"
