@@ -1,24 +1,21 @@
-use crate::{
-    claims::{Claims, Scope},
-    error::{ApiError, AuthError, RegisterUserError},
-    models::*,
-    state::AppState,
-    utils::{
-        hash::{hash_password, verify_password},
-        headers::get_token_from_headers,
-    },
-};
-use axum::{
-    Json,
-    extract::State,
-    http::{HeaderMap, StatusCode},
-};
+use axum::Json;
+use axum::extract::State;
+use axum::http::{HeaderMap, StatusCode};
 use docs::TAGS;
 use jsonwebtoken::EncodingKey;
 use secrecy::ExposeSecret;
 use service::user as UserService;
 use tracing::trace;
-use utoipa_axum::{router::OpenApiRouter, routes};
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
+
+use crate::claims::{Claims, Scope};
+use crate::errors::{ApiError, AuthError, InternalServerError, LoginError, RegisterUserError};
+use crate::models::*;
+use crate::responses::{LoginResponses, RegisterUserResponses, TokenResponse};
+use crate::state::AppState;
+use crate::utils::hash::{hash_password, verify_password};
+use crate::utils::headers::get_token_from_headers;
 
 // TODO: Verify utoipa actually matches the docs
 
@@ -28,17 +25,13 @@ use utoipa_axum::{router::OpenApiRouter, routes};
     path = "/register",
     tag = TAGS::AUTH,
     request_body = RegisterRequest,
-    responses(
-        (status = 201, description = "User successfully registered", body = TokenResponse),
-        (status = 409, description = "User already exists", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(RegisterUserResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn register_user(
     State(AppState { config, conn, .. }): State<AppState>,
     Json(request): Json<RegisterRequest>,
-) -> Result<(StatusCode, Json<TokenResponse>), RegisterUserError> {
+) -> RegisterUserResponses {
     // In a real implementation, you would:
     // 1. Validate input
     // 2. Check if user already exists
@@ -57,46 +50,75 @@ async fn register_user(
     } = request;
 
     // Check if user is allowed
-    if !UserService::is_valid_username(&username) {
+    if !UserService::is_valid_username(&username)
+    {
         trace!("Invalid username: {}", username);
-        return Err(RegisterUserError::InvalidUsername);
+        return RegisterUserResponses::InvalidUsername;
     }
 
     // Validate email format
-    if !UserService::is_valid_email(&email) {
+    if !UserService::is_valid_email(&email)
+    {
         trace!("Invalid email: {}", email);
-        return Err(RegisterUserError::InvalidEmail);
+        return RegisterUserResponses::InvalidEmail;
     }
 
     // Validate password strength
-    if let Err(e) = UserService::is_valid_password(&password) {
+    if let Err(e) = UserService::is_valid_password(&password)
+    {
         trace!("Invalid password: {}", e);
-        return Err(RegisterUserError::InvalidPassword);
+        return RegisterUserResponses::InvalidPassword;
     }
 
     // Check if email already exists
-    let user = UserService::Query::find_user_by_email(&conn, &email).await?;
-    if user.is_some() {
-        trace!("User with email {} already exists", email);
-        return Err(RegisterUserError::EmailAlreadyExists);
+    match UserService::Query::find_user_by_email(&conn, &email).await
+    {
+        Ok(user) =>
+        {
+            if user.is_some()
+            {
+                trace!("User with email {} already exists", email);
+                return RegisterUserResponses::UserAlreadyExists;
+            }
+        }
+        Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     }
 
     // Check if username already exists
-    let user = UserService::Query::find_user_by_username(&conn, &username).await?;
-    if user.is_some() {
+    let user = match UserService::Query::find_user_by_username(&conn, &username).await
+    {
+        Ok(user) => user,
+        Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
+    };
+    if user.is_some()
+    {
         trace!("User with username {} already exists", username);
-        return Err(RegisterUserError::UserAlreadyExists);
+        return RegisterUserResponses::UserAlreadyExists;
     }
 
     // After validation, now create user
-    let hashed_password = hash_password(&password).await?;
+    let hashed_password = match hash_password(&password)
+    {
+        Ok(hashed_password) => hashed_password,
+        Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
+    };
     let user =
-        UserService::Mutation::create_user(&conn, email, name, username, hashed_password).await?;
+        match UserService::Mutation::create_user(&conn, email, name, username, hashed_password)
+            .await
+        {
+            Ok(user) => user,
+            Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
+        };
     let user_id = &user.id;
 
-    let token_response = generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)?;
+    // Generate tokens
+    let token_response = match generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)
+    {
+        Ok(token_response) => token_response,
+        Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
+    };
 
-    Ok((StatusCode::CREATED, Json(token_response)))
+    RegisterUserResponses::Success(token_response)
 }
 
 /// Login a user
@@ -105,33 +127,58 @@ async fn register_user(
     path = "/login",
     tag = TAGS::AUTH,
     request_body = LoginRequest,
-    responses(
-        (status = 200, description = "Login successful", body = TokenResponse),
-        (status = 401, description = "Invalid credentials", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(LoginResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn login_user(
-    State(AppState { config, .. }): State<AppState>,
-    Json(payload): Json<LoginRequest>,
-) -> Result<Json<TokenResponse>, AuthError> {
+    State(AppState { config, conn, .. }): State<AppState>,
+    Json(request): Json<LoginRequest>,
+) -> LoginResponses {
     // In a real implementation, you would:
     // 1. Validate credentials against database
     // 2. Generate JWT tokens if valid
 
     // TODO: Implement login
+    let LoginRequest { email, password } = request;
 
-    // For this example, we'll simulate a successful login
-    // In real app, verify credentials from database
-    if payload.email == "test@example.com" && payload.password == "password" {
-        let user_id = "user123"; // In real app, this would be from DB
+    // Find email by email
+    let user = match UserService::Query::find_user_by_email(&conn, &email).await
+    {
+        Ok(user) => user,
+        Err(e) => return LoginResponses::InternalServerError(e.into()),
+    };
 
-        let token_response = generate_tokens(user_id, &config.jwt_eddsa_encoding_key)?;
+    if let Some(user) = user
+    {
+        // Verify password
+        let hashed_password = user.hashed_password;
+        let is_password_valid = match verify_password(&password, &hashed_password)
+        {
+            Ok(is_valid) => is_valid,
+            Err(e) => return LoginResponses::InternalServerError(e.into()),
+        };
 
-        Ok(Json(token_response))
-    } else {
-        Err(AuthError::InvalidCredentials)
+        if is_password_valid
+        {
+            match generate_tokens(&user.id, &config.jwt_eddsa_encoding_key)
+            {
+                Ok(token_response) => LoginResponses::Success(token_response),
+                Err(e) => LoginResponses::InternalServerError(e.into()),
+            }
+        }
+        else
+        {
+            LoginResponses::InvalidCredentials
+        }
+    }
+    else
+    {
+        // Run dummy password hash to prevent timing attacks
+        let _ = verify_password("random", "random").unwrap();
+        // TODO: Unit test to verify distribution of timing is uncorrelated to password
+        // correctness
+
+        LoginResponses::InvalidCredentials
     }
 }
 
@@ -154,10 +201,13 @@ async fn refresh_token(
 ) -> Result<Json<TokenResponse>, AuthError> {
     // In a real implementation, you would:
     // 1. Validate refresh token
-    // 2. Check if refresh token is in whitelist or not in blacklist
+    // 2. Check if refresh token is in whitelist (to keep track of active sessions
+    //    and allow logout all devices)
     // 3. Generate new access token
 
     // TODO: Implement refresh token
+    // TODO: Implement token rejection
+    // TODO: Add metric for token usage patterns
 
     // For this example, we'll simulate token validation and renewal
     let token = Claims::decode(&payload.refresh_token, &config.jwt_eddsa_decoding_key)?;
@@ -191,7 +241,8 @@ async fn validate_token(
     let token_string = get_token_from_headers(&headers).map_err(Into::<AuthError>::into)?;
 
     // Validate token
-    match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
+    match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
+    {
         Ok(token) => Ok(Json(ValidateTokenResponse::Valid(token.claims.sub))),
         Err(_) => Ok(Json(ValidateTokenResponse::Invalid)),
     }
@@ -224,10 +275,13 @@ async fn reset_password_request(
 
     // For this example, we'll simulate successful request
     // In real app, check if email exists in database
-    if payload.email == "test@example.com" {
+    if payload.email == "test@example.com"
+    {
         // In real app, send email with reset link
         Ok(StatusCode::OK)
-    } else {
+    }
+    else
+    {
         Err(AuthError::InvalidCredentials)
     }
 }
@@ -259,10 +313,13 @@ async fn reset_password(
 
     // For this example, we'll simulate successful password reset
     // In real app, validate token and update password in database
-    if payload.token == "valid_reset_token" {
+    if payload.token == "valid_reset_token"
+    {
         // In real app, update password and invalidate token
         Ok(StatusCode::OK)
-    } else {
+    }
+    else
+    {
         Err(AuthError::InvalidCredentials)
     }
 }
@@ -386,8 +443,46 @@ async fn logout(
     Ok(StatusCode::OK)
 }
 
+/// testing
+#[derive(utoipa::IntoResponses)]
+enum TestingResponses {
+    #[response(status = 200, description = "Testing successful")]
+    Success,
+}
+
+impl axum::response::IntoResponse for TestingResponses {
+    fn into_response(self) -> axum::response::Response {
+        match self
+        {
+            TestingResponses::Success => Json("ok".to_string()).into_response(),
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/testing",
+    tag = TAGS::AUTH,
+    security(
+        ("bearer" = [])
+    ),
+    responses(TestingResponses),
+    tags = ["Pixles Authentication API"]
+)]
+#[axum::debug_handler]
+async fn testing(State(_state): State<AppState>) -> impl axum::response::IntoResponse {
+    TestingResponses::Success
+}
+
+// TODO: Implement logout all devices
+
+// TODO: Implement unregister user
+
 /// Generate access and refresh token pairs
-fn generate_tokens(user_id: &str, encoding_key: &EncodingKey) -> Result<TokenResponse, AuthError> {
+fn generate_tokens(
+    user_id: &str,
+    encoding_key: &EncodingKey,
+) -> Result<TokenResponse, jsonwebtoken::errors::Error> {
     let user_id = user_id.to_string();
 
     // Create access token claims
@@ -398,13 +493,9 @@ fn generate_tokens(user_id: &str, encoding_key: &EncodingKey) -> Result<TokenRes
     let refresh_claims = Claims::new_refresh_token(user_id);
 
     // Generate tokens
-    let access_token = access_claims
-        .encode(encoding_key)
-        .map_err(Into::<AuthError>::into)?;
+    let access_token = access_claims.encode(encoding_key)?;
     let access_token_expires_by = access_claims.exp;
-    let refresh_token = refresh_claims
-        .encode(encoding_key)
-        .map_err(Into::<AuthError>::into)?;
+    let refresh_token = refresh_claims.encode(encoding_key)?;
 
     Ok(TokenResponse {
         access_token,
@@ -418,7 +509,8 @@ pub(super) fn get_router(state: AppState) -> OpenApiRouter {
     OpenApiRouter::new()
         .routes(routes!(get_user_profile, update_user_profile)) // Profile routes (/profile)
         .routes(routes!(register_user)) // POST /register
-        .routes(routes!(login_user)) // POST /login
+        // .routes(routes!(login_user)) // POST /login
+        .routes(routes!(testing)) // POST /testing
         .routes(routes!(refresh_token)) // POST /refresh
         .routes(routes!(validate_token)) // POST /validate
         .routes(routes!(reset_password_request)) // POST /password-reset-request
@@ -427,4 +519,10 @@ pub(super) fn get_router(state: AppState) -> OpenApiRouter {
         .with_state(state)
 }
 
+// TODO: Alerting
+// - Multiple failed login attempts
+// - Unusual authentication patterns
+// - Rate limit threshold breaches
+
+// TODO: Double check on implementation with best practices
 // TODO: Add unit tests

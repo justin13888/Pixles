@@ -1,0 +1,38 @@
+# In .clippy.toml or as command line args
+# deny = [
+#     "clippy::all",         # All default lints
+#     "clippy::correctness", # Catches logical errors
+#     "clippy::suspicious",  # Suspicious code patterns
+#     "clippy::complexity",  # Complex code structures
+#     "clippy::perf",        # Performance optimizations
+#     "clippy::style",       # Style consistency
+#     "clippy::nursery",     # Experimental lints
+#     "clippy::cargo",       # Cargo-related lints
+
+#     # Safety-critical lints
+#     "clippy::unwrap_used",             # Avoid unwrap() in production
+#     "clippy::expect_used",             # Avoid expect() in production
+#     "clippy::panic",                   # Avoid panic!() in production
+#     "clippy::unreachable",             # Avoid unreachable!() in production
+#     "clippy::indexing_slicing",        # Prevents unchecked indexing
+#     "clippy::arithmetic_side_effects", # Prevent overflow issues
+
+#     # Code quality lints
+#     "clippy::doc_markdown",                       # Documentation quality
+#     "clippy::missing_docs_in_private_items",      # Force comprehensive docs
+#     "clippy::implicit_return",                    # Explicit return statements
+#     "clippy::manual_let_else",                    # Use let-else construct
+#     "clippy::redundant_closure_for_method_calls", # Simplify closures
+# ]
+
+# warn = [
+#     "clippy::pedantic",             # Extra-strict rules (as warnings)
+#     "clippy::cognitive_complexity", # Function complexity warnings
+#     "clippy::too_many_lines",       # Long function warnings
+# ]
+
+too-many-arguments-threshold = 6    # Warn when functions have too many args
+too-many-lines-threshold = 100      # Warn when functions are too long
+cognitive-complexity-threshold = 20 # Warn when functions are too complex
+
+# TODO: Review ^^

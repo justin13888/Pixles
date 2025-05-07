@@ -16,16 +16,6 @@ pub struct LoginRequest {
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
-pub struct TokenResponse {
-    pub access_token: String,
-    pub refresh_token: String,
-    /// E.g. "Bearer"
-    pub token_type: String,
-    /// Access token expiry in seconds
-    pub expires_by: u64,
-}
-
-#[derive(Serialize, Deserialize, ToSchema)]
 pub struct RefreshTokenRequest {
     pub refresh_token: String,
 }

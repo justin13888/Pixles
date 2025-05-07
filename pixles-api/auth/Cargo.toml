@@ -14,6 +14,7 @@ pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment" }
 pixles-api-service = { path = "../service" }
 axum = { workspace = true }
+argon2 = { workspace = true }
 chrono = { workspace = true }
 eyre = { workspace = true }
 jsonwebtoken = { workspace = true }

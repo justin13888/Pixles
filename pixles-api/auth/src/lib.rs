@@ -10,10 +10,12 @@ use utoipa_axum::router::OpenApiRouter;
 pub mod claims;
 pub mod config;
 pub mod constants;
-pub mod error;
+pub mod errors;
 #[cfg(feature = "server")]
 mod models;
 pub mod oidc;
+#[cfg(feature = "server")]
+mod responses;
 pub mod roles;
 #[cfg(feature = "server")]
 mod routes;

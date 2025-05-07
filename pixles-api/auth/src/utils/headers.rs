@@ -1,3 +1,8 @@
+use axum::http::HeaderMap;
+use secrecy::SecretString;
+
+use crate::errors::ClaimValidationError;
+
 /// Get the token from the Authorization header
 pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, ClaimValidationError> {
     let auth_header = headers
@@ -7,7 +12,8 @@ pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, Claim
         .map_err(|_| ClaimValidationError::UnexpectedHeaderFormat)?;
 
     // Check if it's a Bearer token
-    if !auth_header.starts_with("Bearer ") {
+    if !auth_header.starts_with("Bearer ")
+    {
         return Err(ClaimValidationError::UnexpectedHeaderFormat);
     }
 

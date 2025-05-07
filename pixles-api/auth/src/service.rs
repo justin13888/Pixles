@@ -1,7 +1,7 @@
 use crate::{
     claims::{Claims, Scope},
     config::AuthConfig,
-    error::ClaimValidationError,
+    errors::ClaimValidationError,
 };
 
 pub struct AuthService {

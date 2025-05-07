@@ -1,13 +1,14 @@
+use activity::ActivityQuery;
+use async_graphql::extensions::Logger;
+use async_graphql::extensions::apollo_persisted_queries::{
+    ApolloPersistedQueries, LruCacheStorage,
+};
+use async_graphql::{MergedSubscription, Object, Schema};
+
 use crate::loaders::Loaders;
 use crate::schema::album::{AlbumMutation, AlbumQuery};
 use crate::schema::asset::{AssetMutation, AssetQuery, AssetSubscription};
 use crate::schema::user::{UserMutation, UserQuery};
-use activity::ActivityQuery;
-use async_graphql::extensions::apollo_persisted_queries::{
-    ApolloPersistedQueries, LruCacheStorage,
-};
-use async_graphql::MergedSubscription;
-use async_graphql::{extensions::Logger, Object, Schema};
 pub mod activity;
 pub mod album;
 pub mod asset;
@@ -50,9 +51,9 @@ impl QueryRoot {
 
 #[Object]
 impl MutationRoot {
-    async fn user(&self) -> &UserMutation {
-        &self.user
-    }
+    // async fn user(&self) -> &UserMutation {
+    //     &self.user
+    // }
 
     async fn album(&self) -> &AlbumMutation {
         &self.album

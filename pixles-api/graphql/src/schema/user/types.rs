@@ -53,33 +53,6 @@ impl From<user::Model> for User {
     }
 }
 
-#[derive(InputObject)]
-pub struct LoginUserInput {
-    pub email: String,
-    pub password: SecretString,
-}
-
-#[derive(InputObject)]
-pub struct UpdateUserInput {
-    pub name: Option<String>,
-    pub email: Option<String>,
-}
-
-/// The response from the register user mutation
-#[derive(SimpleObject, Clone, Serialize, Deserialize)]
-pub struct RegisterUserResponse {
-    pub success: bool,
-    pub data: Option<AuthResponse>,
-    pub errors: Vec<String>,
-}
-
-/// The response from the login user mutation
-#[derive(SimpleObject, Clone, Serialize, Deserialize)]
-pub struct AuthResponse {
-    pub token: String,
-    pub user: Option<User>,
-}
-
 /// User statistics
 #[derive(SimpleObject, Clone, Serialize, Deserialize)]
 pub struct UserStatistics {
