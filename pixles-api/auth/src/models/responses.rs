@@ -3,7 +3,7 @@ use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::errors::*;
+use super::errors::*;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct TokenResponse {
@@ -112,4 +112,10 @@ impl axum::response::IntoResponse for LoginResponses {
             }
         }
     }
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub enum ValidateTokenResponse {
+    Valid(String),
+    Invalid,
 }

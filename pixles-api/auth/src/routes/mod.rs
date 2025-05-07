@@ -10,9 +10,15 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use crate::claims::{Claims, Scope};
-use crate::errors::{ApiError, AuthError, InternalServerError, LoginError, RegisterUserError};
-use crate::models::*;
-use crate::responses::{LoginResponses, RegisterUserResponses, TokenResponse};
+use crate::errors::AuthError;
+use crate::models::errors::{ApiError, InternalServerError, LoginError, RegisterUserError};
+use crate::models::requests::{
+    LoginRequest, RefreshTokenRequest, RegisterRequest, UpdateProfileRequest,
+};
+use crate::models::responses::{
+    LoginResponses, RegisterUserResponses, TokenResponse, ValidateTokenResponse,
+};
+use crate::models::{ResetPasswordPayload, ResetPasswordRequestPayload, UserProfile};
 use crate::state::AppState;
 use crate::utils::hash::{hash_password, verify_password};
 use crate::utils::headers::get_token_from_headers;

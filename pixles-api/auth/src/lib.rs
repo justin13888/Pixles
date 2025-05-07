@@ -14,8 +14,6 @@ pub mod errors;
 #[cfg(feature = "server")]
 mod models;
 pub mod oidc;
-#[cfg(feature = "server")]
-mod responses;
 pub mod roles;
 #[cfg(feature = "server")]
 mod routes;
