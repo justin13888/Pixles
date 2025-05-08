@@ -21,12 +21,8 @@ pub struct TokenResponse {
 pub enum RegisterUserResponses {
     #[response(status = 201, description = "User successfully registered")]
     Success(TokenResponse),
-    #[response(status = 400, description = "Invalid username")]
-    InvalidUsername,
-    #[response(status = 400, description = "Invalid email")]
-    InvalidEmail,
-    #[response(status = 400, description = "Invalid password")]
-    InvalidPassword,
+    #[response(status = 400, description = "Bad request")]
+    BadRequest(BadRegisterUserRequestError),
     #[response(status = 409, description = "User already exists")]
     UserAlreadyExists,
     #[response(status = 500, description = "Internal server error")]
@@ -43,22 +39,10 @@ impl axum::response::IntoResponse for RegisterUserResponses {
                 let body = Json(token_response);
                 (status, body).into_response()
             }
-            Self::InvalidUsername =>
+            Self::BadRequest(e) =>
             {
                 let status = StatusCode::BAD_REQUEST;
-                let body = Json(ApiError::new("Invalid username"));
-                (status, body).into_response()
-            }
-            Self::InvalidEmail =>
-            {
-                let status = StatusCode::BAD_REQUEST;
-                let body = Json(ApiError::new("Invalid email"));
-                (status, body).into_response()
-            }
-            Self::InvalidPassword =>
-            {
-                let status = StatusCode::BAD_REQUEST;
-                let body = Json(ApiError::new("Invalid password"));
+                let body = Json(e);
                 (status, body).into_response()
             }
             Self::UserAlreadyExists =>
@@ -67,12 +51,7 @@ impl axum::response::IntoResponse for RegisterUserResponses {
                 let body = Json(ApiError::new("User already exists"));
                 (status, body).into_response()
             }
-            Self::InternalServerError(e) =>
-            {
-                let status = StatusCode::INTERNAL_SERVER_ERROR;
-                let body = Json(ApiError::new("Internal server error"));
-                (status, body).into_response()
-            }
+            Self::InternalServerError(e) => e.into_response(),
         }
     }
 }

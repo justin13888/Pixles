@@ -11,6 +11,7 @@ use utoipa_axum::routes;
 
 use crate::claims::{Claims, Scope};
 use crate::errors::{AuthError, ClaimValidationError};
+use crate::models::errors::BadRegisterUserRequestError;
 use crate::models::requests::{
     LoginRequest, RefreshTokenRequest, RegisterRequest, UpdateProfileRequest,
 };
@@ -61,21 +62,21 @@ async fn register_user(
     if !UserService::is_valid_username(&username)
     {
         trace!("Invalid username: {}", username);
-        return RegisterUserResponses::InvalidUsername;
+        return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::InvalidUsername);
     }
 
     // Validate email format
     if !UserService::is_valid_email(&email)
     {
         trace!("Invalid email: {}", email);
-        return RegisterUserResponses::InvalidEmail;
+        return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::InvalidEmail);
     }
 
     // Validate password strength
     if let Err(e) = UserService::is_valid_password(&password)
     {
         trace!("Invalid password: {}", e);
-        return RegisterUserResponses::InvalidPassword;
+        return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::InvalidPassword);
     }
 
     // Check if email already exists
@@ -120,7 +121,7 @@ async fn register_user(
     let user_id = &user.id;
 
     // Generate tokens
-    let token_response = match generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)
+    let token_response = match generate_tokens(user_id, &config.jwt_eddsa_encoding_key)
     {
         Ok(token_response) => token_response,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),

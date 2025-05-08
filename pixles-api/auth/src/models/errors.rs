@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use argon2::password_hash;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -68,4 +70,14 @@ impl ApiError {
         let error = error.into();
         ApiError { error }
     }
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub enum BadRegisterUserRequestError {
+    #[schema(rename = "Invalid email")]
+    InvalidEmail,
+    #[schema(rename = "Invalid username")]
+    InvalidUsername,
+    #[schema(rename = "Invalid password")]
+    InvalidPassword,
 }
