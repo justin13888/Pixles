@@ -10,13 +10,15 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use crate::claims::{Claims, Scope};
-use crate::errors::AuthError;
-use crate::models::errors::{ApiError, InternalServerError, LoginError, RegisterUserError};
+use crate::errors::{AuthError, ClaimValidationError};
 use crate::models::requests::{
     LoginRequest, RefreshTokenRequest, RegisterRequest, UpdateProfileRequest,
 };
 use crate::models::responses::{
-    LoginResponses, RegisterUserResponses, TokenResponse, ValidateTokenResponse,
+    LoginResponses, LogoutResponses, PasswordResetResponses, RefreshTokenResponses,
+    RegisterUserResponses, ResetPasswordRequestResponses, TokenResponse,
+    UpdateUserProfileResponses, UserProfileResponses, ValidateTokenResponse,
+    ValidateTokenResponses,
 };
 use crate::models::{ResetPasswordPayload, ResetPasswordRequestPayload, UserProfile};
 use crate::state::AppState;
@@ -194,17 +196,13 @@ async fn login_user(
     path = "/refresh",
     tag = TAGS::AUTH,
     request_body = RefreshTokenRequest,
-    responses(
-        (status = 200, description = "Token refreshed successfully", body = TokenResponse),
-        (status = 401, description = "Invalid refresh token", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(RefreshTokenResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn refresh_token(
     State(AppState { config, .. }): State<AppState>,
     Json(payload): Json<RefreshTokenRequest>,
-) -> Result<Json<TokenResponse>, AuthError> {
+) -> RefreshTokenResponses {
     // In a real implementation, you would:
     // 1. Validate refresh token
     // 2. Check if refresh token is in whitelist (to keep track of active sessions
@@ -216,12 +214,23 @@ async fn refresh_token(
     // TODO: Add metric for token usage patterns
 
     // For this example, we'll simulate token validation and renewal
-    let token = Claims::decode(&payload.refresh_token, &config.jwt_eddsa_decoding_key)?;
+    let token = match Claims::decode(&payload.refresh_token, &config.jwt_eddsa_decoding_key)
+    {
+        Ok(token) => token,
+        Err(e) =>
+        {
+            return RefreshTokenResponses::InvalidRefreshToken(ClaimValidationError::from(e).into())
+        }
+    };
     let user_id = token.claims.sub;
 
-    let token_response = generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)?;
+    let token_response = match generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)
+    {
+        Ok(token_response) => token_response,
+        Err(e) => return RefreshTokenResponses::InternalServerError(e.into()),
+    };
 
-    Ok(Json(token_response))
+    RefreshTokenResponses::Success(token_response)
 }
 
 /// Validate an access token
@@ -232,25 +241,25 @@ async fn refresh_token(
     security(
         ("bearer" = [])
     ),
-    responses(
-        (status = 200, description = "Token validation result", body = ValidateTokenResponse),
-        (status = 401, description = "Invalid token", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(ValidateTokenResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn validate_token(
     State(AppState { config, .. }): State<AppState>,
-    headers: axum::http::HeaderMap,
-) -> Result<Json<ValidateTokenResponse>, AuthError> {
+    headers: HeaderMap,
+) -> ValidateTokenResponses {
     // Get token string
-    let token_string = get_token_from_headers(&headers).map_err(Into::<AuthError>::into)?;
+    let token_string = match get_token_from_headers(&headers)
+    {
+        Ok(token_string) => token_string,
+        Err(e) => return ValidateTokenResponses::Invalid(e.into()),
+    };
 
     // Validate token
     match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
     {
-        Ok(token) => Ok(Json(ValidateTokenResponse::Valid(token.claims.sub))),
-        Err(_) => Ok(Json(ValidateTokenResponse::Invalid)),
+        Ok(token) => ValidateTokenResponses::Valid(ValidateTokenResponse::Valid(token.claims.sub)),
+        Err(e) => ValidateTokenResponses::Invalid(ClaimValidationError::from(e).into()),
     }
 }
 
@@ -260,17 +269,13 @@ async fn validate_token(
     path = "/password-reset-request",
     tag = TAGS::AUTH,
     request_body = ResetPasswordRequestPayload,
-    responses(
-        (status = 200, description = "Password reset email sent"),
-        (status = 404, description = "User not found", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(ResetPasswordRequestResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn reset_password_request(
     State(AppState { config, .. }): State<AppState>,
     Json(payload): Json<ResetPasswordRequestPayload>,
-) -> Result<StatusCode, AuthError> {
+) -> ResetPasswordRequestResponses {
     // In a real implementation, you would:
     // 1. Check if user exists
     // 2. Generate a password reset token
@@ -284,12 +289,15 @@ async fn reset_password_request(
     if payload.email == "test@example.com"
     {
         // In real app, send email with reset link
-        Ok(StatusCode::OK)
     }
     else
     {
-        Err(AuthError::InvalidCredentials)
+        todo!()
+        // TODO: Ensure it doesn't leak if email exists with consistent response
+        // time
     }
+
+    ResetPasswordRequestResponses::Success
 }
 
 /// Reset password with token
@@ -298,17 +306,13 @@ async fn reset_password_request(
     path = "/password-reset",
     tag = TAGS::AUTH,
     request_body = ResetPasswordPayload,
-    responses(
-        (status = 200, description = "Password reset successful"),
-        (status = 401, description = "Invalid or expired token", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(PasswordResetResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn reset_password(
     State(AppState { config, .. }): State<AppState>,
     Json(payload): Json<ResetPasswordPayload>,
-) -> Result<StatusCode, AuthError> {
+) -> PasswordResetResponses {
     // In a real implementation, you would:
     // 1. Validate reset token from database
     // 2. Check if token is expired
@@ -322,11 +326,11 @@ async fn reset_password(
     if payload.token == "valid_reset_token"
     {
         // In real app, update password and invalidate token
-        Ok(StatusCode::OK)
+        PasswordResetResponses::Success
     }
     else
     {
-        Err(AuthError::InvalidCredentials)
+        PasswordResetResponses::InvalidToken
     }
 }
 
@@ -338,22 +342,24 @@ async fn reset_password(
     security(
         ("bearer" = [])
     ),
-    responses(
-        (status = 200, description = "User profile retrieved", body = UserProfile),
-        (status = 401, description = "Unauthorized", body = ApiError),
-        (status = 404, description = "User not found", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(UserProfileResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn get_user_profile(
     State(AppState { config, .. }): State<AppState>,
     headers: HeaderMap,
-) -> Result<Json<UserProfile>, AuthError> {
+) -> UserProfileResponses {
     // Authorize user
-    let token_string = get_token_from_headers(&headers).map_err(Into::<AuthError>::into)?;
-    let token = Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-        .map_err(Into::<AuthError>::into)?;
+    let token_string = match get_token_from_headers(&headers)
+    {
+        Ok(token_string) => token_string,
+        Err(e) => return UserProfileResponses::Unauthorized(e.into()),
+    };
+    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
+    {
+        Ok(token) => token,
+        Err(e) => return UserProfileResponses::Unauthorized(ClaimValidationError::from(e).into()),
+    };
     let user_id = token.claims.sub;
 
     // TODO: Implement get user profile
@@ -367,7 +373,7 @@ async fn get_user_profile(
         updated_at: "2023-01-01T00:00:00Z".to_string(),
     };
 
-    Ok(Json(profile))
+    UserProfileResponses::Success(profile)
 }
 
 /// Update user profile
@@ -379,23 +385,28 @@ async fn get_user_profile(
     security(
         ("bearer" = [])
     ),
-    responses(
-        (status = 200, description = "Profile updated successfully", body = UserProfile),
-        (status = 401, description = "Unauthorized", body = ApiError),
-        (status = 404, description = "User not found", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(UpdateUserProfileResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn update_user_profile(
     State(AppState { config, .. }): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<UpdateProfileRequest>,
-) -> Result<Json<UserProfile>, AuthError> {
+) -> UpdateUserProfileResponses {
     // Authorize user
-    let token_string = get_token_from_headers(&headers).map_err(Into::<AuthError>::into)?;
-    let token = Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-        .map_err(Into::<AuthError>::into)?;
+    let token_string = match get_token_from_headers(&headers)
+    {
+        Ok(token_string) => token_string,
+        Err(e) => return UpdateUserProfileResponses::Unauthorized(e.into()),
+    };
+    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
+    {
+        Ok(token) => token,
+        Err(e) =>
+        {
+            return UpdateUserProfileResponses::Unauthorized(ClaimValidationError::from(e).into())
+        }
+    };
     let user_id = token.claims.sub;
 
     // TODO: Implement update user profile
@@ -411,7 +422,7 @@ async fn update_user_profile(
         updated_at: "2023-05-01T00:00:00Z".to_string(), // Updated timestamp
     }; // TODO
 
-    Ok(Json(updated_profile))
+    UpdateUserProfileResponses::Success(updated_profile)
 }
 
 /// Logout user and invalidate tokens
@@ -422,21 +433,24 @@ async fn update_user_profile(
     security(
         ("bearer" = [])
     ),
-    responses(
-        (status = 200, description = "Logout successful"),
-        (status = 401, description = "Unauthorized", body = ApiError),
-        (status = 500, description = "Internal server error", body = ApiError)
-    ),
+    responses(LogoutResponses),
     tags = ["Pixles Authentication API"]
 )]
 async fn logout(
     State(AppState { config, .. }): State<AppState>,
     headers: HeaderMap,
-) -> Result<StatusCode, AuthError> {
+) -> LogoutResponses {
     // Authorize user
-    let token_string = get_token_from_headers(&headers).map_err(Into::<AuthError>::into)?;
-    let token = Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-        .map_err(Into::<AuthError>::into)?;
+    let token_string = match get_token_from_headers(&headers)
+    {
+        Ok(token_string) => token_string,
+        Err(e) => return LogoutResponses::Unauthorized(e.into()),
+    };
+    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
+    {
+        Ok(token) => token,
+        Err(e) => return LogoutResponses::Unauthorized(ClaimValidationError::from(e).into()),
+    };
     let user_id = token.claims.sub;
 
     // TODO: Implement logout
@@ -446,7 +460,7 @@ async fn logout(
     // let _user_id = validate_jwt_token(token)?;
     // TODO
 
-    Ok(StatusCode::OK)
+    LogoutResponses::Success
 }
 
 /// testing
@@ -515,7 +529,7 @@ pub(super) fn get_router(state: AppState) -> OpenApiRouter {
     OpenApiRouter::new()
         .routes(routes!(get_user_profile, update_user_profile)) // Profile routes (/profile)
         .routes(routes!(register_user)) // POST /register
-        // .routes(routes!(login_user)) // POST /login
+        .routes(routes!(login_user)) // POST /login
         .routes(routes!(testing)) // POST /testing
         .routes(routes!(refresh_token)) // POST /refresh
         .routes(routes!(validate_token)) // POST /validate

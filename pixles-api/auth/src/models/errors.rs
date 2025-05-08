@@ -2,28 +2,7 @@ use argon2::password_hash;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use utoipa::{ToResponse, ToSchema};
-
-#[derive(Error, Debug)]
-pub enum RegisterUserError {
-    #[error("Invalid username")]
-    InvalidUsername,
-    #[error("Invalid email")]
-    InvalidEmail,
-    #[error("Email already exists")]
-    EmailAlreadyExists,
-    #[error("Invalid password")]
-    InvalidPassword,
-    #[error("Username already exists")]
-    UserAlreadyExists,
-} // TODO: Ensure these errors aren't too descriptive for security reasons
-
-#[derive(Error, Debug)]
-pub enum LoginError {
-    #[error("Invalid credentials")]
-    InvalidCredentials,
-}
 
 #[derive(ToSchema, ToResponse)]
 #[schema(description = "Internal server error")]
@@ -31,7 +10,7 @@ pub enum LoginError {
 pub struct InternalServerError {
     pub error: String,
 }
-// TODO: Somehow automatically track errors ^^
+// TODO: Somehow automatically track errors in logs ^^
 
 impl From<sea_orm::DbErr> for InternalServerError {
     fn from(error: sea_orm::DbErr) -> Self {
@@ -57,20 +36,23 @@ impl From<password_hash::errors::Error> for InternalServerError {
     }
 }
 
+impl std::fmt::Display for InternalServerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.error)
+    }
+}
+
 impl IntoResponse for InternalServerError {
     fn into_response(self) -> Response {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            if cfg!(debug_assertions)
-            {
-                self.error
-            }
-            else
-            {
-                "Unknown internal server error".to_string()
-            },
-        )
-            .into_response()
+        let response = if cfg!(debug_assertions)
+        {
+            self.to_string()
+        }
+        else
+        {
+            "Unknown internal server error".to_string()
+        };
+        (StatusCode::INTERNAL_SERVER_ERROR, response).into_response()
     }
 }
 

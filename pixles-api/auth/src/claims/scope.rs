@@ -16,7 +16,8 @@ pub enum Scope {
 
 impl From<&Scope> for String {
     fn from(scope: &Scope) -> Self {
-        match scope {
+        match scope
+        {
             Scope::RefreshToken => "token:refresh".to_string(),
             Scope::ReadUser => "read:user".to_string(),
             Scope::WriteUser => "write:user".to_string(),
@@ -34,23 +35,26 @@ impl FromStr for Scope {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        match s
+        {
             "token:refresh" => Ok(Scope::RefreshToken),
             "read:user" => Ok(Scope::ReadUser),
             "write:user" => Ok(Scope::WriteUser),
-            _ => Err(format!("Invalid scope: {}", s)),
+            _ => Err(format!("Invalid scope: {s}")),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use strum::IntoEnumIterator;
+
+    use super::*;
 
     #[test]
     fn test_scope_from_str() {
-        for scope in Scope::iter() {
+        for scope in Scope::iter()
+        {
             let scope_str: String = scope.into();
             assert_eq!(scope, Scope::from_str(&scope_str).unwrap());
         }
@@ -64,7 +68,8 @@ mod tests {
 
     #[test]
     fn test_serialize_deserialize_json() {
-        for scope in Scope::iter() {
+        for scope in Scope::iter()
+        {
             let scope_str: String = scope.into();
             let serialized = serde_json::to_string(&scope).unwrap();
             assert_eq!(scope_str, serialized);
@@ -77,6 +82,6 @@ mod tests {
     #[test]
     fn test_serialize_deserialize_json_invalid() {
         let invalid_scope = "invalid:scope";
-        assert!(serde_json::from_str::<Scope>(&invalid_scope).is_err());
+        assert!(serde_json::from_str::<Scope>(invalid_scope).is_err());
     }
 }

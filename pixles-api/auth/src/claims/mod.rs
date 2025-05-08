@@ -5,10 +5,8 @@ use chrono::Utc;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, TokenData, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    constants::{ACCESS_TOKEN_EXPIRY, ISSUER, REFRESH_TOKEN_EXPIRY},
-    roles::UserRole,
-};
+use crate::constants::{ACCESS_TOKEN_EXPIRY, ISSUER, REFRESH_TOKEN_EXPIRY};
+use crate::roles::UserRole;
 
 mod scope;
 pub use scope::*;
@@ -54,7 +52,7 @@ impl Claims {
     ) -> Self {
         let expiry_duration = expiry_duration.into();
         let iat = Utc::now().timestamp() as u64;
-        let exp = iat + expiry_duration.as_secs() as u64;
+        let exp: u64 = iat + expiry_duration.as_secs();
 
         Self {
             sub: user_id,
@@ -95,7 +93,7 @@ impl Claims {
 
     /// Checks if a specific scope is present
     pub fn has_scope(&self, scope: &str) -> bool {
-        self.scopes.iter().any(|s| &String::from(s) == scope)
+        self.scopes.iter().any(|s| String::from(s) == scope)
     }
 
     /// Decode from a token string
@@ -124,7 +122,8 @@ impl Claims {
 
 #[cfg(test)]
 mod tests {
-    use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+    use base64::Engine as _;
+    use base64::engine::general_purpose::STANDARD as BASE64;
     use ring::signature::{Ed25519KeyPair, KeyPair};
 
     use super::*;

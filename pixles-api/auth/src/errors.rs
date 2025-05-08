@@ -3,9 +3,10 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use thiserror::Error;
+use utoipa::{PartialSchema, ToResponse, ToSchema};
 
 /// Authentication error
-#[derive(Error, Debug)]
+#[derive(Error, Debug, ToSchema)]
 pub enum AuthError {
     #[error("User not found or invalid credentials")]
     InvalidCredentials,
@@ -26,18 +27,32 @@ impl IntoResponse for AuthError {
 }
 
 // JWT validation error
-#[derive(Error, Debug)]
+#[derive(Error, Debug, ToSchema)]
 pub enum ClaimValidationError {
     #[error("Missing token")]
     TokenMissing,
-    #[error("Invalid token: {0}")]
-    TokenInvalid(#[from] jsonwebtoken::errors::Error),
     #[error("Expired token")]
     TokenExpired,
+    #[error("Invalid token: {0}")]
+    TokenInvalid(String),
     #[error("Unexpected authorization header format")]
     UnexpectedHeaderFormat,
     #[error("Invalid scopes")]
     InvalidScopes,
+}
+
+impl From<jsonwebtoken::errors::Error> for ClaimValidationError {
+    fn from(error: jsonwebtoken::errors::Error) -> Self {
+        match error.kind()
+        {
+            jsonwebtoken::errors::ErrorKind::InvalidToken =>
+            {
+                ClaimValidationError::TokenInvalid(error.to_string())
+            }
+            jsonwebtoken::errors::ErrorKind::ExpiredSignature => ClaimValidationError::TokenExpired,
+            _ => ClaimValidationError::TokenInvalid(error.to_string()),
+        }
+    }
 }
 
 impl IntoResponse for ClaimValidationError {
@@ -55,11 +70,5 @@ impl IntoResponse for ClaimValidationError {
         };
 
         (status, error_message).into_response()
-    }
-}
-
-impl From<jsonwebtoken::errors::Error> for AuthError {
-    fn from(error: jsonwebtoken::errors::Error) -> Self {
-        AuthError::InvalidToken(ClaimValidationError::TokenInvalid(error))
     }
 }
