@@ -463,37 +463,6 @@ async fn logout(
     LogoutResponses::Success
 }
 
-/// testing
-#[derive(utoipa::IntoResponses)]
-enum TestingResponses {
-    #[response(status = 200, description = "Testing successful")]
-    Success,
-}
-
-impl axum::response::IntoResponse for TestingResponses {
-    fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            TestingResponses::Success => Json("ok".to_string()).into_response(),
-        }
-    }
-}
-
-#[utoipa::path(
-    post,
-    path = "/testing",
-    tag = TAGS::AUTH,
-    security(
-        ("bearer" = [])
-    ),
-    responses(TestingResponses),
-    tags = ["Pixles Authentication API"]
-)]
-#[axum::debug_handler]
-async fn testing(State(_state): State<AppState>) -> impl axum::response::IntoResponse {
-    TestingResponses::Success
-}
-
 // TODO: Implement logout all devices
 
 // TODO: Implement unregister user
@@ -530,7 +499,6 @@ pub(super) fn get_router(state: AppState) -> OpenApiRouter {
         .routes(routes!(get_user_profile, update_user_profile)) // Profile routes (/profile)
         .routes(routes!(register_user)) // POST /register
         .routes(routes!(login_user)) // POST /login
-        .routes(routes!(testing)) // POST /testing
         .routes(routes!(refresh_token)) // POST /refresh
         .routes(routes!(validate_token)) // POST /validate
         .routes(routes!(reset_password_request)) // POST /password-reset-request
