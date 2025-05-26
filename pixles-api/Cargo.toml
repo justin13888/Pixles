@@ -66,7 +66,7 @@ utoipa = { version = "5.3.1", features = [
 ] }
 utoipa-axum = { version = "0.2.0" }
 utoipa-scalar = { version = "0.3.0", features = ["axum"] }
-uuid = { version = "1.11.0", features = ["v4"] }
+uuid = { version = "1.17.0", features = ["v4"] }
 tower-http = { version = "0.6.1", features = ["cors"] }
 tracing = "0.1.40"
 
