@@ -1,13 +1,13 @@
 use axum::Json;
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{ToResponse, ToSchema};
 
 use super::UserProfile;
 use super::errors::*;
 use crate::errors::AuthError;
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, ToResponse)]
 pub struct TokenResponse {
     pub access_token: String,
     pub refresh_token: String,
@@ -89,7 +89,7 @@ impl axum::response::IntoResponse for LoginResponses {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, ToResponse)]
 pub enum ValidateTokenResponse {
     Valid(String),
     Invalid,

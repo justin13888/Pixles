@@ -32,7 +32,7 @@ impl Modify for SecurityAddon {
             components.add_security_scheme(
                 "api_key",
                 SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
-            )
+            ) // TODO: Replace this scheme ^^
         }
     }
 }

@@ -5,6 +5,7 @@ use eyre::Result;
 use sea_orm::DatabaseConnection;
 use state::AppState;
 use tower_http::cors::{Any, CorsLayer};
+use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 
 pub mod claims;
@@ -23,6 +24,23 @@ mod state;
 pub mod utils;
 
 #[cfg(feature = "server")]
+#[derive(OpenApi)]
+#[openapi(components(
+    responses(
+        models::responses::TokenResponse,
+        models::responses::ValidateTokenResponse
+    ),
+    schemas(
+        errors::AuthError,
+        models::UserProfile,
+        models::errors::BadRegisterUserRequestError,
+        models::responses::TokenResponse,
+        models::responses::ValidateTokenResponse
+    )
+))]
+pub struct AuthApiDoc;
+
+#[cfg(feature = "server")]
 pub async fn get_router<C: Into<AuthConfig>>(
     conn: Arc<DatabaseConnection>,
     config: C,
@@ -35,7 +53,7 @@ pub async fn get_router<C: Into<AuthConfig>>(
         .allow_headers(Any); // TODO: Restrict later
     let state = AppState { conn, config };
 
-    Ok(OpenApiRouter::new()
+    Ok(OpenApiRouter::with_openapi(AuthApiDoc::openapi())
         .nest("/auth", routes::get_router(state))
         .layer(cors))
 }

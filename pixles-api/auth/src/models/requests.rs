@@ -10,6 +10,7 @@ pub struct RegisterRequest {
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
+#[schema(example = json!({"email": "johndoe@email.com", "password": "password"}))]
 pub struct LoginRequest {
     pub email: String,
     pub password: String,
