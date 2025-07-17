@@ -2335,6 +2335,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pixles-cli"
+version = "0.1.0"
+
+[[package]]
+name = "pixles-core-rust"
+version = "0.1.0"
+
+[[package]]
 name = "pkcs1"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -3,4 +3,6 @@ name = "pixles-cli"
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
+[profile.release]
+lto = "thin"
+codegen-units = 1
