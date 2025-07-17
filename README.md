@@ -124,6 +124,10 @@ Side note: The original author loves open-source and has contributed to various 
 
 A: Yes, we considered many languages. Some other languages considered included Go, TypeScript, Kotlin/Java. In fact, the first PoC was as a single REST API written in TypeScript. However, the current development has developed into multiple APIs (GraphQL, REST, gRPC) and processing logic offloaded to clients of various platforms. Rust offers both the memory-safety and performance requirements, as well as the cross-platform flexiblity that some other languages may equally excel at. On the APIs, Rust libraries also tend to be newer and allowed for Linux-specific optimizations such as using `io_uring` for high-performance async I/O. Additonally, note that several other languages with other strengths are embraced.
 
+**Q: How do bugfixes happen?**
+
+A: Even if the best development practices, rigorous testing, and conservative designs, no software is without bugs. Bug reporting and thoughtful feature requests submitted to the issues page would be much appreciated. Certain types of bugs, such as those affecting data integrity, should be marked with the appropriate tags and will be ironed out ASAP. Patches typically roll out to the latest major version and marked in a notice board separate from CHANGELOGs.
+
 ## How to contribute
 
 Pixles primarily benefits from active contributions and feedback. More instructions to come!
