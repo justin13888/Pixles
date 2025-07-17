@@ -3,6 +3,10 @@ name = "pixles-cli"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "pixles"
+path = "src/main.rs"
+
 [dependencies]
 base64 = { workspace = true }
 clap = { version = "4.5.40", features = ["derive"] }
@@ -24,7 +28,11 @@ serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true, features = ["release_max_level_debug"] }
-tracing-subscriber = { version = "0.3.10", features = ["env-filter", "json", "fmt"] }
+tracing-subscriber = { version = "0.3.10", features = [
+    "env-filter",
+    "json",
+    "fmt",
+] }
 uuid = { version = "1.11.0", features = ["v7"] }
 
 

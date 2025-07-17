@@ -4,7 +4,7 @@ CLI tool for Pixles API. Primarily used for server owners, advanced users, and d
 
 It is a thin CLI wrapper. It uses `pixles-core-rust` for core capabilities such as uploading, downloading, among others. This CLI tool is entirely stateless for simplicity.
 
-## Getting Started
+## Installation
 
 Binaries are compiled to:
 
@@ -16,8 +16,13 @@ For now, CLI has not been packaged with package managers but could be compiled f
 
 <!-- TODO: Distribute via GitHub packages and package managers -->
 
+## Usage
+
+Refer to `pixles --help` for usage.
+
 ## Development
 
-- `cargo run -- <args>` to run the CLI with arguments
-- `cargo test` to run tests
-- `cargo build --release` to build the release binary
+- `cargo run -- <args>` to run the CLI with arguments.
+- `cargo test` to run tests.
+- `cargo build --release` to build the release binary.
+- `cargo install --path .` to build and install CLI.
