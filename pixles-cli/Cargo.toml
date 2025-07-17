@@ -3,6 +3,31 @@ name = "pixles-cli"
 version = "0.1.0"
 edition = "2024"
 
+[dependencies]
+base64 = { workspace = true }
+clap = { version = "4.5.40", features = ["derive"] }
+color-eyre = "0.6.3"
+colored = "3.0.0"
+eyre = { workspace = true }
+humansize = "2.1"
+nanoid = "0.4.0"
+sea-orm = { version = "1.1.10", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
+sea-orm-migration = { version = "1.1.10", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+] }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true, features = ["release_max_level_debug"] }
+tracing-subscriber = { version = "0.3.10", features = ["env-filter", "json", "fmt"] }
+uuid = { version = "1.11.0", features = ["v7"] }
+
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
