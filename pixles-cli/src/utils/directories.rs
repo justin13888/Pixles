@@ -14,12 +14,7 @@ pub fn get_config_dir() -> Option<PathBuf> {
 
 /// Returns the config file path for the Pixles CLI.
 pub fn get_config_file_path() -> Option<PathBuf> {
-    get_project_dirs().map(|proj_dirs| proj_dirs.preference_dir().join("config.toml"))
-}
-
-/// Returns the default cache directory for the Pixles CLI.
-pub fn get_cache_dir() -> Option<PathBuf> {
-    get_project_dirs().map(|proj_dirs| proj_dirs.cache_dir().to_path_buf())
+    get_config_dir().map(|proj_dirs| proj_dirs.join("config.toml"))
 }
 
 /// Returns the default data directory for the Pixles CLI.
@@ -35,4 +30,9 @@ pub fn get_sqlite_db_path() -> Option<PathBuf> {
 /// Returns the sync directory for the Pixles CLI.
 pub fn get_sync_dir() -> Option<PathBuf> {
     get_data_dir().map(|dir| dir.join("sync"))
+}
+
+/// Returns the default cache directory for the Pixles CLI.
+pub fn get_cache_dir() -> Option<PathBuf> {
+    get_project_dirs().map(|proj_dirs| proj_dirs.cache_dir().to_path_buf())
 }

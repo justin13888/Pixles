@@ -9,10 +9,12 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = { workspace = true }
+capitalize = "0.3.4"
 chrono = { workspace = true }
 clap = { version = "4.5.40", features = ["derive"] }
 color-eyre = "0.6.3"
 colored = "3.0.0"
+dialoguer = "0.11.0"
 directories = "6.0"
 eyre = { workspace = true }
 futures = "0.3.31"

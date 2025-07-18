@@ -40,6 +40,26 @@ pub enum Commands {
         #[arg(long)]
         remote: bool,
     },
+    /// Match metadata for current file
+    Match {
+        /// Path to the file to match metadata for
+        path: PathBuf,
+    },
+    /// Reset all local CLI data
+    Reset {
+        /// Reset configuration
+        #[arg(long)]
+        config: bool,
+        /// Reset data directory
+        #[arg(long)]
+        data: bool,
+        /// Reset cache directory
+        #[arg(long)]
+        cache: bool,
+        /// Reset all data
+        #[arg(long)]
+        all: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]

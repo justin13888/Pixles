@@ -1,9 +1,11 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
+use capitalize::Capitalize;
 use clap::Parser;
 use cli::{AuthCommands, Cli, Commands};
 use colored::*;
+use dialoguer::Confirm;
 use eyre::{Result, eyre};
 use futures::stream::{self, StreamExt};
 use sea_orm::Database;
@@ -12,11 +14,12 @@ use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, fmt};
 use walkdir::WalkDir;
 
-use crate::utils::directories::get_sqlite_db_path;
-use crate::utils::hash::get_file_hash;
+use crate::utils::directories::{get_cache_dir, get_config_dir, get_data_dir, get_sqlite_db_path};
+use crate::utils::metadata::get_file_hash;
 
 mod cli;
 mod config;
+mod models;
 mod status;
 mod utils;
 
@@ -230,6 +233,143 @@ async fn main() -> Result<()> {
                 println!("{}", "Showing remote files only".cyan());
             }
             todo!("Implement list logic");
+        }
+        Commands::Match { path } =>
+        {
+            println!(
+                "{}",
+                format!(
+                    "Matching metadata for file: {}",
+                    path.to_string_lossy().blue()
+                )
+                .green()
+            );
+
+            if !path.exists()
+            {
+                return Err(eyre!("File does not exist: {}", path.to_string_lossy()));
+            }
+
+            if !path.is_file()
+            {
+                return Err(eyre!("Path is not a file: {}", path.to_string_lossy()));
+            }
+
+            // Get file metadata
+            match utils::metadata::get_file_metadata(&path)
+            {
+                Ok(metadata) =>
+                {
+                    println!("{}", "File metadata:".green());
+                    println!("{metadata:#?}");
+                }
+                Err(e) =>
+                {
+                    return Err(eyre!("Failed to get file metadata: {}", e));
+                }
+            }
+
+            // todo!("Implement match logic");
+        }
+        Commands::Reset {
+            config,
+            data,
+            cache,
+            all,
+        } =>
+        {
+            if !config && !data && !cache && !all
+            {
+                return Err(eyre!(
+                    "No directories specified for reset. Use --all or specify at least one of \
+                     --config, --data, --cache."
+                ));
+            }
+
+            println!("{}", "Resetting all local CLI data...".red());
+            let config_dir = get_config_dir().ok_or(eyre!("Failed to get config directory"))?;
+            let data_dir = get_data_dir().ok_or(eyre!("Failed to get data directory"))?;
+            let cache_dir = get_cache_dir().ok_or(eyre!("Failed to get cache directory"))?;
+
+            let mut paths_to_remove = Vec::new();
+            if all
+            {
+                paths_to_remove.push(("config", config_dir));
+                paths_to_remove.push(("data", data_dir));
+                paths_to_remove.push(("cache", cache_dir));
+            }
+            else
+            {
+                if config
+                {
+                    paths_to_remove.push(("config", config_dir));
+                }
+                if data
+                {
+                    paths_to_remove.push(("data", data_dir));
+                }
+                if cache
+                {
+                    paths_to_remove.push(("cache", cache_dir));
+                }
+            }
+
+            // Prompt user for confirmation for each path
+            for (label, path) in paths_to_remove
+            {
+                if path.exists()
+                {
+                    // Assert path is a directory
+                    assert!(
+                        path.is_dir(),
+                        "Path {} is not a directory",
+                        path.to_string_lossy()
+                    );
+
+                    // Prompt user for confirmation
+                    let prompt = format!(
+                        "Are you sure you want to delete the {} directory?\n  Path: {}",
+                        label,
+                        path.to_string_lossy()
+                    );
+
+                    if Confirm::new()
+                        .with_prompt(&prompt)
+                        .default(false)
+                        .interact()?
+                    {
+                        println!("{}", format!("Removing {label} directory...").yellow());
+                        match std::fs::remove_dir_all(&path)
+                        {
+                            Ok(_) => println!(
+                                "{}",
+                                format!("Successfully removed {label} directory").green()
+                            ),
+                            Err(e) => println!(
+                                "{}",
+                                format!("Failed to remove {label} directory: {e}").red()
+                            ),
+                        }
+                    }
+                    else
+                    {
+                        println!("{}", format!("Skipping {label} directory").cyan());
+                    }
+                }
+                else
+                {
+                    println!(
+                        "{}",
+                        format!(
+                            "{} directory {} does not exist, skipping...",
+                            label.capitalize_first_only(),
+                            path.to_string_lossy()
+                        )
+                        .yellow()
+                    );
+                    continue;
+                }
+            }
         }
     }
 

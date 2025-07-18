@@ -1,3 +1,3 @@
 pub mod directories;
 pub mod files;
-pub mod hash;
+pub mod metadata;
