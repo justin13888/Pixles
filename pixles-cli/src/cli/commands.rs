@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
@@ -10,7 +12,7 @@ pub enum Commands {
     /// Import files to Pixles
     Import {
         /// Path to the file or directory to import
-        path: String,
+        path: PathBuf,
         /// Album name to import to
         #[arg(long)]
         album: Option<String>,

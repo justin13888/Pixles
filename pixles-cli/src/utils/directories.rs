@@ -27,6 +27,11 @@ pub fn get_data_dir() -> Option<PathBuf> {
     get_project_dirs().map(|proj_dirs| proj_dirs.data_dir().to_path_buf())
 }
 
+/// Returns SQlite database file path for the Pixles CLI.
+pub fn get_sqlite_db_path() -> Option<PathBuf> {
+    get_data_dir().map(|dir| dir.join("pixles.sqlite"))
+}
+
 /// Returns the sync directory for the Pixles CLI.
 pub fn get_sync_dir() -> Option<PathBuf> {
     get_data_dir().map(|dir| dir.join("sync"))
