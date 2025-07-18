@@ -16,7 +16,11 @@ axum = { workspace = true }
 color-eyre = "0.6.3"
 eyre = { workspace = true }
 listenfd = "1.0.1"
-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
 tokio = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }

@@ -30,7 +30,11 @@ axum = { workspace = true }
 eyre = { workspace = true }
 futures-util = { workspace = true }
 jsonwebtoken = { workspace = true }
-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

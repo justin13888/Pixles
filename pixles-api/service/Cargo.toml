@@ -10,7 +10,11 @@ path = "src/lib.rs"
 
 [dependencies]
 pixles-api-entity = { path = "../entity" }
-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

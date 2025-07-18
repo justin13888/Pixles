@@ -17,7 +17,11 @@ eyre = { workspace = true }
 futures-util = { workspace = true }
 hyper = { workspace = true }
 # jsonwebtoken = "9.3.0"
-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

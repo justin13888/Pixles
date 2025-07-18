@@ -12,4 +12,8 @@ path = "src/lib.rs"
 chrono = { workspace = true }
 nanoid = { workspace = true }
 serde = { workspace = true }
-sea-orm = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
