@@ -163,6 +163,9 @@ async fn main() -> Result<()> {
             debug!("Connected to SQLite database at: {db_url}");
             // TODO: Do migrations and stuff
 
+            // TODO: Detect file structures and summarize into ImportPlan
+            // TODO: Show TUI for edit and confirm
+
             // Compute hashes for files
             let hash_start = Instant::now();
             let hashes = stream::iter(paths)
@@ -190,8 +193,6 @@ async fn main() -> Result<()> {
                 )
                 .green()
             );
-
-            // TODO: Finish this
         }
         Commands::Sync { force, dry_run } =>
         {

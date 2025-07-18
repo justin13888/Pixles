@@ -20,6 +20,7 @@ pub enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+    // TODO: Add download command
     /// Sync local and remote data
     Sync {
         /// Force sync even if there are conflicts
