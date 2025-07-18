@@ -1,14 +1,18 @@
+use clap::Parser;
+use cli::{AuthCommands, Cli, Commands};
 use colored::*;
 use eyre::Result;
 use tracing::trace;
-use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-
-use clap::Parser;
-use cli::{AuthCommands, Cli, Commands};
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{EnvFilter, fmt};
 
 mod cli;
+mod config;
+mod status;
+mod utils;
 
-// #[tokio::main(flavor = "multi_thread")] # TODO: see what default for tokio runtime is ideal
+// #[tokio::main(flavor = "multi_thread")] # TODO: see what default for tokio
+// runtime is ideal
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize tracing subscriber for logging
@@ -31,55 +35,97 @@ async fn main() -> Result<()> {
 
     trace!("Parsed CLI arguments: {:#?}", cli);
 
-    match cli.command {
-        Commands::Auth { command } => match command {
-            AuthCommands::Login => {
+    match cli.command
+    {
+        Commands::Auth { command } => match command
+        {
+            AuthCommands::Login =>
+            {
                 println!("{}", "Logging in to Pixles...".green());
                 todo!("Implement login logic");
             }
-            AuthCommands::Logout => {
+            AuthCommands::Logout =>
+            {
                 println!("{}", "Logging out from Pixles...".yellow());
                 todo!("Implement logout logic");
             }
-            AuthCommands::Status => {
+            AuthCommands::Status =>
+            {
                 println!("{}", "Checking authentication status...".blue());
-                todo!("Implement status logic");
+                match config::Config::from_default_path()
+                {
+                    Ok(config) => match status::AuthStatus::check(&config).await
+                    {
+                        Ok(auth_status) =>
+                        {
+                            auth_status.display();
+                        }
+                        Err(e) =>
+                        {
+                            println!("{}", format!("Error checking auth status: {e}").red());
+                        }
+                    },
+                    Err(e) =>
+                    {
+                        println!("{}", format!("Error loading config: {e}").red());
+                    }
+                }
             }
         },
         Commands::Import {
             path,
             album,
             dry_run,
-        } => {
+        } =>
+        {
             println!("{}", format!("Importing from path: {path}").green());
-            if let Some(album_name) = album {
+            if let Some(album_name) = album
+            {
                 println!("{}", format!("Target album: {album_name}").cyan());
             }
-            if dry_run {
+            if dry_run
+            {
                 println!("{}", "Dry run mode enabled".yellow());
             }
             // TODO: Implement import logic
         }
-        Commands::Sync { force, dry_run } => {
+        Commands::Sync { force, dry_run } =>
+        {
             println!("{}", "Syncing local and remote data...".green());
-            if force {
+            if force
+            {
                 println!("{}", "Force sync enabled".yellow());
             }
-            if dry_run {
+            if dry_run
+            {
                 println!("{}", "Dry run mode enabled".yellow());
             }
             // TODO: Implement sync logic
         }
-        Commands::Status => {
+        Commands::Status =>
+        {
             println!("{}", "Checking Pixles status...".blue());
-            // TODO: Implement status logic
+            match status::StatusInfo::collect().await
+            {
+                Ok(status_info) =>
+                {
+                    status_info.display();
+                }
+                Err(e) =>
+                {
+                    println!("{}", format!("Error collecting status: {}", e).red());
+                }
+            }
         }
-        Commands::List { local, remote } => {
+        Commands::List { local, remote } =>
+        {
             println!("{}", "Listing files and albums...".green());
-            if local {
+            if local
+            {
                 println!("{}", "Showing local files only".cyan());
             }
-            if remote {
+            if remote
+            {
                 println!("{}", "Showing remote files only".cyan());
             }
             // TODO: Implement list logic

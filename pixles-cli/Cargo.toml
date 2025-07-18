@@ -9,9 +9,11 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = { workspace = true }
+chrono = { workspace = true }
 clap = { version = "4.5.40", features = ["derive"] }
 color-eyre = "0.6.3"
 colored = "3.0.0"
+directories = "6.0"
 eyre = { workspace = true }
 humansize = "2.1"
 nanoid = "0.4.0"
@@ -25,6 +27,7 @@ sea-orm-migration = { version = "1.1.10", features = [
     "runtime-tokio-rustls",
 ] }
 serde = { workspace = true }
+sysinfo = "0.36.0"
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true, features = ["release_max_level_debug"] }
