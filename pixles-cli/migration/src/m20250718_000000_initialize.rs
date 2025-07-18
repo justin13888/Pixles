@@ -7,55 +7,15 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // TODO: Inspect the generated postgres schema for column types and indices
-
-        let db = manager.get_connection();
-
-        db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
-            .await?;
-        db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS btree_gin;")
-            .await?;
-
-        // Create the users table
+        // Create the profiles table
         manager
             .create_table(
                 Table::create()
-                    .table(Users::Table)
+                    .table(Profiles::Table)
                     .if_not_exists()
-                    .col(char_len(Users::Id, 21).primary_key())
-                    .col(string_len(Users::Username, 64))
-                    .col(string(Users::Name))
-                    .col(string_len(Users::Email, 255))
-                    .col(boolean(Users::AccountVerified))
-                    .col(boolean(Users::NeedsOnboarding))
-                    .col(string(Users::HashedPassword))
-                    .col(boolean(Users::IsAdmin))
-                    .col(
-                        timestamp_with_time_zone(Users::CreatedAt)
-                            .default(Expr::current_timestamp()),
-                    )
-                    .col(
-                        timestamp_with_time_zone(Users::ModifiedAt)
-                            .default(Expr::current_timestamp()),
-                    )
-                    .col(timestamp_with_time_zone_null(Users::DeletedAt))
-                    .to_owned(),
-            )
-            .await?;
-
-        // Create users indices
-        db.execute_unprepared(
-            r#"CREATE UNIQUE INDEX idx_username_lower ON users (LOWER(username))"#,
-        )
-        .await?; // TODO: Verify index prevents usernames with difference casing to be inserted
-        manager
-            .create_index(
-                Index::create()
-                    .if_not_exists()
-                    .name("idx_email")
-                    .table(Users::Table)
-                    .col(Users::Email)
-                    .unique()
+                    .col(char_len(Profiles::Id, 21).primary_key())
+                    .col(string_len(Profiles::Username, 64))
+                    .col(string(Profiles::Name))
                     .to_owned(),
             )
             .await?;
@@ -63,21 +23,10 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_deleted_at")
-                    .table(Users::Table)
-                    .col(Users::DeletedAt)
+                    .name("idx_username")
+                    .table(Profiles::Table)
+                    .col(Profiles::Username)
                     .index_type(IndexType::BTree)
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_index(
-                Index::create()
-                    .if_not_exists()
-                    .name("idx_is_admin")
-                    .table(Users::Table)
-                    .col(Users::IsAdmin)
-                    .index_type(IndexType::Hash)
                     .to_owned(),
             )
             .await?;
@@ -101,6 +50,13 @@ impl MigrationTrait for Migration {
                             .default(Expr::current_timestamp()),
                     )
                     .col(timestamp_with_time_zone_null(Albums::DeletedAt))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_albums_owner_id")
+                            .from(Albums::Table, Albums::OwnerId)
+                            .to(Profiles::Table, Profiles::Id)
+                            .on_delete(ForeignKeyAction::Restrict),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -169,18 +125,6 @@ impl MigrationTrait for Migration {
                     .table(Albums::Table)
                     .col(Albums::DeletedAt)
                     .index_type(IndexType::BTree)
-                    .to_owned(),
-            )
-            .await?;
-
-        // // Add albums.user_id foreign key constraint
-        manager
-            .create_foreign_key(
-                ForeignKey::create()
-                    .name("fk_albums_owner_id")
-                    .from(Albums::Table, Albums::OwnerId)
-                    .to(Users::Table, Users::Id)
-                    .on_delete(ForeignKeyAction::Restrict)
                     .to_owned(),
             )
             .await?;
@@ -284,7 +228,7 @@ impl MigrationTrait for Migration {
             .drop_table(Table::drop().table(Albums::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(Users::Table).to_owned())
+            .drop_table(Table::drop().table(Profiles::Table).to_owned())
             .await?;
 
         Ok(())
@@ -292,19 +236,11 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(DeriveIden)]
-enum Users {
+enum Profiles {
     Table,
     Id,
     Username,
     Name,
-    Email,
-    AccountVerified,
-    NeedsOnboarding,
-    HashedPassword,
-    IsAdmin,
-    CreatedAt,
-    ModifiedAt,
-    DeletedAt,
 }
 
 #[derive(DeriveIden)]

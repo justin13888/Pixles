@@ -2472,8 +2472,9 @@ dependencies = [
  "futures",
  "humansize",
  "nanoid",
+ "pixles-cli-entity",
+ "pixles-cli-migration",
  "sea-orm",
- "sea-orm-migration",
  "serde",
  "sysinfo",
  "thiserror 2.0.12",
@@ -2483,6 +2484,24 @@ dependencies = [
  "uuid",
  "walkdir",
  "xxhash-rust",
+]
+
+[[package]]
+name = "pixles-cli-entity"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "nanoid",
+ "sea-orm",
+ "serde",
+]
+
+[[package]]
+name = "pixles-cli-migration"
+version = "0.1.0"
+dependencies = [
+ "sea-orm-migration",
+ "tokio",
 ]
 
 [[package]]

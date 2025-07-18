@@ -8,17 +8,18 @@ use colored::*;
 use dialoguer::Confirm;
 use eyre::{Result, eyre};
 use futures::stream::{self, StreamExt};
-use sea_orm::Database;
 use tracing::{debug, trace};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, fmt};
 use walkdir::WalkDir;
 
-use crate::utils::directories::{get_cache_dir, get_config_dir, get_data_dir, get_sqlite_db_path};
+use crate::db::init_sqlite;
+use crate::utils::directories::{get_cache_dir, get_config_dir, get_data_dir};
 use crate::utils::metadata::get_file_hash;
 
 mod cli;
 mod config;
+mod db;
 mod models;
 mod status;
 mod utils;
@@ -147,21 +148,8 @@ async fn main() -> Result<()> {
             );
 
             // Init local DB connection
-            let db_path = get_sqlite_db_path().ok_or(eyre!("Failed to get SQLite DB path"))?;
-            {
-                // Create the database directory if it doesn't exist
-                if let Some(parent) = db_path.parent()
-                {
-                    std::fs::create_dir_all(parent)
-                        .map_err(|e| eyre!("Failed to create DB directory: {:?}", e))?;
-                }
-            }
-            let db_url = format!("sqlite://{}?mode=rwc", db_path.to_string_lossy());
-            debug!("{}", format!("Using SQLite DB at: {db_url}").blue());
-            let db = Database::connect(&db_url).await?;
-            // db.close().await?;
-            debug!("Connected to SQLite database at: {db_url}");
-            // TODO: Do migrations and stuff
+            let db = init_sqlite().await?;
+            debug!("Initialized SQLite database connection");
 
             // TODO: Detect file structures and summarize into ImportPlan
             // TODO: Show TUI for edit and confirm

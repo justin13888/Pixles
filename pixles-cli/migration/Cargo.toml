@@ -1,0 +1,16 @@
+[package]
+name = "pixles-cli-migration"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "migration"
+path = "src/lib.rs"
+
+[dependencies]
+tokio = { workspace = true }
+sea-orm-migration = { workspace = true, features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+] }

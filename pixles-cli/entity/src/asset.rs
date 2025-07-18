@@ -4,7 +4,6 @@ use sea_orm::Set;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-// TODO: Check
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "assets")]
 pub struct Model {
@@ -55,9 +54,9 @@ pub enum AssetType {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
+        belongs_to = "super::profile::Entity",
         from = "Column::OwnerId",
-        to = "super::user::Column::Id"
+        to = "super::profile::Column::Id"
     )]
     Owner,
     #[sea_orm(

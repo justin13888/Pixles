@@ -1,0 +1,19 @@
+[package]
+name = "pixles-cli-entity"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "entity"
+path = "src/lib.rs"
+
+[dependencies]
+chrono = { workspace = true }
+nanoid = { workspace = true }
+serde = { workspace = true }
+sea-orm = { workspace = true, features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "debug-print",
+] }
