@@ -42,7 +42,7 @@ hyper = { version = "1.6.0", features = ["full"] }
 jsonwebtoken = "9.3.0"
 nanoid = "0.4.0"
 ring = "0.17.14"
-sea-orm = { version = "1.1.10", features = [
+sea-orm = { version = "1.1.15", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "debug-print",
