@@ -13,12 +13,6 @@ pub enum Commands {
     Import {
         /// Path to the file or directory to import
         path: PathBuf,
-        /// Album name to import to
-        #[arg(long)]
-        album: Option<String>,
-        /// Perform a dry run without making changes
-        #[arg(long)]
-        dry_run: bool,
     },
     // TODO: Add download command
     /// Sync local and remote data

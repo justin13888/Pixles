@@ -522,6 +522,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "234113d19d0d7d613b40e86fb654acf958910802bcceab913a4f9e7cda03b1a4"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1238,6 +1248,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 
 [[package]]
+name = "globset"
+version = "0.4.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54a1028dfc5f5df5da8a56a73e6c153c9a9708ec57232470703592a3f18e49f5"
+dependencies = [
+ "aho-corasick",
+ "bstr",
+ "log",
+ "regex-automata 0.4.9",
+ "regex-syntax 0.8.5",
+]
+
+[[package]]
 name = "h2"
 version = "0.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1630,9 +1653,9 @@ checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
+checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.3",
@@ -2471,9 +2494,11 @@ dependencies = [
  "eyre",
  "futures",
  "humansize",
+ "indexmap",
  "nanoid",
  "pixles-cli-entity",
  "pixles-cli-migration",
+ "pixles-core",
  "sea-orm",
  "serde",
  "sysinfo",
@@ -2481,9 +2506,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
  "walkdir",
- "xxhash-rust",
 ]
 
 [[package]]
@@ -2505,8 +2528,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "pixles-core-rust"
+name = "pixles-core"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "globset",
+ "indexmap",
+ "log",
+ "serde",
+ "thiserror 2.0.12",
+ "uuid",
+ "xxhash-rust",
+]
 
 [[package]]
 name = "pkcs1"

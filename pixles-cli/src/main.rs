@@ -8,6 +8,8 @@ use colored::*;
 use dialoguer::Confirm;
 use eyre::{Result, eyre};
 use futures::stream::{self, StreamExt};
+use pixles_core::metadata::FileMetadata;
+use pixles_core::utils::hash::get_file_hash;
 use tracing::{debug, trace};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, fmt};
@@ -15,12 +17,11 @@ use walkdir::WalkDir;
 
 use crate::db::init_sqlite;
 use crate::utils::directories::{get_cache_dir, get_config_dir, get_data_dir};
-use crate::utils::metadata::get_file_hash;
 
 mod cli;
 mod config;
 mod db;
-mod models;
+mod import;
 mod status;
 mod utils;
 
@@ -28,15 +29,14 @@ mod utils;
 // runtime is ideal
 #[tokio::main]
 async fn main() -> Result<()> {
+    color_eyre::install()?;
+
     // Initialize tracing subscriber for logging
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| {
-            if cfg!(debug_assertions)
-            {
+            if cfg!(debug_assertions) {
                 EnvFilter::try_new("debug")
-            }
-            else
-            {
+            } else {
                 EnvFilter::try_new("info")
             }
         })
@@ -57,69 +57,42 @@ async fn main() -> Result<()> {
 
     trace!("Parsed CLI arguments: {:#?}", cli);
 
-    match cli.command
-    {
-        Commands::Auth { command } => match command
-        {
-            AuthCommands::Login =>
-            {
+    match cli.command {
+        Commands::Auth { command } => match command {
+            AuthCommands::Login => {
                 println!("{}", "Logging in to Pixles...".green());
                 todo!("Implement login logic");
             }
-            AuthCommands::Logout =>
-            {
+            AuthCommands::Logout => {
                 println!("{}", "Logging out from Pixles...".yellow());
                 todo!("Implement logout logic");
             }
-            AuthCommands::Status =>
-            {
+            AuthCommands::Status => {
                 println!("{}", "Checking authentication status...".blue());
-                match config::Config::from_default_path()
-                {
-                    Ok(config) => match status::AuthStatus::check(&config).await
-                    {
-                        Ok(auth_status) =>
-                        {
+                match config::Config::from_default_path() {
+                    Ok(config) => match status::AuthStatus::check(&config).await {
+                        Ok(auth_status) => {
                             auth_status.display();
                         }
-                        Err(e) =>
-                        {
+                        Err(e) => {
                             println!("{}", format!("Error checking auth status: {e}").red());
                         }
                     },
-                    Err(e) =>
-                    {
+                    Err(e) => {
                         println!("{}", format!("Error loading config: {e}").red());
                     }
                 }
             }
         },
-        Commands::Import {
-            path,
-            album,
-            dry_run,
-        } =>
-        {
+        Commands::Import { path } => {
             println!(
                 "{}",
                 format!("Importing from path: {}", path.to_string_lossy().blue()).green()
             );
-            if let Some(album) = album
-            {
-                println!("{}", format!("Target album: {}", album.blue()).cyan());
-
-                // TODO: Verify album exists by ID or name
-            }
-            if dry_run
-            {
-                println!("{}", "Dry run mode enabled".yellow());
-                // TODO: Do something about dry run
-            }
             // TODO: Implement import logic
 
             // File or directory?
-            let paths: Vec<PathBuf> = if path.is_dir()
-            {
+            let paths: Vec<PathBuf> = if path.is_dir() {
                 println!("{}", "Importing from directory...".cyan());
                 // Handle directory import
 
@@ -129,15 +102,11 @@ async fn main() -> Result<()> {
                     .filter(|entry| entry.file_type().is_file())
                     .map(|entry| entry.path().to_path_buf())
                     .collect()
-            }
-            else if path.is_file()
-            {
+            } else if path.is_file() {
                 println!("{}", "Importing from file...".cyan());
                 // Handle file import
                 vec![path]
-            }
-            else
-            {
+            } else {
                 println!("{}", "Invalid path provided".red());
                 return Err(eyre!("Invalid path provided"));
             };
@@ -182,49 +151,38 @@ async fn main() -> Result<()> {
                 .green()
             );
         }
-        Commands::Sync { force, dry_run } =>
-        {
+        Commands::Sync { force, dry_run } => {
             println!("{}", "Syncing local and remote data...".green());
-            if force
-            {
+            if force {
                 println!("{}", "Force sync enabled".yellow());
             }
-            if dry_run
-            {
+            if dry_run {
                 println!("{}", "Dry run mode enabled".yellow());
             }
             // TODO: Implement sync logic
         }
-        Commands::Status =>
-        {
+        Commands::Status => {
             println!("{}", "Checking Pixles status...".blue());
-            match status::StatusInfo::collect().await
-            {
-                Ok(status_info) =>
-                {
+            match status::StatusInfo::collect().await {
+                Ok(status_info) => {
                     status_info.display();
                 }
-                Err(e) =>
-                {
+                Err(e) => {
                     println!("{}", format!("Error collecting status: {e}").red());
                 }
             }
         }
-        Commands::List { local, remote } =>
-        {
+        Commands::List { local, remote } => {
             println!("{}", "Listing files and albums...".green());
-            if local
-            {
+            if local {
                 println!("{}", "Showing local files only".cyan());
             }
-            if remote
-            {
+            if remote {
                 println!("{}", "Showing remote files only".cyan());
             }
             todo!("Implement list logic");
         }
-        Commands::Match { path } =>
-        {
+        Commands::Match { path } => {
             println!(
                 "{}",
                 format!(
@@ -234,26 +192,21 @@ async fn main() -> Result<()> {
                 .green()
             );
 
-            if !path.exists()
-            {
+            if !path.exists() {
                 return Err(eyre!("File does not exist: {}", path.to_string_lossy()));
             }
 
-            if !path.is_file()
-            {
+            if !path.is_file() {
                 return Err(eyre!("Path is not a file: {}", path.to_string_lossy()));
             }
 
             // Get file metadata
-            match utils::metadata::get_file_metadata(&path)
-            {
-                Ok(metadata) =>
-                {
+            match FileMetadata::from_file_path(&path).await {
+                Ok(metadata) => {
                     println!("{}", "File metadata:".green());
                     println!("{metadata:#?}");
                 }
-                Err(e) =>
-                {
+                Err(e) => {
                     return Err(eyre!("Failed to get file metadata: {}", e));
                 }
             }
@@ -265,10 +218,8 @@ async fn main() -> Result<()> {
             data,
             cache,
             all,
-        } =>
-        {
-            if !config && !data && !cache && !all
-            {
+        } => {
+            if !config && !data && !cache && !all {
                 return Err(eyre!(
                     "No directories specified for reset. Use --all or specify at least one of \
                      --config, --data, --cache."
@@ -281,33 +232,25 @@ async fn main() -> Result<()> {
             let cache_dir = get_cache_dir().ok_or(eyre!("Failed to get cache directory"))?;
 
             let mut paths_to_remove = Vec::new();
-            if all
-            {
+            if all {
                 paths_to_remove.push(("config", config_dir));
                 paths_to_remove.push(("data", data_dir));
                 paths_to_remove.push(("cache", cache_dir));
-            }
-            else
-            {
-                if config
-                {
+            } else {
+                if config {
                     paths_to_remove.push(("config", config_dir));
                 }
-                if data
-                {
+                if data {
                     paths_to_remove.push(("data", data_dir));
                 }
-                if cache
-                {
+                if cache {
                     paths_to_remove.push(("cache", cache_dir));
                 }
             }
 
             // Prompt user for confirmation for each path
-            for (label, path) in paths_to_remove
-            {
-                if path.exists()
-                {
+            for (label, path) in paths_to_remove {
+                if path.exists() {
                     // Assert path is a directory
                     assert!(
                         path.is_dir(),
@@ -328,8 +271,7 @@ async fn main() -> Result<()> {
                         .interact()?
                     {
                         println!("{}", format!("Removing {label} directory...").yellow());
-                        match std::fs::remove_dir_all(&path)
-                        {
+                        match std::fs::remove_dir_all(&path) {
                             Ok(_) => println!(
                                 "{}",
                                 format!("Successfully removed {label} directory").green()
@@ -339,14 +281,10 @@ async fn main() -> Result<()> {
                                 format!("Failed to remove {label} directory: {e}").red()
                             ),
                         }
-                    }
-                    else
-                    {
+                    } else {
                         println!("{}", format!("Skipping {label} directory").cyan());
                     }
-                }
-                else
-                {
+                } else {
                     println!(
                         "{}",
                         format!(

@@ -1,6 +1,14 @@
 [package]
-name = "pixles-core-rust"
+name = "pixles-core"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+chrono = { workspace = true }
+globset = "0.4.16"
+indexmap = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+uuid = { version = "1.11.0", features = ["v7"] }
+xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
