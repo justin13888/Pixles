@@ -18,7 +18,7 @@
     "sharp": "^0.33.5",
     "starlight-links-validator": "^0.14.3",
     "starlight-versions": "^0.5.3",
-    "tailwindcss": "^4.1.4"
+    "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
     "wrangler": "^4.13.2"
