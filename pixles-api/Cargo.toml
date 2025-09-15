@@ -24,7 +24,7 @@ sea-orm = { workspace = true, features = [
 tokio = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "json"] }
 futures-util = "0.3.31"
 async-stream = "0.3.6"
 serde = { workspace = true }
