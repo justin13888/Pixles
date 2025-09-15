@@ -12,6 +12,7 @@ use uuid::Uuid;
 use crate::import::{ImportAction, ImportActionPlan};
 
 pub type Grouping = Vec<Vec<PathBuf>>;
+pub type GroupingResult<T> = Result<T, GroupingError>;
 
 #[derive(Debug, Error)]
 pub enum GroupingError {
@@ -69,13 +70,15 @@ pub fn detect_groups_by_name(plan: &ImportActionPlan) -> Result<Grouping, Groupi
     Ok(groups)
 }
 
+pub const GROUP_FUNCS: &[fn(&ImportActionPlan) -> GroupingResult<Grouping>] =
+    &[detect_groups_by_name];
+
 /// Applies standard grouping rules to the import action plan.
 /// This function will modify the plan in place, grouping paths based on the rules defined.
-pub fn apply_grouping_rules(plan: &mut ImportActionPlan) -> Result<(), GroupingError> {
+pub fn apply_grouping_rules(plan: &mut ImportActionPlan) -> GroupingResult<()> {
     trace!("Applying grouping rules to import action plan");
-    let group_funcs = &[detect_groups_by_name];
 
-    for group_func in group_funcs {
+    for group_func in GROUP_FUNCS {
         let groups: Grouping = group_func(plan)?;
         if !groups.is_empty() {
             // Apply the grouping logic

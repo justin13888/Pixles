@@ -4,7 +4,10 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::import::ScanResult;
+use crate::import::{
+    GroupingResult, ScanResult, UploadExecutionPlan, UploadPriorityConfig, apply_grouping_rules,
+    get_upload_ordering,
+};
 use crate::metadata::AssetType;
 use crate::utils::file::are_there_nested_paths;
 
@@ -59,6 +62,11 @@ impl ImportActionPlan {
     pub fn is_empty(&self) -> bool {
         self.mapping.is_empty()
     }
+
+    /// Applies standard grouping rules to the import action plan.
+    pub fn apply_grouping_rules(&mut self) -> GroupingResult<()> {
+        apply_grouping_rules(self)
+    }
 }
 
 impl Default for ImportActionPlan {
@@ -99,6 +107,24 @@ impl ImportExecutionPlan {
     /// Returns the list of files and their actions in the import plan.
     pub fn mapping(&self) -> &ImportExecutionMapping {
         &self.mapping
+    }
+
+    /// Get uploadable paths only
+    pub fn get_uploadable_paths(&self) -> impl Iterator<Item = PathBuf> {
+        self.mapping
+            .iter()
+            .filter_map(|(path, action)| match action {
+                ImportAction::New(_) => Some(path.clone()),
+                ImportAction::Skip => None,
+            })
+    }
+
+    /// Returns upload ordering
+    pub fn get_upload_ordering(
+        &self,
+        upload_priority_config: Option<UploadPriorityConfig>,
+    ) -> UploadExecutionPlan {
+        get_upload_ordering(self, upload_priority_config)
     }
 }
 
