@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 pixles-api-docs = { path = "../docs" }
 # pixles-api-entity = { path = "../entity" }
-pixles-api-environment = { path = "../environment" }
+pixles-api-environment = { path = "../environment", features = ["upload"] }
 axum = { workspace = true, features = ["multipart"] }
 eyre = { workspace = true }
 futures-util = { workspace = true }
@@ -34,6 +34,6 @@ ring = { workspace = true }
 base64 = { workspace = true }
 # secrecy = { workspace = true }
 # nanoid = { workspace = true }
-sled = "0.34.7" # TODO: Remove this later
+sled = "0.34.7"                    # TODO: Remove this later
 utoipa = { workspace = true }
 utoipa-axum = { workspace = true }

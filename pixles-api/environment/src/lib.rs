@@ -4,12 +4,16 @@ use thiserror::Error;
 use tracing::level_filters::LevelFilter;
 use wrapper::SecretKeyWrapper;
 
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use jsonwebtoken::{DecodingKey, EncodingKey};
-use ring::signature::Ed25519KeyPair;
 
+#[cfg(feature = "auth")]
+use crate::constants::{ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY};
+#[cfg(feature = "upload")]
+use crate::constants::{MAX_CACHE_SIZE, MAX_FILE_SIZE};
 use crate::jwt::convert_ed25519_der_to_jwt_keys;
 
+pub mod constants;
 mod jwt;
 mod wrapper;
 
@@ -37,18 +41,18 @@ pub struct ServerConfig {
     /// Public domain (e.g. "api.pixles.com")
     pub domain: String,
 
-    #[cfg(feature = "graphql")]
+    #[cfg(feature = "auth")]
     /// EdDSA encoding key
     pub jwt_eddsa_encoding_key: SecretKeyWrapper<EncodingKey>,
-    #[cfg(feature = "graphql")]
+    #[cfg(feature = "auth")]
     /// EdDSA decoding key
-    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>,
-    #[cfg(feature = "graphql")]
+    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>, // TODO: Might need this for other components like graphql
+    #[cfg(feature = "auth")]
     /// JWT refresh token duration in seconds
-    pub jwt_refresh_token_duration_seconds: usize,
-    #[cfg(feature = "graphql")]
+    pub jwt_refresh_token_duration_seconds: u64,
+    #[cfg(feature = "auth")]
     /// JWT access token duration in seconds
-    pub jwt_access_token_duration_seconds: usize,
+    pub jwt_access_token_duration_seconds: u64,
 
     #[cfg(feature = "upload")]
     /// Upload directory
@@ -82,6 +86,13 @@ impl Environment {
         let load_env_u16 = |key: &str| {
             load_env(key).and_then(|v| {
                 v.parse::<u16>().map_err(|e: ParseIntError| {
+                    EnvironmentError::ParseError(key.to_string(), e.to_string())
+                })
+            })
+        };
+        let load_env_u64 = |key: &str| {
+            load_env(key).and_then(|v| {
+                v.parse::<u64>().map_err(|e: ParseIntError| {
                     EnvironmentError::ParseError(key.to_string(), e.to_string())
                 })
             })
@@ -130,28 +141,28 @@ impl Environment {
                 host: load_env("SERVER_HOST").unwrap_or("0.0.0.0".to_string()),
                 port: load_env_u16("SERVER_PORT").unwrap_or(3000),
                 domain: load_env("SERVER_DOMAIN").unwrap_or("localhost".to_string()),
-                #[cfg(feature = "graphql")]
+                #[cfg(feature = "auth")]
                 jwt_eddsa_encoding_key: SecretKeyWrapper::from(jwt_eddsa_encoding_key),
-                #[cfg(feature = "graphql")]
+                #[cfg(feature = "auth")]
                 jwt_eddsa_decoding_key: SecretKeyWrapper::from(jwt_eddsa_decoding_key),
-                #[cfg(feature = "graphql")]
-                jwt_refresh_token_duration_seconds: load_env_usize(
+                #[cfg(feature = "auth")]
+                jwt_refresh_token_duration_seconds: load_env_u64(
                     "JWT_REFRESH_TOKEN_DURATION_SECONDS",
                 )
-                .unwrap_or(60 * 60 * 24 * 30), // 30 days
-                #[cfg(feature = "graphql")]
-                jwt_access_token_duration_seconds: load_env_usize(
+                .unwrap_or(REFRESH_TOKEN_EXPIRY),
+                #[cfg(feature = "auth")]
+                jwt_access_token_duration_seconds: load_env_u64(
                     "JWT_ACCESS_TOKEN_DURATION_SECONDS",
                 )
-                .unwrap_or(60 * 10), // 10 minutes
+                .unwrap_or(ACCESS_TOKEN_EXPIRY),
                 #[cfg(feature = "upload")]
                 upload_dir: load_env("UPLOAD_DIR")
                     .unwrap_or(String::from("./uploads"))
                     .into(),
                 #[cfg(feature = "upload")]
-                max_file_size: load_env_usize("MAX_FILE_SIZE").unwrap_or(32 * 1024 * 1024 * 1024), // 32 GiB
+                max_file_size: load_env_usize("MAX_FILE_SIZE").unwrap_or(MAX_FILE_SIZE),
                 #[cfg(feature = "upload")]
-                max_cache_size: load_env_usize("MAX_CACHE_SIZE").unwrap_or(64 * 1024 * 1024 * 1024), // 64 GiB
+                max_cache_size: load_env_usize("MAX_CACHE_SIZE").unwrap_or(MAX_CACHE_SIZE),
                 #[cfg(feature = "upload")]
                 sled_db_dir: load_env("SLED_DB_DIR")
                     .unwrap_or(String::from("./.metadata"))

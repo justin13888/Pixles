@@ -2,10 +2,11 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use chrono::Utc;
+use environment::constants::{ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, TokenData, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
-use crate::constants::{ACCESS_TOKEN_EXPIRY, ISSUER, REFRESH_TOKEN_EXPIRY};
+use crate::constants::ISSUER;
 use crate::roles::UserRole;
 
 pub mod issuer;

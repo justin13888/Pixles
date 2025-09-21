@@ -9,7 +9,7 @@ name = "metadata"
 path = "src/lib.rs"
 
 [dependencies]
-pixles-api-environment = { path = "../environment" }
+pixles-api-environment = { path = "../environment", features = ["metadata"] }
 anyhow = { workspace = true }
 axum = { workspace = true }
 eyre = { workspace = true }

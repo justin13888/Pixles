@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 pixles-api-auth = { path = "../auth" }
 pixles-api-entity = { path = "../entity" }
-pixles-api-environment = { path = "../environment" }
+pixles-api-environment = { path = "../environment", features = ["graphql"] }
 pixles-api-service = { path = "../service" }
 async-graphql = { version = "7.0.11", features = [
     "apollo_persisted_queries",

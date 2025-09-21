@@ -16,9 +16,9 @@ pub struct AuthConfig {
     pub jwt_eddsa_decoding_key: DecodingKey,
 
     /// JWT refresh token duration in seconds
-    pub jwt_refresh_token_duration_seconds: usize,
+    pub jwt_refresh_token_duration_seconds: u64,
     /// JWT access token duration in seconds
-    pub jwt_access_token_duration_seconds: usize,
+    pub jwt_access_token_duration_seconds: u64,
 }
 
 impl From<&ServerConfig> for AuthConfig {
