@@ -15,7 +15,7 @@ fn main() {
     }
 
     // Feature flags
-    let features = vec!["graphql", "upload", "metadata"];
+    let features = vec!["auth", "graphql", "upload", "metadata"];
     let mut has_server_feature = false;
 
     for feature in features.iter() {
