@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::constants::{ACCESS_TOKEN_EXPIRY, ISSUER, REFRESH_TOKEN_EXPIRY};
 use crate::roles::UserRole;
 
+pub mod issuer;
 mod scope;
 pub use scope::*;
 

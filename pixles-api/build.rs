@@ -3,20 +3,19 @@ fn main() {
         .map(|profile| profile == "debug")
         .unwrap_or(false);
 
-    // Enable 'openapi' feature if in debug
-    if debug_build {
-        println!("cargo:rustc-cfg=feature=\"openapi\""); // TODO: Why this doesn't enable the feature?
-        println!("cargo:warning=OpenAPI enabled for debug build");
-    } else if std::env::var("CARGO_FEATURE_OPENAPI").is_ok() {
-        panic!("Error: The `openapi` feature cannot be enabled in release for security reasons");
+    // Check if 'openapi' feature is enabled and validate against build profile
+    if std::env::var("CARGO_FEATURE_OPENAPI").is_ok() {
+        if debug_build {
+            println!("cargo:warning=OpenAPI feature is enabled for debug build");
+        } else {
+            panic!(
+                "Error: The `openapi` feature cannot be enabled in release for security reasons"
+            );
+        }
     }
 
     // Feature flags
-    let features = vec![
-        "graphql",
-        "upload",
-        "metadata",
-    ];
+    let features = vec!["graphql", "upload", "metadata"];
     let mut has_server_feature = false;
 
     for feature in features.iter() {

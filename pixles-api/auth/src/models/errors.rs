@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use argon2::password_hash;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -46,12 +44,9 @@ impl std::fmt::Display for InternalServerError {
 
 impl IntoResponse for InternalServerError {
     fn into_response(self) -> Response {
-        let response = if cfg!(debug_assertions)
-        {
+        let response = if cfg!(debug_assertions) {
             self.to_string()
-        }
-        else
-        {
+        } else {
             "Unknown internal server error".to_string()
         };
         (StatusCode::INTERNAL_SERVER_ERROR, response).into_response()

@@ -31,22 +31,18 @@ pub enum RegisterUserResponses {
 
 impl axum::response::IntoResponse for RegisterUserResponses {
     fn into_response(self) -> axum::response::Response {
-        match (self)
-        {
-            Self::Success(token_response) =>
-            {
+        match self {
+            Self::Success(token_response) => {
                 let status = StatusCode::CREATED;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
-            Self::BadRequest(e) =>
-            {
+            Self::BadRequest(e) => {
                 let status = StatusCode::BAD_REQUEST;
                 let body = Json(e);
                 (status, body).into_response()
             }
-            Self::UserAlreadyExists =>
-            {
+            Self::UserAlreadyExists => {
                 let status = StatusCode::CONFLICT;
                 let body = Json(ApiError::new("User already exists"));
                 (status, body).into_response()
@@ -70,16 +66,13 @@ pub enum LoginResponses {
 
 impl axum::response::IntoResponse for LoginResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success(token_response) =>
-            {
+        match self {
+            Self::Success(token_response) => {
                 let status = StatusCode::OK;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
-            Self::InvalidCredentials =>
-            {
+            Self::InvalidCredentials => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new("Invalid credentials"));
                 (status, body).into_response()
@@ -109,16 +102,13 @@ pub enum RefreshTokenResponses {
 
 impl axum::response::IntoResponse for RefreshTokenResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success(token_response) =>
-            {
+        match self {
+            Self::Success(token_response) => {
                 let status = StatusCode::OK;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
-            Self::InvalidRefreshToken(e) =>
-            {
+            Self::InvalidRefreshToken(e) => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
@@ -142,16 +132,13 @@ pub enum ValidateTokenResponses {
 
 impl axum::response::IntoResponse for ValidateTokenResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Valid(token_response) =>
-            {
+        match self {
+            Self::Valid(token_response) => {
                 let status = StatusCode::OK;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
-            Self::Invalid(e) =>
-            {
+            Self::Invalid(e) => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
@@ -173,10 +160,8 @@ pub enum ResetPasswordRequestResponses {
 
 impl axum::response::IntoResponse for ResetPasswordRequestResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success =>
-            {
+        match self {
+            Self::Success => {
                 let status = StatusCode::OK;
                 let body = Json(ApiError::new("Password reset request sent"));
                 (status, body).into_response()
@@ -200,16 +185,13 @@ pub enum PasswordResetResponses {
 
 impl axum::response::IntoResponse for PasswordResetResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success =>
-            {
+        match self {
+            Self::Success => {
                 let status = StatusCode::OK;
                 let body = Json(ApiError::new("Password reset successful"));
                 (status, body).into_response()
             }
-            Self::InvalidToken =>
-            {
+            Self::InvalidToken => {
                 let status = StatusCode::BAD_REQUEST;
                 let body = Json(ApiError::new("Invalid or expired token"));
                 (status, body).into_response()
@@ -236,22 +218,18 @@ pub enum UserProfileResponses {
 
 impl axum::response::IntoResponse for UserProfileResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success(user_profile) =>
-            {
+        match self {
+            Self::Success(user_profile) => {
                 let status = StatusCode::OK;
                 let body = Json(user_profile);
                 (status, body).into_response()
             }
-            Self::Unauthorized(e) =>
-            {
+            Self::Unauthorized(e) => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
-            Self::UserNotFound =>
-            {
+            Self::UserNotFound => {
                 let status = StatusCode::NOT_FOUND;
                 let body = Json(ApiError::new("User not found"));
                 (status, body).into_response()
@@ -279,22 +257,18 @@ pub enum UpdateUserProfileResponses {
 
 impl axum::response::IntoResponse for UpdateUserProfileResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success(profile) =>
-            {
+        match self {
+            Self::Success(profile) => {
                 let status = StatusCode::OK;
                 let body = Json(profile);
                 (status, body).into_response()
             }
-            Self::Unauthorized(e) =>
-            {
+            Self::Unauthorized(e) => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
-            Self::UserNotFound =>
-            {
+            Self::UserNotFound => {
                 let status = StatusCode::NOT_FOUND;
                 let body = Json(ApiError::new("User not found"));
                 (status, body).into_response()
@@ -318,16 +292,13 @@ pub enum LogoutResponses {
 
 impl axum::response::IntoResponse for LogoutResponses {
     fn into_response(self) -> axum::response::Response {
-        match self
-        {
-            Self::Success =>
-            {
+        match self {
+            Self::Success => {
                 let status = StatusCode::OK;
                 let body = Json(ApiError::new("Logout successful"));
                 (status, body).into_response()
             }
-            Self::Unauthorized(e) =>
-            {
+            Self::Unauthorized(e) => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()

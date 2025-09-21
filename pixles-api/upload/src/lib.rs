@@ -1,6 +1,6 @@
-use axum::{extract::DefaultBodyLimit, Router};
+use axum::{Router, extract::DefaultBodyLimit};
 use config::UploadServerConfig;
-use eyre::{eyre, Result};
+use eyre::Result;
 use metadata::FileDatabase;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
@@ -8,7 +8,7 @@ use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing::info;
 use utoipa_axum::router::OpenApiRouter;
 
-use crate::state::AppState;
+use crate::{config::validate_config, state::AppState};
 
 mod config;
 mod error;
@@ -16,43 +16,17 @@ mod metadata;
 mod routes;
 mod state;
 
-/// Validate the configuration
-/// Returns a list of warnings
-pub fn validate_config(config: &UploadServerConfig) -> Result<Vec<String>> {
-    let mut warnings = vec![];
-    if config.max_file_size >= config.max_cache_size {
-        return Err(eyre!("max_file_size must be less than max_cache_size"));
-    }
-
-    // Warn max_file_size allows < 10 concurrent files
-    if config.max_cache_size / config.max_file_size < 10 {
-        warnings.push(
-            "Based on current max_cache_size, max_file_size allows < 10 concurrent files"
-                .to_string(),
-        );
-    }
-
-    // Warn if upload_dir is a non-empty directory
-    if config.upload_dir.is_dir() && config.upload_dir.read_dir()?.count() > 0 {
-        warnings.push("upload_dir is non-empty. This may be from server restarts.".to_string());
-    }
-
-    // Warn if sled_db_dir is an existing directory
-    if config.sled_db_dir.is_dir() {
-        warnings.push(
-            "sled_db_dir is an existing directory. This may be from server restarts.".to_string(),
-        );
-    }
-
-    Ok(warnings)
-} // TODO: Move this to config module ^^
-
 pub async fn get_router<C: Into<UploadServerConfig>>(
     conn: Arc<DatabaseConnection>,
     config: C,
 ) -> Result<OpenApiRouter> {
     let config = config.into();
-    let config_warnings = validate_config(&config)?;
+    let config_warnings = validate_config(&config).map_err(|e| {
+        eyre::eyre!(
+            "Upload server configuration is invalid: {}. Please fix the configuration and try again.",
+            e
+        )
+    })?;
     if !config_warnings.is_empty() {
         info!("Upload server config warnings: {:?}", config_warnings);
     }
@@ -72,10 +46,8 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
         file_db,
     };
 
-    Ok(
-        OpenApiRouter::new()
-            .nest("/upload", routes::get_router(state))
-            .layer(cors)
-            .layer(default_body_limit), // TODO: Ensure limit is respected
-    )
+    Ok(OpenApiRouter::new()
+        .nest("/upload", routes::get_router(state))
+        .layer(cors)
+        .layer(default_body_limit))
 }

@@ -1,5 +1,7 @@
 # Pixles Auth
 
+> Warning: Auth is being redesigned. Federation is still a WIP.
+
 This package provides both the key authentication API and shared utilities for other Pixles APIs.
 
 ## Some Features

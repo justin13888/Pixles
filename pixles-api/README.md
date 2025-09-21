@@ -4,11 +4,11 @@ This is API service for all Pixles clients, written in Rust.
 
 There are multiple servable components (built together for development but separately for production):
 
-- `graphql`: GraphQL API written for Pixles GUI clients
-- `upload`: High-performance, asynchronous upload server, with [TUS](https://tus.io/protocols/resumable-upload), active session management, and metadata+preview processing
-- `metadata`: gRPC-based API for high-volume metadata fetching
-
-<!-- TODO: Elaborate more on the responsibilities, goals, technical requirements of each component -->
+- [`auth`](auth/README.md): Federated authentication and user management
+- [`graphql`](graphql/README.md): GraphQL API
+- [`upload`](upload/README.md): High-performance, asynchronous upload/ingress server
+- [`metadata`](metadata/README.md): gRPC-based API for high-volume metadata fetching
+- [`openapi`](openapi/README.md): OpenAPI specification and docs for RESTful parts of the API
 
 They can be packaged together or separately (recommended for production).
 
@@ -16,7 +16,7 @@ They can be packaged together or separately (recommended for production).
 
 ### Prerequisites
 
-_We assume Linux-based system for this service._
+_We assume Linux-based systems for this service._
 
 - Rust 1.86+
 - Populate `.env` file based on `.env.example`

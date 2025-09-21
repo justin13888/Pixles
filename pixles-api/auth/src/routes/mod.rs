@@ -1,6 +1,6 @@
 use axum::Json;
 use axum::extract::State;
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::HeaderMap;
 use docs::TAGS;
 use jsonwebtoken::EncodingKey;
 use secrecy::ExposeSecret;
@@ -10,7 +10,7 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use crate::claims::{Claims, Scope};
-use crate::errors::{AuthError, ClaimValidationError};
+use crate::errors::ClaimValidationError;
 use crate::models::errors::BadRegisterUserRequestError;
 use crate::models::requests::{
     LoginRequest, RefreshTokenRequest, RegisterRequest, UpdateProfileRequest,
@@ -59,33 +59,27 @@ async fn register_user(
     } = request;
 
     // Check if user is allowed
-    if !UserService::is_valid_username(&username)
-    {
+    if !UserService::is_valid_username(&username) {
         trace!("Invalid username: {}", username);
         return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::InvalidUsername);
     }
 
     // Validate email format
-    if !UserService::is_valid_email(&email)
-    {
+    if !UserService::is_valid_email(&email) {
         trace!("Invalid email: {}", email);
         return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::InvalidEmail);
     }
 
     // Validate password strength
-    if let Err(e) = UserService::is_valid_password(&password)
-    {
+    if let Err(e) = UserService::is_valid_password(&password) {
         trace!("Invalid password: {}", e);
         return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::InvalidPassword);
     }
 
     // Check if email already exists
-    match UserService::Query::find_user_by_email(&conn, &email).await
-    {
-        Ok(user) =>
-        {
-            if user.is_some()
-            {
+    match UserService::Query::find_user_by_email(&conn, &email).await {
+        Ok(user) => {
+            if user.is_some() {
                 trace!("User with email {} already exists", email);
                 return RegisterUserResponses::UserAlreadyExists;
             }
@@ -94,20 +88,17 @@ async fn register_user(
     }
 
     // Check if username already exists
-    let user = match UserService::Query::find_user_by_username(&conn, &username).await
-    {
+    let user = match UserService::Query::find_user_by_username(&conn, &username).await {
         Ok(user) => user,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     };
-    if user.is_some()
-    {
+    if user.is_some() {
         trace!("User with username {} already exists", username);
         return RegisterUserResponses::UserAlreadyExists;
     }
 
     // After validation, now create user
-    let hashed_password = match hash_password(&password)
-    {
+    let hashed_password = match hash_password(&password) {
         Ok(hashed_password) => hashed_password,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     };
@@ -121,8 +112,7 @@ async fn register_user(
     let user_id = &user.id;
 
     // Generate tokens
-    let token_response = match generate_tokens(user_id, &config.jwt_eddsa_encoding_key)
-    {
+    let token_response = match generate_tokens(user_id, &config.jwt_eddsa_encoding_key) {
         Ok(token_response) => token_response,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     };
@@ -151,37 +141,28 @@ async fn login_user(
     let LoginRequest { email, password } = request;
 
     // Find email by email
-    let user = match UserService::Query::find_user_by_email(&conn, &email).await
-    {
+    let user = match UserService::Query::find_user_by_email(&conn, &email).await {
         Ok(user) => user,
         Err(e) => return LoginResponses::InternalServerError(e.into()),
     };
 
-    if let Some(user) = user
-    {
+    if let Some(user) = user {
         // Verify password
         let hashed_password = user.hashed_password;
-        let is_password_valid = match verify_password(&password, &hashed_password)
-        {
+        let is_password_valid = match verify_password(&password, &hashed_password) {
             Ok(is_valid) => is_valid,
             Err(e) => return LoginResponses::InternalServerError(e.into()),
         };
 
-        if is_password_valid
-        {
-            match generate_tokens(&user.id, &config.jwt_eddsa_encoding_key)
-            {
+        if is_password_valid {
+            match generate_tokens(&user.id, &config.jwt_eddsa_encoding_key) {
                 Ok(token_response) => LoginResponses::Success(token_response),
                 Err(e) => LoginResponses::InternalServerError(e.into()),
             }
-        }
-        else
-        {
+        } else {
             LoginResponses::InvalidCredentials
         }
-    }
-    else
-    {
+    } else {
         // Run dummy password hash to prevent timing attacks
         let _ = verify_password("random", "random").unwrap();
         // TODO: Unit test to verify distribution of timing is uncorrelated to password
@@ -215,18 +196,17 @@ async fn refresh_token(
     // TODO: Add metric for token usage patterns
 
     // For this example, we'll simulate token validation and renewal
-    let token = match Claims::decode(&payload.refresh_token, &config.jwt_eddsa_decoding_key)
-    {
+    let token = match Claims::decode(&payload.refresh_token, &config.jwt_eddsa_decoding_key) {
         Ok(token) => token,
-        Err(e) =>
-        {
-            return RefreshTokenResponses::InvalidRefreshToken(ClaimValidationError::from(e).into())
+        Err(e) => {
+            return RefreshTokenResponses::InvalidRefreshToken(
+                ClaimValidationError::from(e).into(),
+            );
         }
     };
     let user_id = token.claims.sub;
 
-    let token_response = match generate_tokens(&user_id, &config.jwt_eddsa_encoding_key)
-    {
+    let token_response = match generate_tokens(&user_id, &config.jwt_eddsa_encoding_key) {
         Ok(token_response) => token_response,
         Err(e) => return RefreshTokenResponses::InternalServerError(e.into()),
     };
@@ -250,15 +230,13 @@ async fn validate_token(
     headers: HeaderMap,
 ) -> ValidateTokenResponses {
     // Get token string
-    let token_string = match get_token_from_headers(&headers)
-    {
+    let token_string = match get_token_from_headers(&headers) {
         Ok(token_string) => token_string,
         Err(e) => return ValidateTokenResponses::Invalid(e.into()),
     };
 
     // Validate token
-    match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-    {
+    match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
         Ok(token) => ValidateTokenResponses::Valid(ValidateTokenResponse::Valid(token.claims.sub)),
         Err(e) => ValidateTokenResponses::Invalid(ClaimValidationError::from(e).into()),
     }
@@ -287,12 +265,9 @@ async fn reset_password_request(
 
     // For this example, we'll simulate successful request
     // In real app, check if email exists in database
-    if payload.email == "test@example.com"
-    {
+    if payload.email == "test@example.com" {
         // In real app, send email with reset link
-    }
-    else
-    {
+    } else {
         todo!()
         // TODO: Ensure it doesn't leak if email exists with consistent response
         // time
@@ -324,13 +299,10 @@ async fn reset_password(
 
     // For this example, we'll simulate successful password reset
     // In real app, validate token and update password in database
-    if payload.token == "valid_reset_token"
-    {
+    if payload.token == "valid_reset_token" {
         // In real app, update password and invalidate token
         PasswordResetResponses::Success
-    }
-    else
-    {
+    } else {
         PasswordResetResponses::InvalidToken
     }
 }
@@ -351,13 +323,11 @@ async fn get_user_profile(
     headers: HeaderMap,
 ) -> UserProfileResponses {
     // Authorize user
-    let token_string = match get_token_from_headers(&headers)
-    {
+    let token_string = match get_token_from_headers(&headers) {
         Ok(token_string) => token_string,
         Err(e) => return UserProfileResponses::Unauthorized(e.into()),
     };
-    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-    {
+    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
         Ok(token) => token,
         Err(e) => return UserProfileResponses::Unauthorized(ClaimValidationError::from(e).into()),
     };
@@ -395,17 +365,14 @@ async fn update_user_profile(
     Json(payload): Json<UpdateProfileRequest>,
 ) -> UpdateUserProfileResponses {
     // Authorize user
-    let token_string = match get_token_from_headers(&headers)
-    {
+    let token_string = match get_token_from_headers(&headers) {
         Ok(token_string) => token_string,
         Err(e) => return UpdateUserProfileResponses::Unauthorized(e.into()),
     };
-    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-    {
+    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
         Ok(token) => token,
-        Err(e) =>
-        {
-            return UpdateUserProfileResponses::Unauthorized(ClaimValidationError::from(e).into())
+        Err(e) => {
+            return UpdateUserProfileResponses::Unauthorized(ClaimValidationError::from(e).into());
         }
     };
     let user_id = token.claims.sub;
@@ -442,13 +409,11 @@ async fn logout(
     headers: HeaderMap,
 ) -> LogoutResponses {
     // Authorize user
-    let token_string = match get_token_from_headers(&headers)
-    {
+    let token_string = match get_token_from_headers(&headers) {
         Ok(token_string) => token_string,
         Err(e) => return LogoutResponses::Unauthorized(e.into()),
     };
-    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key)
-    {
+    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
         Ok(token) => token,
         Err(e) => return LogoutResponses::Unauthorized(ClaimValidationError::from(e).into()),
     };
