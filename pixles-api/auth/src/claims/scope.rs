@@ -1,9 +1,9 @@
+use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
-// TODO: Finalize scope names
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, EnumIter, Hash)]
 pub enum Scope {
     #[serde(rename = "token:refresh")]
@@ -16,8 +16,7 @@ pub enum Scope {
 
 impl From<&Scope> for String {
     fn from(scope: &Scope) -> Self {
-        match scope
-        {
+        match scope {
             Scope::RefreshToken => "token:refresh".to_string(),
             Scope::ReadUser => "read:user".to_string(),
             Scope::WriteUser => "write:user".to_string(),
@@ -35,13 +34,25 @@ impl FromStr for Scope {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s
-        {
+        match s {
             "token:refresh" => Ok(Scope::RefreshToken),
             "read:user" => Ok(Scope::ReadUser),
             "write:user" => Ok(Scope::WriteUser),
             _ => Err(format!("Invalid scope: {s}")),
         }
+    }
+}
+
+impl fmt::Display for Scope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from(self))
+    }
+}
+
+impl Scope {
+    pub fn all_scopes() -> Vec<String> {
+        use strum::IntoEnumIterator;
+        Self::iter().map(String::from).collect()
     }
 }
 
@@ -53,8 +64,7 @@ mod tests {
 
     #[test]
     fn test_scope_from_str() {
-        for scope in Scope::iter()
-        {
+        for scope in Scope::iter() {
             let scope_str: String = scope.into();
             assert_eq!(scope, Scope::from_str(&scope_str).unwrap());
         }
@@ -68,8 +78,7 @@ mod tests {
 
     #[test]
     fn test_serialize_deserialize_json() {
-        for scope in Scope::iter()
-        {
+        for scope in Scope::iter() {
             let scope_str: String = scope.into();
             let serialized = serde_json::to_string(&scope).unwrap();
             assert_eq!(scope_str, serialized);
