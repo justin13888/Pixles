@@ -10,13 +10,13 @@ impl Mutation {
         username: String,
         name: String,
         email: String,
-        hashed_password: String,
+        password_hash: String,
     ) -> Result<user::Model, DbErr> {
         user::ActiveModel {
             username: Set(username),
             name: Set(name),
             email: Set(email),
-            hashed_password: Set(hashed_password),
+            password_hash: Set(password_hash),
             ..Default::default()
         }
         .insert(db)

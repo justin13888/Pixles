@@ -7,6 +7,8 @@ members = [
     "pixles-api/entity",
     "pixles-api/metadata",
     "pixles-api/migration",
+    "pixles-api/testing",
+    "pixles-api/upload",
     "pixles-cli",
     "pixles-cli/migration",
     "pixles-core-rust",
@@ -29,7 +31,10 @@ nanoid = "0.4.0"
 rand = "0.9.2"
 ring = "0.17.14"
 sea-orm = { version = "1.1.13" }
-sea-orm-migration = { version = "1.1.13" }
+sea-orm-migration = { version = "1.1.13", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+] }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"

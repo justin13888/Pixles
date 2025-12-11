@@ -15,7 +15,7 @@ pub struct InternalServerError {
 impl From<sea_orm::DbErr> for InternalServerError {
     fn from(error: sea_orm::DbErr) -> Self {
         InternalServerError {
-            error: error.to_string(),
+            error: format!("SeaORM error: {error}"),
         }
     }
 }
@@ -23,7 +23,7 @@ impl From<sea_orm::DbErr> for InternalServerError {
 impl From<jsonwebtoken::errors::Error> for InternalServerError {
     fn from(error: jsonwebtoken::errors::Error) -> Self {
         InternalServerError {
-            error: error.to_string(),
+            error: format!("JWT error: {error}"),
         }
     }
 }
@@ -31,7 +31,7 @@ impl From<jsonwebtoken::errors::Error> for InternalServerError {
 impl From<password_hash::errors::Error> for InternalServerError {
     fn from(error: password_hash::errors::Error) -> Self {
         InternalServerError {
-            error: error.to_string(),
+            error: format!("Password hash error: {error}"),
         }
     }
 }

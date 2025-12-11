@@ -1,0 +1,19 @@
+[package]
+name = "pixles-api-testing"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "testing"
+path = "src/lib.rs"
+
+[dependencies]
+pixles-api-entity = { path = "../entity" }
+pixles-api-migration = { path = "../migration" }
+tokio = { workspace = true }
+sea-orm = { workspace = true }
+sea-orm-migration = { workspace = true }
+uuid.workspace = true
+dotenvy = "0.15.7"
+thiserror = { workspace = true }

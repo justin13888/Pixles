@@ -98,17 +98,16 @@ async fn register_user(
     }
 
     // After validation, now create user
-    let hashed_password = match hash_password(&password) {
-        Ok(hashed_password) => hashed_password,
+    let password_hash = match hash_password(&password) {
+        Ok(password_hash) => password_hash,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     };
-    let user =
-        match UserService::Mutation::create_user(&conn, email, name, username, hashed_password)
-            .await
-        {
-            Ok(user) => user,
-            Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
-        };
+    let user = match UserService::Mutation::create_user(&conn, email, name, username, password_hash)
+        .await
+    {
+        Ok(user) => user,
+        Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
+    };
     let user_id = &user.id;
 
     // Generate tokens
@@ -148,8 +147,8 @@ async fn login_user(
 
     if let Some(user) = user {
         // Verify password
-        let hashed_password = user.hashed_password;
-        let is_password_valid = match verify_password(&password, &hashed_password) {
+        let password_hash = user.password_hash;
+        let is_password_valid = match verify_password(&password, &password_hash) {
             Ok(is_valid) => is_valid,
             Err(e) => return LoginResponses::InternalServerError(e.into()),
         };

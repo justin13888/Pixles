@@ -45,20 +45,13 @@ impl MigrationTrait for Migration {
 
         // Create users indices
         db.execute_unprepared(
-            r#"CREATE UNIQUE INDEX idx_username_lower ON users (LOWER(username))"#,
+            r#"CREATE UNIQUE INDEX IF NOT EXISTS idx_username_lower ON users (LOWER(username))"#,
         )
         .await?; // TODO: Verify index prevents usernames with difference casing to be inserted
-        manager
-            .create_index(
-                Index::create()
-                    .if_not_exists()
-                    .name("idx_email")
-                    .table(Users::Table)
-                    .col(Users::Email)
-                    .unique()
-                    .to_owned(),
-            )
-            .await?;
+        db.execute_unprepared(
+            r#"CREATE UNIQUE INDEX IF NOT EXISTS idx_email_lower ON users (LOWER(email))"#,
+        )
+        .await?;
         manager
             .create_index(
                 Index::create()

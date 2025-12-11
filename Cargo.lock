@@ -2455,6 +2455,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pixles-api-testing"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "pixles-api-entity",
+ "pixles-api-migration",
+ "sea-orm",
+ "sea-orm-migration",
+ "thiserror 2.0.12",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "pixles-api-upload"
 version = "0.1.0"
 dependencies = [

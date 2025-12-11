@@ -10,7 +10,4 @@ path = "src/lib.rs"
 
 [dependencies]
 tokio = { workspace = true }
-sea-orm-migration = { workspace = true, features = [
-    "sqlx-postgres",
-    "runtime-tokio-rustls",
-] }
+sea-orm-migration = { workspace = true }
