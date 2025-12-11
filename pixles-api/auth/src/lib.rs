@@ -54,6 +54,6 @@ pub async fn get_router<C: Into<AuthConfig>>(
     let state = AppState { conn, config };
 
     Ok(OpenApiRouter::with_openapi(AuthApiDoc::openapi())
-        .nest("/auth", routes::get_router(state))
+        .merge(routes::get_router(state))
         .layer(cors))
 }

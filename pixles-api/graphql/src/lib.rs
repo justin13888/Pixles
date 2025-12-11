@@ -4,13 +4,12 @@ use async_graphql::{Response, http::GraphiQLSource};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use auth::config::AuthConfig;
 use auth::service::AuthService;
-use axum::http::{HeaderName, header};
 use axum::{
     Router,
     extract::State,
-    http::{HeaderMap, Method},
+    http::{HeaderMap, HeaderName, Method, header},
     response::{Html, IntoResponse},
-    routing::get,
+    routing::{get, post},
 };
 use config::GraphqlServerConfig;
 use context::{AppContext, DbContext, UserContext};
@@ -57,10 +56,10 @@ async fn graphql_handler(
     GraphQLResponse::from(schema.execute(req).await)
 }
 
-async fn graphiql() -> impl IntoResponse {
+async fn graphiql(endpoint: &str) -> impl IntoResponse {
     Html(
         GraphiQLSource::build()
-            .endpoint("/graphql")
+            .endpoint(endpoint)
             // .header()
             .title("Pixles API")
             .finish(),
@@ -108,13 +107,10 @@ pub async fn get_router<C: Into<GraphqlServerConfig>>(
     };
 
     // Build router
-    let mut app = Router::new().route(
-        "/graphql",
-        get(graphql_handler).post(graphql_handler).with_state(state),
-    );
+    let mut app = Router::new().route("/", post(graphql_handler).with_state(state));
     #[cfg(debug_assertions)]
     {
-        app = app.route("/playground", get(graphiql));
+        app = app.route("/playground", get(|| graphiql("/v1/graphql")));
     }
     app = app.layer(create_cors_layer());
 

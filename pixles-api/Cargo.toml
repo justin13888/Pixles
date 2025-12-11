@@ -32,7 +32,7 @@ utoipa = { workspace = true }
 utoipa-axum = { workspace = true }
 
 [features]
-default = ["auth", "graphql", "upload", "metadata"]
+default = ["auth", "graphql", "upload", "metadata", "openapi"]
 auth = ["pixles-api-auth", "pixles-api-environment/auth"]
 graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
 metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]

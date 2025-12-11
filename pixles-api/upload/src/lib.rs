@@ -47,7 +47,7 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
     };
 
     Ok(OpenApiRouter::new()
-        .nest("/upload", routes::get_router(state))
+        .merge(routes::get_router(state))
         .layer(cors)
         .layer(default_body_limit))
 }

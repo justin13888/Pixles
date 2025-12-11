@@ -64,26 +64,28 @@ async fn main() -> Result<()> {
     #[cfg(feature = "auth")]
     {
         openapi_router =
-            openapi_router.nest("/v1", auth::get_router(conn.clone(), &env.server).await?);
+            openapi_router.nest("/auth", auth::get_router(conn.clone(), &env.server).await?);
     }
     #[cfg(feature = "graphql")]
     {
         router = router.nest(
-            "/v1",
+            "/graphql",
             graphql::get_router(conn.clone(), &env.server, (&env.server).into()).await?,
         );
     }
     #[cfg(feature = "metadata")]
     {
         router = router.nest(
-            "/v1",
+            "/metadata",
             metadata::get_router(conn.clone(), &env.server).await?,
         );
     }
     #[cfg(feature = "upload")]
     {
-        openapi_router =
-            openapi_router.nest("/v1", upload::get_router(conn.clone(), &env.server).await?);
+        openapi_router = openapi_router.nest(
+            "/upload",
+            upload::get_router(conn.clone(), &env.server).await?,
+        );
     }
 
     use crate::routes::version::__path_get_version;
@@ -92,6 +94,7 @@ async fn main() -> Result<()> {
     let docs_router = docs::get_router(openapi_router); // Should include docs only if 'openapi' feature is enabled
     let router = router.merge(docs_router);
 
+    let router = Router::new().nest("/v1", router);
     let app = router.into_make_service();
 
     // Start server

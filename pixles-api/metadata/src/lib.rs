@@ -6,9 +6,9 @@ use sea_orm::DatabaseConnection;
 use tonic::service::Routes;
 use tonic::{Request, Response, Status};
 
+use eyre::Result;
 use hello_world::greeter_server::{Greeter, GreeterServer};
 use hello_world::{HelloReply, HelloRequest};
-use eyre::Result;
 use tracing::{debug, info};
 
 mod config;
@@ -46,8 +46,5 @@ pub async fn get_router<C: Into<MetadataServerConfig>>(
 ) -> Result<Router> {
     let greeter = MyGreeter::default();
 
-    Ok(
-        Router::new()
-            .nest_service("/metadata", Routes::new(GreeterServer::new(greeter)))
-    )
+    Ok(Routes::new(GreeterServer::new(greeter)).into_axum_router())
 }

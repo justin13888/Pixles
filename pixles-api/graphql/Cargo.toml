@@ -13,7 +13,7 @@ pixles-api-auth = { path = "../auth" }
 pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment", features = ["graphql"] }
 pixles-api-service = { path = "../service" }
-async-graphql = { version = "7.0.11", features = [
+async-graphql = { version = "7.0.17", features = [
     "apollo_persisted_queries",
     "chrono",
     # "dataloader", // Disabled due to bug: <https://github.com/async-graphql/async-graphql/issues/1726>
@@ -25,7 +25,7 @@ async-graphql = { version = "7.0.11", features = [
     "uuid",
     "url",
 ] }
-async-graphql-axum = "7.0.11"
+async-graphql-axum = "7.0.17"
 axum = { workspace = true }
 eyre = { workspace = true }
 futures-util = { workspace = true }
