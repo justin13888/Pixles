@@ -18,7 +18,7 @@ They can be packaged together or separately (recommended for production).
 
 _We assume Linux-based systems for this service._
 
-- Rust 1.86+
+- Rustup toolchain
 - Populate `.env` file based on `.env.example`
 - `cargo install systemfd cargo-watch`
 - `cargo install sea-orm-cli`
@@ -45,6 +45,7 @@ _We assume Linux-based systems for this service._
 ### Running
 
 - Spin up some dependencies: `podman compose up` (could spin up individual services manually if needed)
+  - Note for SELinux: We use `:Z,U` mount options in `compose.yaml` to ensure proper permissions.
   - Remove existing data: `podman compose down -v`
 - Start development server: `RUST_BACKTRACE=1 COLORBT_SHOW_HIDDEN=1 systemfd --no-pid -s 3000 -- cargo watch -x run`
   - _Append feature flags to enable specific parts of server_
