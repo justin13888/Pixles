@@ -1,0 +1,11 @@
+[package]
+name = "pixles-sdk"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+uuid = { version = "1.11.0", features = ["v7"] }

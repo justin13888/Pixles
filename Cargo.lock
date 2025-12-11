@@ -2724,6 +2724,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pixles-sdk"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "log",
+ "serde",
+ "thiserror 2.0.17",
+ "uuid",
+]
+
+[[package]]
 name = "pkcs1"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

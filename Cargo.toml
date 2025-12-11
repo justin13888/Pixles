@@ -12,6 +12,7 @@ members = [
     "pixles-cli",
     "pixles-cli/migration",
     "pixles-core-rust",
+    "pixles-sdk",
 ]
 resolver = "3"
 
