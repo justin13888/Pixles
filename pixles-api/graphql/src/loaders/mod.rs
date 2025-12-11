@@ -1,44 +1,46 @@
-use async_graphql::{dataloader::*, FieldError};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
-use std::{collections::HashMap, sync::Arc};
+// use async_graphql::{FieldError, dataloader::*};
+use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
-use crate::schema::user::User;
-use entity::user;
+// use crate::schema::user::User;
+// use entity::user;
 
-// TODO: FInish implementation for user and all other entities
+// // TODO: Finish implementation for user and all other entities
 
-pub struct UserLoader {
-    pub conn: Arc<DatabaseConnection>,
-}
+// pub struct UserLoader {
+//     pub conn: Arc<DatabaseConnection>,
+// }
 
-impl Loader<String> for UserLoader {
-    type Value = User;
-    type Error = FieldError;
+// impl Loader<String> for UserLoader {
+//     type Value = User;
+//     type Error = FieldError;
 
-    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
-        let users = user::Entity::find()
-            .filter(user::Column::Id.is_in(keys.to_vec()))
-            .all(&*self.conn)
-            .await
-            .unwrap_or_default();
+//     async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+//         let users = user::Entity::find()
+//             .filter(user::Column::Id.is_in(keys.to_vec()))
+//             .all(&*self.conn)
+//             .await
+//             .unwrap_or_default();
 
-        let mut map = HashMap::new();
-        for user in users {
-            map.insert(user.id.clone(), user.into());
-        }
-        // map
-        Ok(map)
-    }
-}
+//         let mut map = HashMap::new();
+//         for user in users {
+//             map.insert(user.id.clone(), user.into());
+//         }
+//         // map
+//         Ok(map)
+//     }
+// }
 
-pub struct Loaders {
-    pub user_loader: DataLoader<UserLoader>,
-}
+pub struct Loaders;
+// pub struct Loaders {
+//     pub user_loader: DataLoader<UserLoader>,
+// }
 
 impl Loaders {
     pub fn new(conn: Arc<DatabaseConnection>) -> Self {
-        Self {
-            user_loader: DataLoader::new(UserLoader { conn }, tokio::spawn),
-        }
+        Self {}
+        // Self {
+        //     user_loader: DataLoader::new(UserLoader { conn }, tokio::spawn),
+        // }
     }
 }

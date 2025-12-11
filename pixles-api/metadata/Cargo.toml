@@ -10,7 +10,6 @@ path = "src/lib.rs"
 
 [dependencies]
 pixles-api-environment = { path = "../environment", features = ["metadata"] }
-anyhow = { workspace = true }
 axum = { workspace = true }
 eyre = { workspace = true }
 futures-util = { workspace = true }
@@ -27,10 +26,11 @@ tracing = { workspace = true }
 tower-http = { workspace = true }
 # uuid = { workspace = true }
 # chrono = { workspace = true }
-tonic = "0.13.0"
-prost = "0.13.5"
-tonic-health = "0.13.0"
-tonic-types = "0.13.0"
+tonic = { workspace = true }
+tonic-prost = { workspace = true }
+tonic-health = { workspace = true }
+tonic-types = { workspace = true }
+prost = { workspace = true }
 
 [build-dependencies]
-tonic-build = { version = "0.13.0", features = ["prost"] }
+tonic-prost-build = { workspace = true }

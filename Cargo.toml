@@ -16,31 +16,36 @@ members = [
 resolver = "3"
 
 [workspace.dependencies]
-anyhow = "1.0.98"
 argon2 = "0.5.3"
-axum = { version = "0.8.4", features = ["http2", "macros"] }
+axum = { version = "0.8.7", features = ["http2", "macros"] }
 base64 = "0.22.1"
-chrono = { version = "0.4.41", features = ["serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
 eyre = "0.6.12"
 futures-util = "0.3.31"
-hyper = { version = "1.6.0", features = ["full"] }
-indexmap = { version = "2.10.0", features = ["serde"] }
-jsonwebtoken = "9.3.0"
-log = { version = "0.4.27", features = ["release_max_level_debug"] }
+hyper = { version = "1.8.1", features = ["full"] }
+indexmap = { version = "2.12.1", features = ["serde"] }
+jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
+log = { version = "0.4.29", features = ["release_max_level_debug"] }
 nanoid = "0.4.0"
+prost = "0.14.1"
 rand = "0.9.2"
 ring = "0.17.14"
-sea-orm = { version = "1.1.13" }
-sea-orm-migration = { version = "1.1.13", features = [
+sea-orm = { version = "1.1.19" }
+sea-orm-migration = { version = "1.1.19", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
 ] }
 secrecy = { version = "0.10.3", features = ["serde"] }
-serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.133"
-thiserror = "2.0.12"
-tokio = { version = "1.44.2", features = ["full"] }
-utoipa = { version = "5.3.1", features = [
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", features = ["full"] }
+tonic = "0.14.2"
+tonic-health = "0.14.2"
+tonic-types = "0.14.2"
+tonic-prost = "0.14.2"
+tonic-prost-build = { version = "0.14.2" }
+utoipa = { version = "5.4.0", features = [
     "axum_extras",
     "chrono",
     "debug",
@@ -50,11 +55,11 @@ utoipa = { version = "5.3.1", features = [
 ] }
 utoipa-axum = { version = "0.2.0" }
 utoipa-scalar = { version = "0.3.0", features = ["axum"] }
-uuid = { version = "1.11.0", features = [
+uuid = { version = "1.19.0", features = [
     "v4",
 ] } # TODO: Remove v4, and only use v7
-tower-http = { version = "0.6.1", features = ["cors"] }
-tracing = "0.1.41"
+tower-http = { version = "0.6.8", features = ["cors"] }
+tracing = "0.1.43"
 
 [profile.release]
 lto = "thin"

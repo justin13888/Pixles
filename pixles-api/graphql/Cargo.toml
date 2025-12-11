@@ -16,7 +16,7 @@ pixles-api-service = { path = "../service" }
 async-graphql = { version = "7.0.11", features = [
     "apollo_persisted_queries",
     "chrono",
-    "dataloader",
+    # "dataloader", // Disabled due to bug: <https://github.com/async-graphql/async-graphql/issues/1726>
     "log",
     "opentelemetry",
     "secrecy",
