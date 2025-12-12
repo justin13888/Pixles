@@ -4,9 +4,9 @@ use eyre::Result;
 use metadata::FileDatabase;
 use sea_orm::DatabaseConnection;
 
+use aide::axum::ApiRouter;
 use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
-use utoipa_axum::router::OpenApiRouter;
 
 use crate::{config::validate_config, state::AppState};
 
@@ -19,7 +19,7 @@ mod state;
 pub async fn get_router<C: Into<UploadServerConfig>>(
     conn: DatabaseConnection,
     config: C,
-) -> Result<OpenApiRouter> {
+) -> Result<ApiRouter> {
     let config = config.into();
     let config_warnings = validate_config(&config).map_err(|e| {
         eyre::eyre!(
@@ -46,7 +46,7 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
         file_db,
     };
 
-    Ok(OpenApiRouter::new()
+    Ok(ApiRouter::new()
         .merge(routes::get_router(state))
         .layer(cors)
         .layer(default_body_limit))

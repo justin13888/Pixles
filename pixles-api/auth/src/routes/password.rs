@@ -1,6 +1,5 @@
 use axum::Json;
 use axum::extract::State;
-use docs::TAGS;
 use service::user as UserService;
 use tracing::trace;
 
@@ -10,15 +9,6 @@ use crate::state::AppState;
 use crate::utils::hash::hash_password;
 
 /// Request password reset
-#[utoipa::path(
-    post,
-    path = "/password-reset-request",
-    tag = TAGS::AUTH,
-    security(),
-    request_body = ResetPasswordRequestPayload,
-    responses(ResetPasswordRequestResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn reset_password_request(
     State(state): State<AppState>,
     Json(payload): Json<ResetPasswordRequestPayload>,
@@ -37,15 +27,6 @@ pub async fn reset_password_request(
 }
 
 /// Reset password with token
-#[utoipa::path(
-    post,
-    path = "/password-reset",
-    tag = TAGS::AUTH,
-    security(),
-    request_body = ResetPasswordPayload,
-    responses(PasswordResetResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn reset_password(
     State(state): State<AppState>,
     Json(payload): Json<ResetPasswordPayload>,

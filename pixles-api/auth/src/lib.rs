@@ -1,10 +1,9 @@
+use aide::axum::ApiRouter;
 use config::AuthConfig;
 use eyre::Result;
 use sea_orm::DatabaseConnection;
 use state::AppState;
 use tower_http::cors::{Any, CorsLayer};
-use utoipa::OpenApi;
-use utoipa_axum::router::OpenApiRouter;
 
 pub mod claims;
 pub mod config;
@@ -26,28 +25,10 @@ pub mod utils;
 pub mod validation;
 
 #[cfg(feature = "server")]
-#[derive(OpenApi)]
-#[openapi(
-    components(
-        responses(models::errors::InternalServerError),
-        schemas(
-            errors::AuthError,
-            models::UserProfile,
-            models::errors::BadRegisterUserRequestError,
-            models::responses::TokenResponse,
-        )
-    ),
-    security(
-        ("bearer" = [])
-    ),
-)]
-pub struct AuthApiDoc;
-
-#[cfg(feature = "server")]
 pub async fn get_router<C: Into<AuthConfig>>(
     conn: DatabaseConnection,
     config: C,
-) -> Result<OpenApiRouter> {
+) -> Result<ApiRouter> {
     let config = config.into();
 
     let session_manager = session::SessionManager::new(
@@ -65,7 +46,7 @@ pub async fn get_router<C: Into<AuthConfig>>(
         .allow_headers(Any); // TODO: Restrict later
     let state = AppState::new(conn, config, session_manager, email_service);
 
-    Ok(OpenApiRouter::with_openapi(AuthApiDoc::openapi())
+    Ok(ApiRouter::new()
         .merge(routes::get_router(state))
         .layer(cors))
 }

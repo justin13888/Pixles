@@ -3,15 +3,12 @@ use environment::Environment;
 use eyre::{Result, eyre};
 use listenfd::ListenFd;
 use migration::{Migrator, MigratorTrait};
-use routes::version::get_version;
+use pixles_api::create_app;
 use sea_orm::Database;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use tokio::net::TcpListener;
 use tracing::{debug, info};
 use tracing_subscriber::fmt::format::FmtSpan;
-use utoipa_axum::{router::OpenApiRouter, routes};
-
-mod routes;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -47,7 +44,7 @@ async fn main() -> Result<()> {
     debug!("Environment settings loaded: {:?}", env);
 
     // Initialize database connection
-    let conn = Database::connect(env.database.url).await?;
+    let conn = Database::connect(env.database.url.clone()).await?;
 
     // Run auto migration in dev
     #[cfg(debug_assertions)]
@@ -55,41 +52,8 @@ async fn main() -> Result<()> {
         Migrator::up(&conn, None).await?;
     }
 
-    let mut openapi_router = OpenApiRouter::new();
-    let mut router = Router::new();
-
-    #[cfg(feature = "auth")]
-    {
-        openapi_router =
-            openapi_router.nest("/auth", auth::get_router(conn.clone(), &env.server).await?);
-    }
-    #[cfg(feature = "graphql")]
-    {
-        router = router.nest(
-            "/graphql",
-            graphql::get_router(conn.clone(), &env.server, (&env.server).into()).await?,
-        );
-    }
-    #[cfg(feature = "metadata")]
-    {
-        router = router.nest(
-            "/metadata",
-            metadata::get_router(conn.clone(), &env.server).await?,
-        );
-    }
-    #[cfg(feature = "upload")]
-    {
-        openapi_router = openapi_router.nest(
-            "/upload",
-            upload::get_router(conn.clone(), &env.server).await?,
-        );
-    }
-
-    use crate::routes::version::__path_get_version;
-    openapi_router = openapi_router.routes(routes!(get_version)); // TODO: Add this to OpenAPI
-
-    let docs_router = docs::get_router(openapi_router); // Should include docs only if 'openapi' feature is enabled
-    let router = router.merge(docs_router);
+    // Build app
+    let (router, _api) = create_app(conn, &env).await?;
 
     let app = router.into_make_service();
 

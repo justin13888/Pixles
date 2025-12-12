@@ -1,25 +1,16 @@
-use axum::{Json, response::IntoResponse};
-use docs::TAGS;
+use aide::axum::IntoApiResponse;
+use axum::Json;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, JsonSchema, Clone)]
 pub struct VersionResponse {
     pub name: String,
     pub version: String,
 }
 
 /// Get API version info
-#[utoipa::path(
-    get,
-    path = "/version",
-    tag = TAGS::API,
-    security(),
-    responses(
-        (status = 200, description = "Version info", body = VersionResponse)
-    )
-)]
-pub async fn get_version() -> impl IntoResponse {
+pub async fn get_version() -> impl IntoApiResponse {
     let name = env!("CARGO_PKG_NAME");
     let version = env!("CARGO_PKG_VERSION");
 

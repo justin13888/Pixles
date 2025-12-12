@@ -2,10 +2,10 @@ pub mod errors;
 pub mod requests;
 pub mod responses;
 
+use schemars::JsonSchema;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Serializer;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
 pub fn serialize_secret<S>(secret: &SecretString, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -28,19 +28,25 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
-#[schema(example = json!({"email": "johndoe@email.com"}))]
+#[derive(Serialize, Deserialize, JsonSchema)]
+#[schemars(example = example_reset_password_request())]
 pub struct ResetPasswordRequestPayload {
     pub email: String,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+fn example_reset_password_request() -> ResetPasswordRequestPayload {
+    ResetPasswordRequestPayload {
+        email: "johndoe@email.com".to_string(),
+    }
+}
+
+#[derive(Serialize, Deserialize, JsonSchema)]
 pub struct ResetPasswordPayload {
     pub token: String,
     pub new_password: String,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, JsonSchema)]
 pub struct UserProfile {
     pub user_id: String,
     pub username: String,

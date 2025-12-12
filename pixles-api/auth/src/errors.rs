@@ -3,12 +3,11 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use thiserror::Error;
-use utoipa::ToSchema;
 
 use crate::models::errors::BadRegisterUserRequestError;
 
 /// Authentication error
-#[derive(Error, Debug, ToSchema)]
+#[derive(Error, Debug)]
 pub enum AuthError {
     #[error("User not found or invalid credentials")]
     InvalidCredentials,
@@ -21,7 +20,6 @@ pub enum AuthError {
     #[error("Invalid token")]
     InvalidToken(#[from] ClaimValidationError),
     #[error("Internal server error")]
-    #[schema(value_type = String)]
     InternalServerError(#[from] eyre::Report), // Using eyre::Report or Box<dyn StdError> or similar
 }
 
@@ -46,7 +44,7 @@ impl IntoResponse for AuthError {
 }
 
 // JWT validation error
-#[derive(Error, Debug, ToSchema)]
+#[derive(Error, Debug)]
 pub enum ClaimValidationError {
     #[error("Missing token")]
     TokenMissing,

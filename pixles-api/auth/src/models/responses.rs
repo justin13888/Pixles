@@ -2,18 +2,20 @@ use super::UserProfile;
 use super::errors::*;
 use crate::claims::Claims;
 use crate::errors::{AuthError, ClaimValidationError};
+use aide::OperationOutput;
+use aide::openapi::{Operation, Response, StatusCode};
 use axum::Json;
-use axum::http::StatusCode;
+use axum::http::StatusCode as HttpStatusCode;
+use schemars::JsonSchema;
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
-use utoipa::{ToResponse, ToSchema};
 
-#[derive(Serialize, Deserialize, ToSchema, ToResponse, Debug)]
+#[derive(Serialize, Deserialize, JsonSchema, Debug)]
 pub struct TokenResponse {
-    #[schema(value_type = String)]
+    #[schemars(with = "String")]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub access_token: SecretString,
-    #[schema(value_type = String)]
+    #[schemars(with = "String")]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub refresh_token: SecretString,
     /// E.g. "Bearer"
@@ -22,16 +24,11 @@ pub struct TokenResponse {
     pub expires_by: u64,
 }
 
-#[derive(utoipa::IntoResponses)]
 pub enum RegisterUserResponses {
-    #[response(status = 201, description = "User successfully registered")]
     Success(TokenResponse),
-    #[response(status = 400, description = "Bad request")]
     BadRequest(BadRegisterUserRequestError),
-    #[response(status = 409, description = "User already exists")]
     UserAlreadyExists,
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl From<Result<TokenResponse, AuthError>> for RegisterUserResponses {
@@ -49,17 +46,17 @@ impl axum::response::IntoResponse for RegisterUserResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success(token_response) => {
-                let status = StatusCode::CREATED;
+                let status = HttpStatusCode::CREATED;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
             Self::BadRequest(e) => {
-                let status = StatusCode::BAD_REQUEST;
+                let status = HttpStatusCode::BAD_REQUEST;
                 let body = Json(e);
                 (status, body).into_response()
             }
             Self::UserAlreadyExists => {
-                let status = StatusCode::CONFLICT;
+                let status = HttpStatusCode::CONFLICT;
                 let body = Json(ApiError::new("User already exists"));
                 (status, body).into_response()
             }
@@ -68,16 +65,57 @@ impl axum::response::IntoResponse for RegisterUserResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
+impl OperationOutput for RegisterUserResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        ctx: &mut aide::generate::GenContext,
+        operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        let mut responses = Vec::new();
+
+        // 201 Created - Success with TokenResponse
+        if let Some(resp) =
+            <Json<TokenResponse> as OperationOutput>::operation_response(ctx, operation)
+        {
+            responses.push((Some(201), resp));
+        }
+
+        // 400 Bad Request
+        responses.push((
+            Some(400),
+            Response {
+                description: "Bad request - invalid registration data".into(),
+                ..Default::default()
+            },
+        ));
+
+        // 409 Conflict
+        responses.push((
+            Some(409),
+            Response {
+                description: "User already exists".into(),
+                ..Default::default()
+            },
+        ));
+
+        // 500 Internal Server Error
+        responses.push((
+            Some(500),
+            Response {
+                description: "Internal server error".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses
+    }
+}
+
 pub enum LoginResponses {
-    #[response(status = 200, description = "Login successful")]
     Success(TokenResponse),
-
-    #[response(status = 404, description = "Invalid credentials")]
     InvalidCredentials,
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl From<Result<TokenResponse, AuthError>> for LoginResponses {
@@ -94,12 +132,12 @@ impl axum::response::IntoResponse for LoginResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success(token_response) => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
             Self::InvalidCredentials => {
-                let status = StatusCode::UNAUTHORIZED;
+                let status = HttpStatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new("Invalid credentials"));
                 (status, body).into_response()
             }
@@ -108,16 +146,45 @@ impl axum::response::IntoResponse for LoginResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
+impl OperationOutput for LoginResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        ctx: &mut aide::generate::GenContext,
+        operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        let mut responses = Vec::new();
+
+        if let Some(resp) =
+            <Json<TokenResponse> as OperationOutput>::operation_response(ctx, operation)
+        {
+            responses.push((Some(200), resp));
+        }
+
+        responses.push((
+            Some(401),
+            Response {
+                description: "Invalid credentials".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(500),
+            Response {
+                description: "Internal server error".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses
+    }
+}
+
 pub enum RefreshTokenResponses {
-    #[response(status = 200, description = "Token refreshed successfully")]
     Success(TokenResponse),
-
-    #[response(status = 401, description = "Invalid refresh token")]
     InvalidRefreshToken(AuthError),
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl From<Result<TokenResponse, AuthError>> for RefreshTokenResponses {
@@ -133,12 +200,12 @@ impl axum::response::IntoResponse for RefreshTokenResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success(token_response) => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
             Self::InvalidRefreshToken(e) => {
-                let status = StatusCode::UNAUTHORIZED;
+                let status = HttpStatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
@@ -147,12 +214,43 @@ impl axum::response::IntoResponse for RefreshTokenResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
-pub enum ValidateTokenResponses {
-    #[response(status = 200, description = "Token is valid")]
-    Valid(String),
+impl OperationOutput for RefreshTokenResponses {
+    type Inner = Self;
 
-    #[response(status = 401, description = "Invalid token")]
+    fn inferred_responses(
+        ctx: &mut aide::generate::GenContext,
+        operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        let mut responses = Vec::new();
+
+        if let Some(resp) =
+            <Json<TokenResponse> as OperationOutput>::operation_response(ctx, operation)
+        {
+            responses.push((Some(200), resp));
+        }
+
+        responses.push((
+            Some(401),
+            Response {
+                description: "Invalid or expired refresh token".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(500),
+            Response {
+                description: "Internal server error".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses
+    }
+}
+
+pub enum ValidateTokenResponses {
+    Valid(String),
     Invalid(AuthError),
 }
 
@@ -169,12 +267,12 @@ impl axum::response::IntoResponse for ValidateTokenResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Valid(token_response) => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(token_response);
                 (status, body).into_response()
             }
             Self::Invalid(e) => {
-                let status = StatusCode::UNAUTHORIZED;
+                let status = HttpStatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
@@ -182,21 +280,42 @@ impl axum::response::IntoResponse for ValidateTokenResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
-pub enum ResetPasswordRequestResponses {
-    /// Success response
-    #[response(status = 200, description = "Password reset request sent if it exists")]
-    Success,
+impl OperationOutput for ValidateTokenResponses {
+    type Inner = Self;
 
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    fn inferred_responses(
+        _ctx: &mut aide::generate::GenContext,
+        _operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        vec![
+            (
+                Some(200),
+                Response {
+                    description: "Token is valid - returns user ID".into(),
+                    ..Default::default()
+                },
+            ),
+            (
+                Some(401),
+                Response {
+                    description: "Invalid or expired token".into(),
+                    ..Default::default()
+                },
+            ),
+        ]
+    }
+}
+
+pub enum ResetPasswordRequestResponses {
+    Success,
+    InternalServerError(InternalServerError),
 }
 
 impl axum::response::IntoResponse for ResetPasswordRequestResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(ApiError::new("Password reset request sent"));
                 (status, body).into_response()
             }
@@ -205,36 +324,54 @@ impl axum::response::IntoResponse for ResetPasswordRequestResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
+impl OperationOutput for ResetPasswordRequestResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        _ctx: &mut aide::generate::GenContext,
+        _operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        vec![
+            (
+                Some(200),
+                Response {
+                    description: "Password reset email sent (if user exists)".into(),
+                    ..Default::default()
+                },
+            ),
+            (
+                Some(500),
+                Response {
+                    description: "Internal server error".into(),
+                    ..Default::default()
+                },
+            ),
+        ]
+    }
+}
+
 pub enum PasswordResetResponses {
-    #[response(status = 200, description = "Password reset successful")]
     Success,
-
-    #[response(status = 400, description = "Invalid or expired token")]
     InvalidToken,
-
-    #[response(status = 400, description = "Invalid new password")]
     InvalidNewPassword,
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl axum::response::IntoResponse for PasswordResetResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(ApiError::new("Password reset successful"));
                 (status, body).into_response()
             }
             Self::InvalidToken => {
-                let status = StatusCode::BAD_REQUEST;
+                let status = HttpStatusCode::BAD_REQUEST;
                 let body = Json(ApiError::new("Invalid or expired token"));
                 (status, body).into_response()
             }
             Self::InvalidNewPassword => {
-                let status = StatusCode::BAD_REQUEST;
+                let status = HttpStatusCode::BAD_REQUEST;
                 let body = Json(ApiError::new("Invalid new password"));
                 (status, body).into_response()
             }
@@ -243,36 +380,61 @@ impl axum::response::IntoResponse for PasswordResetResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
+impl OperationOutput for PasswordResetResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        _ctx: &mut aide::generate::GenContext,
+        _operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        vec![
+            (
+                Some(200),
+                Response {
+                    description: "Password reset successful".into(),
+                    ..Default::default()
+                },
+            ),
+            (
+                Some(400),
+                Response {
+                    description: "Invalid or expired token, or invalid new password".into(),
+                    ..Default::default()
+                },
+            ),
+            (
+                Some(500),
+                Response {
+                    description: "Internal server error".into(),
+                    ..Default::default()
+                },
+            ),
+        ]
+    }
+}
+
 pub enum UserProfileResponses {
-    #[response(status = 200, description = "User profile retrieved successfully")]
     Success(UserProfile),
-
-    #[response(status = 401, description = "Unauthorized")]
     Unauthorized(AuthError),
-
-    #[response(status = 404, description = "User not found")]
     UserNotFound,
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl axum::response::IntoResponse for UserProfileResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success(user_profile) => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(user_profile);
                 (status, body).into_response()
             }
             Self::Unauthorized(e) => {
-                let status = StatusCode::UNAUTHORIZED;
+                let status = HttpStatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
             Self::UserNotFound => {
-                let status = StatusCode::NOT_FOUND;
+                let status = HttpStatusCode::NOT_FOUND;
                 let body = Json(ApiError::new("User not found"));
                 (status, body).into_response()
             }
@@ -281,45 +443,77 @@ impl axum::response::IntoResponse for UserProfileResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
+impl OperationOutput for UserProfileResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        ctx: &mut aide::generate::GenContext,
+        operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        let mut responses = Vec::new();
+
+        if let Some(resp) =
+            <Json<UserProfile> as OperationOutput>::operation_response(ctx, operation)
+        {
+            responses.push((Some(200), resp));
+        }
+
+        responses.push((
+            Some(401),
+            Response {
+                description: "Unauthorized - invalid or missing token".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(404),
+            Response {
+                description: "User not found".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(500),
+            Response {
+                description: "Internal server error".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses
+    }
+}
+
 pub enum UpdateUserProfileResponses {
-    #[response(status = 200, description = "User profile updated successfully")]
     Success(UserProfile),
-    // #[response(status = 400, description = "Invalid user profile data")]
-    // InvalidData,
-    #[response(status = 401, description = "Unauthorized")]
     Unauthorized(AuthError),
-
-    #[response(status = 400, description = "Invalid password")]
     InvalidPassword,
-
-    #[response(status = 404, description = "User not found")]
     UserNotFound,
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl axum::response::IntoResponse for UpdateUserProfileResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success(profile) => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(profile);
                 (status, body).into_response()
             }
             Self::Unauthorized(e) => {
-                let status = StatusCode::UNAUTHORIZED;
+                let status = HttpStatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
             Self::InvalidPassword => {
-                let status = StatusCode::BAD_REQUEST;
+                let status = HttpStatusCode::BAD_REQUEST;
                 let body = Json(ApiError::new("Invalid password"));
                 (status, body).into_response()
             }
             Self::UserNotFound => {
-                let status = StatusCode::NOT_FOUND;
+                let status = HttpStatusCode::NOT_FOUND;
                 let body = Json(ApiError::new("User not found"));
                 (status, body).into_response()
             }
@@ -328,32 +522,110 @@ impl axum::response::IntoResponse for UpdateUserProfileResponses {
     }
 }
 
-#[derive(utoipa::IntoResponses)]
+impl OperationOutput for UpdateUserProfileResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        ctx: &mut aide::generate::GenContext,
+        operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        let mut responses = Vec::new();
+
+        if let Some(resp) =
+            <Json<UserProfile> as OperationOutput>::operation_response(ctx, operation)
+        {
+            responses.push((Some(200), resp));
+        }
+
+        responses.push((
+            Some(400),
+            Response {
+                description: "Invalid password".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(401),
+            Response {
+                description: "Unauthorized - invalid or missing token".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(404),
+            Response {
+                description: "User not found".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses.push((
+            Some(500),
+            Response {
+                description: "Internal server error".into(),
+                ..Default::default()
+            },
+        ));
+
+        responses
+    }
+}
+
 pub enum LogoutResponses {
-    #[response(status = 200, description = "Logout successful")]
     Success,
-
-    #[response(status = 401, description = "Unauthorized")]
     Unauthorized(AuthError),
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
+    InternalServerError(InternalServerError),
 }
 
 impl axum::response::IntoResponse for LogoutResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
             Self::Success => {
-                let status = StatusCode::OK;
+                let status = HttpStatusCode::OK;
                 let body = Json(ApiError::new("Logout successful"));
                 (status, body).into_response()
             }
             Self::Unauthorized(e) => {
-                let status = StatusCode::UNAUTHORIZED;
+                let status = HttpStatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
             Self::InternalServerError(e) => e.into_response(),
         }
+    }
+}
+
+impl OperationOutput for LogoutResponses {
+    type Inner = Self;
+
+    fn inferred_responses(
+        _ctx: &mut aide::generate::GenContext,
+        _operation: &mut Operation,
+    ) -> Vec<(Option<u16>, Response)> {
+        vec![
+            (
+                Some(200),
+                Response {
+                    description: "Logout successful".into(),
+                    ..Default::default()
+                },
+            ),
+            (
+                Some(401),
+                Response {
+                    description: "Unauthorized - invalid or missing token".into(),
+                    ..Default::default()
+                },
+            ),
+            (
+                Some(500),
+                Response {
+                    description: "Internal server error".into(),
+                    ..Default::default()
+                },
+            ),
+        ]
     }
 }

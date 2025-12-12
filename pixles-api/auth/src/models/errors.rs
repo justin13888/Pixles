@@ -1,12 +1,11 @@
 use argon2::password_hash;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use utoipa::{ToResponse, ToSchema};
 
-#[derive(Debug, Error, ToResponse)]
-#[response(description = "Internal server error")]
+#[derive(Debug, Error)]
 pub enum InternalServerError {
     #[error("SeaORM error: {0}")]
     Db(#[from] sea_orm::DbErr),
@@ -34,31 +33,11 @@ impl From<password_hash::errors::Error> for InternalServerError {
 }
 
 /// Proxy struct to generate the correct API schema for InternalServerError
-#[derive(ToSchema, ToResponse)]
-#[schema(as = InternalServerError, description = "Internal server error")]
-#[response(description = "Internal server error")]
+#[derive(JsonSchema, Serialize, Deserialize)]
+#[schemars(description = "Internal server error")]
 pub struct InternalServerErrorSchema {
     pub _error: String,
 }
-
-impl utoipa::PartialSchema for InternalServerError {
-    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
-        InternalServerErrorSchema::schema()
-    }
-}
-
-impl ToSchema for InternalServerError {
-    fn schemas(
-        schemas: &mut Vec<(
-            String,
-            utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
-        )>,
-    ) {
-        InternalServerErrorSchema::schemas(schemas)
-    }
-}
-
-// TODO: Somehow automatically track errors in logs ^^
 
 impl IntoResponse for InternalServerError {
     fn into_response(self) -> Response {
@@ -73,7 +52,7 @@ impl IntoResponse for InternalServerError {
 }
 
 /// A generic API error response
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, JsonSchema)]
 pub struct ApiError {
     pub error: String,
 }
@@ -86,15 +65,12 @@ impl ApiError {
     }
 }
 
-#[derive(Serialize, Deserialize, Error, ToSchema, Debug)]
+#[derive(Serialize, Deserialize, Error, JsonSchema, Debug)]
 pub enum BadRegisterUserRequestError {
-    #[schema(rename = "Invalid email")]
     #[error("Invalid email")]
     Email,
-    #[schema(rename = "Invalid username")]
     #[error("Invalid username")]
     Username,
-    #[schema(rename = "Invalid password")]
     #[error("Invalid password")]
     Password,
 }

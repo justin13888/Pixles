@@ -1,7 +1,6 @@
 use axum::Json;
 use axum::extract::State;
 use axum::http::HeaderMap;
-use docs::TAGS;
 use secrecy::ExposeSecret;
 
 use crate::claims::Claims;
@@ -15,15 +14,6 @@ use crate::state::AppState;
 use crate::utils::headers::get_token_from_headers;
 
 /// Register a new user
-#[utoipa::path(
-    post,
-    path = "/register",
-    tag = TAGS::AUTH,
-    security(),
-    request_body = RegisterRequest,
-    responses(RegisterUserResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn register_user(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
@@ -36,15 +26,6 @@ pub async fn register_user(
 }
 
 /// Login a user
-#[utoipa::path(
-    post,
-    path = "/login",
-    tag = TAGS::AUTH,
-    security(),
-    request_body = LoginRequest,
-    responses(LoginResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn login_user(
     State(state): State<AppState>,
     Json(request): Json<LoginRequest>,
@@ -59,15 +40,6 @@ pub async fn login_user(
 }
 
 /// Refresh an access token using a refresh token
-#[utoipa::path(
-    post,
-    path = "/refresh",
-    tag = TAGS::AUTH,
-    security(),
-    request_body = RefreshTokenRequest,
-    responses(RefreshTokenResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn refresh_token(
     State(state): State<AppState>,
     Json(payload): Json<RefreshTokenRequest>,
@@ -126,14 +98,6 @@ pub async fn refresh_token(
 }
 
 /// Validate an access token
-#[utoipa::path(
-    post,
-    path = "/validate",
-    tag = TAGS::AUTH,
-    security(),
-    responses(ValidateTokenResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn validate_token(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -152,13 +116,6 @@ pub async fn validate_token(
 }
 
 /// Logout user and invalidate tokens
-#[utoipa::path(
-    post,
-    path = "/logout",
-    tag = TAGS::AUTH,
-    responses(LogoutResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> LogoutResponses {
     // Authorize user
     let token_string = match get_token_from_headers(&headers) {

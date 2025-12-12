@@ -46,16 +46,15 @@ tonic-health = "0.14.2"
 tonic-types = "0.14.2"
 tonic-prost = "0.14.2"
 tonic-prost-build = { version = "0.14.2" }
-utoipa = { version = "5.4.0", features = [
-    "axum_extras",
-    "chrono",
-    "debug",
-    "url",
-    "uuid",
+aide = { version = "0.15.1", features = [
+    "axum",
+    "axum-json",
+    "axum-query",
+    "axum-form",
+    "scalar",
     "macros",
 ] }
-utoipa-axum = { version = "0.2.0" }
-utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+schemars = { version = "0.9.0", features = ["chrono04", "uuid1", "indexmap2"] }
 uuid = { version = "1.19.0", features = [
     "v4",
 ] } # TODO: Remove v4, and only use v7

@@ -1,10 +1,9 @@
 use axum::Json;
 use axum::extract::State;
 use axum::http::HeaderMap;
-use docs::TAGS;
+use model::user::UpdateUser;
 use secrecy::ExposeSecret;
 use service::user as UserService;
-use model::user::UpdateUser;
 
 use crate::claims::Claims;
 use crate::errors::ClaimValidationError;
@@ -16,13 +15,6 @@ use crate::utils::hash::{hash_password, verify_password};
 use crate::utils::headers::get_token_from_headers;
 
 /// Get user profile
-#[utoipa::path(
-    get,
-    path = "/profile",
-    tag = TAGS::AUTH,
-    responses(UserProfileResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn get_user_profile(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -60,14 +52,6 @@ pub async fn get_user_profile(
 }
 
 /// Update user profile
-#[utoipa::path(
-    post,
-    path = "/profile",
-    tag = TAGS::AUTH,
-    request_body = UpdateProfileRequest,
-    responses(UpdateUserProfileResponses),
-    tags = ["Pixles Authentication API"]
-)]
 pub async fn update_user_profile(
     State(state): State<AppState>,
     headers: HeaderMap,

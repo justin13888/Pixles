@@ -35,14 +35,15 @@ tower-http = { workspace = true }
 uuid = { workspace = true }
 ring = { workspace = true }
 base64 = { workspace = true }
-utoipa = { workspace = true }
-utoipa-axum = { workspace = true }
+aide = { workspace = true }
+schemars = { workspace = true }
 strum = { version = "0.27.1", features = ["derive"] }
 strum_macros = "0.27.1"
 redis = { version = "1.0.1", features = ["tokio-comp", "connection-manager"] }
 bb8-redis = "0.26.0"
 bb8 = "0.9.1"
 async-trait = "0.1.89"
+indexmap = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }

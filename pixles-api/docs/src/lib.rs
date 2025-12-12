@@ -1,9 +1,11 @@
-use axum::Router;
+use aide::{
+    axum::{ApiRouter, IntoApiResponse, routing::get},
+    openapi::{Info, License, OpenApi, Tag},
+    scalar::Scalar,
+    transform::TransformOpenApi,
+};
+use axum::{Extension, Json, Router};
 use tracing::debug;
-use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
-use utoipa::{Modify, OpenApi};
-use utoipa_axum::router::OpenApiRouter;
-use utoipa_scalar::{Scalar, Servable as ScalarServable};
 
 #[allow(non_snake_case)]
 pub mod TAGS {
@@ -12,65 +14,74 @@ pub mod TAGS {
     pub const UPLOAD: &str = "upload";
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    info(
-        title = "Pixles API",
-        description = "Pixles API Documentation",
-        version = "0.1.0",
-        license(
-            name = "GNU Affero General Public License v3.0 or later",
-            identifier = "AGPL-3.0-or-later",
-        ),
-    ),
-    modifiers(&SecurityAddon),
-    tags(
-        (name = TAGS::API, description = "Pixles API"),
-        (name = TAGS::AUTH, description = "Pixles Authentication API"),
-        (name = TAGS::UPLOAD, description = "Pixles Upload API"),
-    ),
-    servers(
-        (url = "/", description = "Current Server URL"),
-    ),
-    security(
-        ("bearer" = [])
-    ),
-)]
-pub struct ApiDoc;
-
-struct SecurityAddon;
-
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        let components = openapi.components.get_or_insert_with(Default::default);
-
-        components.add_security_scheme(
+fn api_docs(api: TransformOpenApi) -> TransformOpenApi {
+    api.title("Pixles API")
+        .description("Pixles API Documentation")
+        .version("0.1.0")
+        .tag(Tag {
+            name: TAGS::API.into(),
+            description: Some("Pixles API".into()),
+            ..Default::default()
+        })
+        .tag(Tag {
+            name: TAGS::AUTH.into(),
+            description: Some("Pixles Authentication API".into()),
+            ..Default::default()
+        })
+        .tag(Tag {
+            name: TAGS::UPLOAD.into(),
+            description: Some("Pixles Upload API".into()),
+            ..Default::default()
+        })
+        .security_scheme(
             "bearer",
-            SecurityScheme::Http(
-                HttpBuilder::new()
-                    .scheme(HttpAuthScheme::Bearer)
-                    .bearer_format("JWT")
-                    .build(),
-            ),
-        );
+            aide::openapi::SecurityScheme::Http {
+                scheme: "bearer".into(),
+                bearer_format: Some("JWT".into()),
+                description: Some("JWT Bearer token authentication".into()),
+                extensions: Default::default(),
+            },
+        )
+}
+
+async fn serve_openapi(Extension(api): Extension<OpenApi>) -> impl IntoApiResponse {
+    Json(api)
+}
+
+pub fn get_base_openapi() -> OpenApi {
+    OpenApi {
+        info: Info {
+            title: "Pixles API".into(),
+            description: Some("Pixles API Documentation".into()),
+            version: "0.1.0".into(),
+            license: Some(License {
+                name: "GNU Affero General Public License v3.0 or later".into(),
+                identifier: Some("AGPL-3.0-or-later".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
+        ..Default::default()
     }
 }
 
-pub fn get_router(v1_router: OpenApiRouter) -> Router {
-    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+pub fn get_router(v1_router: ApiRouter) -> (Router, OpenApi) {
+    let mut api = get_base_openapi();
+
+    let mut app = ApiRouter::new()
         .nest("/v1", v1_router)
-        .split_for_parts();
+        .api_route("/openapi.json", get(serve_openapi));
 
     if cfg!(feature = "openapi") {
         const SCALAR_ROUTE: &str = "/openapi";
         debug!("OpenAPI documentation enabled at {}", SCALAR_ROUTE);
-        let mut router = router.merge(Scalar::with_url(SCALAR_ROUTE, api.clone()));
-        let get_openapi_json = async move || axum::Json(api);
-        router = router.route("/openapi.json", axum::routing::get(get_openapi_json));
 
-        router
+        // Use route() for Scalar's axum_route() which returns ApiMethodRouter
+        app = app.route(SCALAR_ROUTE, Scalar::new("/openapi.json").axum_route());
     } else {
         debug!("OpenAPI Documentation is not used");
-        router
     }
+
+    let router: Router = app.finish_api_with(&mut api, api_docs);
+    (router.layer(Extension(api.clone())), api)
 }
