@@ -47,7 +47,7 @@ impl PasswordService {
                         email_service
                             .send_password_reset_email(&user.email, &token)
                             .await
-                            .map_err(|e| AuthError::InternalServerError(e))
+                            .map_err(AuthError::InternalServerError)
                     }
                     Err(e) => Err(AuthError::InternalServerError(e.into())),
                 }

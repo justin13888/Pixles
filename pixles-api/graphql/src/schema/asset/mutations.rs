@@ -1,8 +1,7 @@
 use crate::{constants::MAX_UPLOAD_SESSION_DURATION_SECONDS, schema::user::User};
 
 use super::{
-    AssetMetadata, CreateAssetInput, CreateUploadSessionInput, UploadSession,
-    UploadStatus,
+    AssetMetadata, CreateAssetInput, CreateUploadSessionInput, UploadSession, UploadStatus,
 };
 use async_graphql::*;
 use chrono::{Duration, Utc};

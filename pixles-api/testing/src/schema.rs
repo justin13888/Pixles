@@ -1,5 +1,3 @@
-
-
 #[tokio::test]
 async fn test_create_user() {
     let db = common::setup_test_db().await.expect("setup db");
