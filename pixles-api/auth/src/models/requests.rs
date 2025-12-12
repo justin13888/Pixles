@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
+#[schema(example = json!({"username": "johndoe", "name": "John Doe", "email": "johndoe@email.com", "password": "password"}))]
 pub struct RegisterRequest {
     pub username: String,
     pub name: String,
