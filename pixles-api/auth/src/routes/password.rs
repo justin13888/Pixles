@@ -30,6 +30,7 @@ pub async fn reset_password_request(
         Err(e) => return ResetPasswordRequestResponses::InternalServerError(e.into()),
     };
 
+    // TODO: Move sending email into another queue
     if let Some(user) = user {
         // Generate token
         let token = nanoid::nanoid!();

@@ -19,10 +19,3 @@ sea-orm = { workspace = true, features = [
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
-
-[features]
-mock = ["sea-orm/mock"]
-
-[[test]]
-name = "mock"
-required-features = ["mock"]

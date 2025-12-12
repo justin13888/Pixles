@@ -81,7 +81,7 @@ mod tests {
         for scope in Scope::iter() {
             let scope_str: String = scope.into();
             let serialized = serde_json::to_string(&scope).unwrap();
-            assert_eq!(scope_str, serialized);
+            assert_eq!(format!("\"{}\"", scope_str), serialized);
 
             let deserialized: Scope = serde_json::from_str(&serialized).unwrap();
             assert_eq!(scope, deserialized);

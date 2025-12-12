@@ -180,7 +180,7 @@ mod tests {
 
         let claims = Claims {
             sub: user_id,
-            exp: Utc::now().timestamp() as u64 - 1,
+            exp: Utc::now().timestamp() as u64 - 100,
             iat: Utc::now().timestamp() as u64,
             jti: uuid::Uuid::new_v4().to_string(),
             iss: ISSUER.to_string(),
