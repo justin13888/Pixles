@@ -2,6 +2,7 @@ use argon2::password_hash;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use utoipa::{ToResponse, ToSchema};
 
 // TODO: Convert this to use thiserror::Error trait
@@ -93,12 +94,15 @@ impl ApiError {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, Error, ToSchema, Debug)]
 pub enum BadRegisterUserRequestError {
     #[schema(rename = "Invalid email")]
+    #[error("Invalid email")]
     Email,
     #[schema(rename = "Invalid username")]
+    #[error("Invalid username")]
     Username,
     #[schema(rename = "Invalid password")]
+    #[error("Invalid password")]
     Password,
 }

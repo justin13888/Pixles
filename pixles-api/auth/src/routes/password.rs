@@ -24,43 +24,12 @@ pub async fn reset_password_request(
 ) -> ResetPasswordRequestResponses {
     let email = payload.email;
 
-    // Find user by email
-    let user = match UserService::Query::find_user_by_email(&state.conn, &email).await {
-        Ok(user) => user,
-        Err(e) => return ResetPasswordRequestResponses::InternalServerError(e.into()),
-    };
-
-    // TODO: Move sending email into another queue
-    if let Some(user) = user {
-        // Generate token
-        let token = nanoid::nanoid!();
-        let expires_at = chrono::Utc::now() + chrono::Duration::hours(1);
-
-        // Update user with token
-        if let Err(e) = UserService::Mutation::update_password_reset_token(
-            &state.conn,
-            user.id.clone(),
-            token.clone(),
-            expires_at,
-        )
+    if let Err(e) = state
+        .password_service
+        .request_reset(&state.conn, &state.email_service, &email)
         .await
-        {
-            return ResetPasswordRequestResponses::InternalServerError(e.into());
-        }
-
-        // Send email
-        if let Err(e) = state
-            .email_service
-            .send_password_reset_email(&user.email, &token)
-            .await
-        {
-            tracing::error!("Failed to send reset email to {}: {}", user.email, e);
-            // We return success to not leak that email exists/failed, but we might want to alert ops
-        }
-    } else {
-        // User not found - pretend success to avoid enumeration
-        trace!("Password reset requested for non-existent email: {}", email);
-        // Ideally sleep here to match DB timing
+    {
+        return ResetPasswordRequestResponses::InternalServerError(e.into());
     }
 
     ResetPasswordRequestResponses::Success

@@ -5,11 +5,19 @@ use axum::response::{IntoResponse, Response};
 use thiserror::Error;
 use utoipa::ToSchema;
 
+use crate::models::errors::BadRegisterUserRequestError;
+
 /// Authentication error
 #[derive(Error, Debug, ToSchema)]
 pub enum AuthError {
     #[error("User not found or invalid credentials")]
     InvalidCredentials,
+    #[error("User already exists")]
+    UserAlreadyExists,
+    #[error("Unauthorized")]
+    Unauthorized,
+    #[error("Bad request")]
+    BadRequest(BadRegisterUserRequestError),
     #[error("Invalid token")]
     InvalidToken(#[from] ClaimValidationError),
     #[error("Internal server error")]
@@ -21,6 +29,11 @@ impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AuthError::InvalidCredentials => (StatusCode::NOT_FOUND, "User not found".to_string()),
+            AuthError::UserAlreadyExists => {
+                (StatusCode::CONFLICT, "User already exists".to_string())
+            }
+            AuthError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
+            AuthError::BadRequest(e) => (StatusCode::BAD_REQUEST, e.to_string()),
             AuthError::InvalidToken(e) => (StatusCode::UNAUTHORIZED, e.to_string()),
             AuthError::InternalServerError(_e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
