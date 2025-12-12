@@ -1,0 +1,12 @@
+[package]
+name = "pixles-api-model"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+name = "model"
+path = "src/lib.rs"
+
+[dependencies]
+pixles-api-entity = { path = "../entity" }

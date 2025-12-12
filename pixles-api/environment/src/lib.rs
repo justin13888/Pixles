@@ -172,7 +172,7 @@ impl Environment {
                     .unwrap_or(String::from("./.metadata"))
                     .into(),
                 #[cfg(feature = "auth")]
-                valkey_url: load_env("VALKEY_URL").unwrap_or("redis://127.0.0.1:8080".to_string()),
+                valkey_url: load_env("VALKEY_URL")?,
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {
                 LevelFilter::TRACE

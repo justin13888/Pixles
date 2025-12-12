@@ -4,6 +4,7 @@ use axum::http::HeaderMap;
 use docs::TAGS;
 use secrecy::ExposeSecret;
 use service::user as UserService;
+use model::user::UpdateUser;
 
 use crate::claims::Claims;
 use crate::errors::ClaimValidationError;
@@ -126,10 +127,12 @@ pub async fn update_user_profile(
     let updated_user = match UserService::Mutation::update_user(
         &state.conn,
         user_id,
-        payload.username,
-        None, // Name update not exposed in request yet?
-        payload.email,
-        new_password_hash,
+        UpdateUser {
+            username: payload.username,
+            name: None, // Name update not exposed in request yet?
+            email: payload.email,
+            password_hash: new_password_hash,
+        },
     )
     .await
     {

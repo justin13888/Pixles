@@ -12,6 +12,7 @@ path = "src/lib.rs"
 pixles-api-docs = { path = "../docs", optional = true }
 pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment", features = ["auth"] }
+pixles-api-model = { path = "../model" }
 pixles-api-service = { path = "../service" }
 axum = { workspace = true }
 argon2 = { workspace = true }

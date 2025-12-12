@@ -2559,6 +2559,7 @@ dependencies = [
  "pixles-api-docs",
  "pixles-api-entity",
  "pixles-api-environment",
+ "pixles-api-model",
  "pixles-api-service",
  "redis",
  "ring",
@@ -2675,11 +2676,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "pixles-api-model"
+version = "0.1.0"
+dependencies = [
+ "pixles-api-entity",
+]
+
+[[package]]
 name = "pixles-api-service"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "pixles-api-entity",
+ "pixles-api-model",
  "sea-orm",
  "tokio",
 ]

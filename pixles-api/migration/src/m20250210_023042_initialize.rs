@@ -26,10 +26,11 @@ impl MigrationTrait for Migration {
                     .col(string_len(Users::Username, 64))
                     .col(string(Users::Name))
                     .col(string_len(Users::Email, 255))
-                    .col(boolean(Users::AccountVerified))
-                    .col(boolean(Users::NeedsOnboarding))
-                    .col(string(Users::HashedPassword))
-                    .col(boolean(Users::IsAdmin))
+                    .col(string_len_null(Users::ProfileImageUrl, 255))
+                    .col(boolean(Users::AccountVerified).default(false))
+                    .col(boolean(Users::NeedsOnboarding).default(true))
+                    .col(string(Users::PasswordHash))
+                    .col(boolean(Users::IsAdmin).default(false))
                     .col(
                         timestamp_with_time_zone(Users::CreatedAt)
                             .default(Expr::current_timestamp()),
@@ -291,9 +292,10 @@ enum Users {
     Username,
     Name,
     Email,
+    ProfileImageUrl,
     AccountVerified,
     NeedsOnboarding,
-    HashedPassword,
+    PasswordHash,
     IsAdmin,
     CreatedAt,
     ModifiedAt,

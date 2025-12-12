@@ -1,3 +1,4 @@
+use model::user::CreateUser;
 use sea_orm::DatabaseConnection;
 use service::user as UserService;
 
@@ -70,9 +71,17 @@ impl AuthService {
             .map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
 
         // TODO: Handle unique constraint violation from DB if race condition occurs
-        let user = UserService::Mutation::create_user(conn, email, name, username, password_hash)
-            .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+        let user = UserService::Mutation::create_user(
+            conn,
+            CreateUser {
+                username,
+                name,
+                email,
+                password_hash,
+            },
+        )
+        .await
+        .map_err(|e| AuthError::InternalServerError(e.into()))?;
 
         self.generate_token_pair(&user.id, session_manager).await
     }
@@ -89,6 +98,7 @@ impl AuthService {
             .map_err(|e| AuthError::InternalServerError(e.into()))?;
 
         if let Some(user) = user {
+            tracing::info!("User found: {}", user.id);
             let is_valid = verify_password(password.expose_secret(), &user.password_hash)
                 .map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
 
@@ -99,6 +109,7 @@ impl AuthService {
                 let _ = UserService::Mutation::track_login_failure(conn, user.id).await;
             }
         } else {
+            tracing::info!("User not found");
             // Timing attack mitigation
             // Uses a valid hash to ensure verify_password performs work
             let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$tYPnkCUH2lh52Sj6ZZwkbg$nn/VtIvxWjJoVIWHIpgvesIzTrUvtrczdkXaxmgZ/+w";
@@ -165,7 +176,7 @@ mod tests {
             jwt_eddsa_decoding_key: decoding_key,
             jwt_refresh_token_duration_seconds: 3600,
             jwt_access_token_duration_seconds: 300,
-            valkey_url: "redis://localhost".to_string(),
+            valkey_url: "redis://localhost:6379".to_string(),
         };
         AuthService::new(config)
     }

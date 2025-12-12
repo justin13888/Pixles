@@ -9,8 +9,9 @@ name = "service"
 path = "src/lib.rs"
 
 [dependencies]
-chrono = { workspace = true }
 pixles-api-entity = { path = "../entity" }
+pixles-api-model = { path = "../model" }
+chrono = { workspace = true }
 sea-orm = { workspace = true, features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",

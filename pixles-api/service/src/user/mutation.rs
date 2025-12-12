@@ -1,18 +1,19 @@
 use ::entity::{user, user::Entity as User};
+use model::user::{CreateUser, UpdateUser};
 use sea_orm::*;
 
-// TODO: Finish
 pub struct Mutation;
 
 impl Mutation {
     /// Creates a new user
-    pub async fn create_user(
-        db: &DbConn,
-        username: String,
-        name: String,
-        email: String,
-        password_hash: String,
-    ) -> Result<user::Model, DbErr> {
+    pub async fn create_user(db: &DbConn, user: CreateUser) -> Result<user::Model, DbErr> {
+        let CreateUser {
+            username,
+            name,
+            email,
+            password_hash,
+        } = user;
+
         user::ActiveModel {
             username: Set(username),
             name: Set(name),
@@ -28,11 +29,15 @@ impl Mutation {
     pub async fn update_user(
         db: &DbConn,
         id: String,
-        username: Option<String>,
-        name: Option<String>,
-        email: Option<String>,
-        password_hash: Option<String>,
+        user: UpdateUser,
     ) -> Result<user::Model, DbErr> {
+        let UpdateUser {
+            username,
+            name,
+            email,
+            password_hash,
+        } = user;
+
         let user: user::ActiveModel = User::find_by_id(id)
             .one(db)
             .await?

@@ -7,6 +7,7 @@ members = [
     "pixles-api/entity",
     "pixles-api/metadata",
     "pixles-api/migration",
+    "pixles-api/model",
     "pixles-api/testing",
     "pixles-api/upload",
     "pixles-cli",
