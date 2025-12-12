@@ -5,69 +5,60 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use utoipa::{ToResponse, ToSchema};
 
-// TODO: Convert this to use thiserror::Error trait
-
-#[derive(ToSchema, ToResponse)]
-#[schema(description = "Internal server error")]
+#[derive(Debug, Error, ToResponse)]
 #[response(description = "Internal server error")]
-pub struct InternalServerError {
-    pub error: String,
-}
-// TODO: Somehow automatically track errors in logs ^^
+pub enum InternalServerError {
+    #[error("SeaORM error: {0}")]
+    Db(#[from] sea_orm::DbErr),
 
-impl From<sea_orm::DbErr> for InternalServerError {
-    fn from(error: sea_orm::DbErr) -> Self {
-        InternalServerError {
-            error: format!("SeaORM error: {error}"),
-        }
-    }
-}
+    #[error("JWT error: {0}")]
+    Jwt(#[from] jsonwebtoken::errors::Error),
 
-impl From<jsonwebtoken::errors::Error> for InternalServerError {
-    fn from(error: jsonwebtoken::errors::Error) -> Self {
-        InternalServerError {
-            error: format!("JWT error: {error}"),
-        }
-    }
+    #[error("Password hash error: {0}")]
+    PasswordHash(password_hash::errors::Error),
+
+    #[error("Auth error: {0}")]
+    Auth(#[from] crate::errors::AuthError),
+
+    #[error("Redis error: {0}")]
+    Redis(#[from] redis::RedisError),
+
+    #[error("Internal error: {0}")]
+    Eyre(#[from] eyre::Report),
 }
 
 impl From<password_hash::errors::Error> for InternalServerError {
     fn from(error: password_hash::errors::Error) -> Self {
-        InternalServerError {
-            error: format!("Password hash error: {error}"),
-        }
+        Self::PasswordHash(error)
     }
 }
 
-impl From<crate::errors::AuthError> for InternalServerError {
-    fn from(error: crate::errors::AuthError) -> Self {
-        InternalServerError {
-            error: format!("Auth error: {error}"),
-        }
+/// Proxy struct to generate the correct API schema for InternalServerError
+#[derive(ToSchema, ToResponse)]
+#[schema(as = InternalServerError, description = "Internal server error")]
+#[response(description = "Internal server error")]
+pub struct InternalServerErrorSchema {
+    pub _error: String,
+}
+
+impl utoipa::PartialSchema for InternalServerError {
+    fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::schema::Schema> {
+        InternalServerErrorSchema::schema()
     }
 }
 
-impl From<redis::RedisError> for InternalServerError {
-    fn from(error: redis::RedisError) -> Self {
-        InternalServerError {
-            error: format!("Redis error: {error}"),
-        }
+impl ToSchema for InternalServerError {
+    fn schemas(
+        schemas: &mut Vec<(
+            String,
+            utoipa::openapi::RefOr<utoipa::openapi::schema::Schema>,
+        )>,
+    ) {
+        InternalServerErrorSchema::schemas(schemas)
     }
 }
 
-impl From<eyre::Report> for InternalServerError {
-    fn from(error: eyre::Report) -> Self {
-        InternalServerError {
-            error: format!("Internal error: {error}"),
-        }
-    }
-}
-
-impl std::fmt::Display for InternalServerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.error)
-    }
-}
+// TODO: Somehow automatically track errors in logs ^^
 
 impl IntoResponse for InternalServerError {
     fn into_response(self) -> Response {
