@@ -1,6 +1,6 @@
 use axum::Router;
 use tracing::debug;
-use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
+use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_scalar::{Scalar, Servable as ScalarServable};
@@ -14,6 +14,15 @@ pub mod TAGS {
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "Pixles API",
+        description = "Pixles API Documentation",
+        version = "0.1.0",
+        license(
+            name = "GNU Affero General Public License v3.0 or later",
+            identifier = "AGPL-3.0-or-later",
+        ),
+    ),
     modifiers(&SecurityAddon),
     tags(
         (name = TAGS::API, description = "Pixles API"),
@@ -21,8 +30,11 @@ pub mod TAGS {
         (name = TAGS::UPLOAD, description = "Pixles Upload API"),
     ),
     servers(
-        (url = "/v1", description = "Current Server URL")
-    )
+        (url = "/", description = "Current Server URL"),
+    ),
+    security(
+        ("bearer" = [])
+    ),
 )]
 pub struct ApiDoc;
 
@@ -30,18 +42,23 @@ struct SecurityAddon;
 
 impl Modify for SecurityAddon {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        if let Some(components) = openapi.components.as_mut() {
-            components.add_security_scheme(
-                "api_key",
-                SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
-            ) // TODO: Replace this scheme ^^
-        }
+        let components = openapi.components.get_or_insert_with(Default::default);
+
+        components.add_security_scheme(
+            "bearer",
+            SecurityScheme::Http(
+                HttpBuilder::new()
+                    .scheme(HttpAuthScheme::Bearer)
+                    .bearer_format("JWT")
+                    .build(),
+            ),
+        );
     }
 }
 
-pub fn get_router(router: OpenApiRouter) -> Router {
+pub fn get_router(v1_router: OpenApiRouter) -> Router {
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
-        .merge(router)
+        .nest("/v1", v1_router)
         .split_for_parts();
 
     if cfg!(feature = "openapi") {

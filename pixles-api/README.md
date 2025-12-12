@@ -55,7 +55,9 @@ _We assume Linux-based systems for this service._
     - GraphiQL (debug build only): <http://localhost:3000/v1/graphql/playground>
   - Upload: <http://localhost:3000/v1/upload>
   - Metadata: <http://localhost:3000/v1/metadata>
-  - OpenAPI: <http://localhost:3000/v1/openapi>
+
+  - OpenAPI Docs: <http://localhost:3000/openapi>
+  - OpenAPI JSON: <http://localhost:3000/openapi.json>
 
 ### Building with Podman
 

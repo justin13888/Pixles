@@ -19,6 +19,7 @@ use crate::utils::headers::get_token_from_headers;
     post,
     path = "/register",
     tag = TAGS::AUTH,
+    security(),
     request_body = RegisterRequest,
     responses(RegisterUserResponses),
     tags = ["Pixles Authentication API"]
@@ -39,6 +40,7 @@ pub async fn register_user(
     post,
     path = "/login",
     tag = TAGS::AUTH,
+    security(),
     request_body = LoginRequest,
     responses(LoginResponses),
     tags = ["Pixles Authentication API"]
@@ -61,6 +63,7 @@ pub async fn login_user(
     post,
     path = "/refresh",
     tag = TAGS::AUTH,
+    security(),
     request_body = RefreshTokenRequest,
     responses(RefreshTokenResponses),
     tags = ["Pixles Authentication API"]
@@ -127,9 +130,7 @@ pub async fn refresh_token(
     post,
     path = "/validate",
     tag = TAGS::AUTH,
-    security(
-        ("bearer" = [])
-    ),
+    security(),
     responses(ValidateTokenResponses),
     tags = ["Pixles Authentication API"]
 )]
@@ -155,9 +156,6 @@ pub async fn validate_token(
     post,
     path = "/logout",
     tag = TAGS::AUTH,
-    security(
-        ("bearer" = [])
-    ),
     responses(LogoutResponses),
     tags = ["Pixles Authentication API"]
 )]

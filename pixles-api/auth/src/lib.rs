@@ -27,19 +27,20 @@ pub mod validation;
 
 #[cfg(feature = "server")]
 #[derive(OpenApi)]
-#[openapi(components(
-    responses(
-        models::responses::TokenResponse,
-        models::responses::ValidateTokenResponse
+#[openapi(
+    components(
+        responses(models::errors::InternalServerError),
+        schemas(
+            errors::AuthError,
+            models::UserProfile,
+            models::errors::BadRegisterUserRequestError,
+            models::responses::TokenResponse,
+        )
     ),
-    schemas(
-        errors::AuthError,
-        models::UserProfile,
-        models::errors::BadRegisterUserRequestError,
-        models::responses::TokenResponse,
-        models::responses::ValidateTokenResponse
-    )
-))]
+    security(
+        ("bearer" = [])
+    ),
+)]
 pub struct AuthApiDoc;
 
 #[cfg(feature = "server")]

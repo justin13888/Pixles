@@ -14,6 +14,7 @@ pub struct VersionResponse {
     get,
     path = "/version",
     tag = TAGS::API,
+    security(),
     responses(
         (status = 200, description = "Version info", body = VersionResponse)
     )

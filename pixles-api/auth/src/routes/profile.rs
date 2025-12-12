@@ -20,9 +20,6 @@ use crate::utils::headers::get_token_from_headers;
     get,
     path = "/profile",
     tag = TAGS::AUTH,
-    security(
-        ("bearer" = [])
-    ),
     responses(UserProfileResponses),
     tags = ["Pixles Authentication API"]
 )]
@@ -68,9 +65,6 @@ pub async fn get_user_profile(
     path = "/profile",
     tag = TAGS::AUTH,
     request_body = UpdateProfileRequest,
-    security(
-        ("bearer" = [])
-    ),
     responses(UpdateUserProfileResponses),
     tags = ["Pixles Authentication API"]
 )]

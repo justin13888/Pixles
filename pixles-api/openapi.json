@@ -1,0 +1,581 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Pixles API",
+    "description": "Pixles API Documentation",
+    "license": {
+      "name": "GNU Affero General Public License v3.0 or later",
+      "identifier": "AGPL-3.0-or-later"
+    },
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current Server URL"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "post": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Login a user",
+        "operationId": "login_user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid credentials"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/logout": {
+      "post": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Logout user and invalidate tokens",
+        "operationId": "logout",
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Get user profile",
+        "operationId": "get_user_profile",
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Update user profile",
+        "operationId": "update_user_profile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "User profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid password"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/refresh": {
+      "post": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Refresh an access token using a refresh token",
+        "operationId": "refresh_token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/register": {
+      "post": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Register a new user",
+        "operationId": "register_user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRegisterUserRequestError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "User already exists"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
+        "security": []
+      }
+    },
+    "/validate": {
+      "post": {
+        "tags": [
+          "auth",
+          "Pixles Authentication API"
+        ],
+        "summary": "Validate an access token",
+        "operationId": "validate_token",
+        "responses": {
+          "200": {
+            "description": "Token is valid",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuthError": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "InvalidCredentials"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "UserAlreadyExists"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "Unauthorized"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "BadRequest"
+            ],
+            "properties": {
+              "BadRequest": {
+                "$ref": "#/components/schemas/BadRegisterUserRequestError"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "InvalidToken"
+            ],
+            "properties": {
+              "InvalidToken": {
+                "$ref": "#/components/schemas/ClaimValidationError"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "InternalServerError"
+            ],
+            "properties": {
+              "InternalServerError": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Authentication error"
+      },
+      "BadRegisterUserRequestError": {
+        "type": "string",
+        "enum": [
+          "Invalid email",
+          "Invalid username",
+          "Invalid password"
+        ]
+      },
+      "ClaimValidationError": {
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "TokenMissing"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "TokenExpired"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "TokenInvalid"
+            ],
+            "properties": {
+              "TokenInvalid": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "UnexpectedHeaderFormat"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "InvalidScopes"
+            ]
+          }
+        ]
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "email": "johndoe@email.com",
+          "password": "password"
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "properties": {
+          "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "name",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "email": "johndoe@email.com",
+          "name": "John Doe",
+          "password": "password",
+          "username": "johndoe"
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token",
+          "token_type",
+          "expires_by"
+        ],
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "expires_by": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Access token expiry in seconds",
+            "minimum": 0
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string",
+            "description": "E.g. \"Bearer\""
+          }
+        }
+      },
+      "UpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "current_password": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "new_password": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "username": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "required": [
+          "user_id",
+          "username",
+          "email",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "InternalServerError": {
+        "description": "Internal server error"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "api",
+      "description": "Pixles API"
+    },
+    {
+      "name": "auth",
+      "description": "Pixles Authentication API"
+    },
+    {
+      "name": "upload",
+      "description": "Pixles Upload API"
+    }
+  ]
+}

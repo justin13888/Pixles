@@ -292,9 +292,6 @@ async fn mark_done(
     ),
     params(
         ("id" = i32, Path, description = "Todo database id")
-    ),
-    security(
-        ("api_key" = [])
     )
 )]
 async fn delete_todo(

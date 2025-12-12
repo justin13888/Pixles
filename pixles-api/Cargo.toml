@@ -3,6 +3,7 @@ name = "pixles-api"
 version = "0.1.0"
 edition = "2024"
 publish = false
+default-run = "pixles-api"
 
 [dependencies]
 pixles-api-auth = { path = "./auth", optional = true }

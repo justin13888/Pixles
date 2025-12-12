@@ -108,12 +108,6 @@ impl axum::response::IntoResponse for LoginResponses {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema, ToResponse)]
-pub enum ValidateTokenResponse {
-    Valid(String),
-    Invalid,
-}
-
 #[derive(utoipa::IntoResponses)]
 pub enum RefreshTokenResponses {
     #[response(status = 200, description = "Token refreshed successfully")]
@@ -156,7 +150,7 @@ impl axum::response::IntoResponse for RefreshTokenResponses {
 #[derive(utoipa::IntoResponses)]
 pub enum ValidateTokenResponses {
     #[response(status = 200, description = "Token is valid")]
-    Valid(ValidateTokenResponse),
+    Valid(String),
 
     #[response(status = 401, description = "Invalid token")]
     Invalid(AuthError),
@@ -165,7 +159,7 @@ pub enum ValidateTokenResponses {
 impl From<Result<Claims, ClaimValidationError>> for ValidateTokenResponses {
     fn from(result: Result<Claims, ClaimValidationError>) -> Self {
         match result {
-            Ok(claims) => Self::Valid(ValidateTokenResponse::Valid(claims.sub)),
+            Ok(claims) => Self::Valid(claims.sub),
             Err(e) => Self::Invalid(e.into()),
         }
     }

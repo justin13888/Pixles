@@ -14,6 +14,7 @@ use crate::utils::hash::hash_password;
     post,
     path = "/password-reset-request",
     tag = TAGS::AUTH,
+    security(),
     request_body = ResetPasswordRequestPayload,
     responses(ResetPasswordRequestResponses),
     tags = ["Pixles Authentication API"]
@@ -40,6 +41,7 @@ pub async fn reset_password_request(
     post,
     path = "/password-reset",
     tag = TAGS::AUTH,
+    security(),
     request_body = ResetPasswordPayload,
     responses(PasswordResetResponses),
     tags = ["Pixles Authentication API"]

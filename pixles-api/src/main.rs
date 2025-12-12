@@ -91,7 +91,6 @@ async fn main() -> Result<()> {
     let docs_router = docs::get_router(openapi_router); // Should include docs only if 'openapi' feature is enabled
     let router = router.merge(docs_router);
 
-    let router = Router::new().nest("/v1", router);
     let app = router.into_make_service();
 
     // Start server
