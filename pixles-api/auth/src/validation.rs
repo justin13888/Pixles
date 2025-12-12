@@ -33,3 +33,19 @@ impl RegistrationValidator {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_valid_request() {
+        let request = RegisterRequest {
+            username: "valid_user".to_string(),
+            email: "test@example.com".to_string(),
+            password: "Password123!".to_string(),
+            name: "Test User".to_string(),
+        };
+        assert!(RegistrationValidator::validate(&request).is_ok());
+    }
+}

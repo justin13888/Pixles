@@ -7,7 +7,7 @@ use std::time::Duration;
 use crate::errors::AuthError;
 
 pub mod storage;
-pub use storage::{RedisSessionStorage, SessionStorage};
+pub use self::storage::{InMemorySessionStorage, RedisSessionStorage, SessionStorage};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Session {

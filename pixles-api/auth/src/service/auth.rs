@@ -99,7 +99,9 @@ impl AuthService {
             }
         } else {
             // Timing attack mitigation
-            let _ = verify_password("random", "random");
+            // Uses a valid hash to ensure verify_password performs work
+            let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$tYPnkCUH2lh52Sj6ZZwkbg$nn/VtIvxWjJoVIWHIpgvesIzTrUvtrczdkXaxmgZ/+w";
+            let _ = verify_password("random", dummy_hash);
         }
 
         Err(AuthError::InvalidCredentials)
@@ -129,5 +131,85 @@ impl AuthService {
             token_type: "Bearer".to_string(),
             expires_by,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::session::InMemorySessionStorage;
+    use base64::Engine;
+    use jsonwebtoken::{DecodingKey, EncodingKey};
+    use ring::signature::{Ed25519KeyPair, KeyPair};
+    use std::time::Duration;
+
+    fn get_test_keys() -> (EncodingKey, DecodingKey) {
+        let doc: Vec<u8> = base64::engine::general_purpose::STANDARD
+            .decode("MC4CAQAwBQYDK2VwBCIEIG73KilXg8qazIq8mNGzuPEHYPLY3WXR1uOS7ZxNkefV")
+            .unwrap();
+        let pair = Ed25519KeyPair::from_pkcs8_maybe_unchecked(&doc).unwrap();
+        let encoding_key = EncodingKey::from_ed_der(&doc);
+        let decoding_key = DecodingKey::from_ed_der(pair.public_key().as_ref());
+
+        (encoding_key, decoding_key)
+    }
+
+    fn get_test_service() -> AuthService {
+        let (encoding_key, decoding_key) = get_test_keys();
+        let config = AuthConfig {
+            host: "localhost".to_string(),
+            port: 8080,
+            domain: "example.com".to_string(),
+            jwt_eddsa_encoding_key: encoding_key,
+            jwt_eddsa_decoding_key: decoding_key,
+            jwt_refresh_token_duration_seconds: 3600,
+            jwt_access_token_duration_seconds: 300,
+            valkey_url: "redis://localhost".to_string(),
+        };
+        AuthService::new(config)
+    }
+
+    #[test]
+    fn test_validate_claims_valid() {
+        let service = get_test_service();
+        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser]);
+
+        assert!(service.validate_claims(&claims, &[Scope::ReadUser]).is_ok());
+    }
+
+    #[test]
+    fn test_validate_claims_invalid_scope() {
+        let service = get_test_service();
+        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser]);
+
+        let result = service.validate_claims(&claims, &[Scope::WriteUser]);
+        assert!(matches!(result, Err(ClaimValidationError::InvalidScopes)));
+    }
+
+    #[tokio::test]
+    async fn test_generate_token_pair() {
+        let service = get_test_service();
+        let storage = Box::new(InMemorySessionStorage::new());
+        let session_manager = SessionManager::new_with_storage(storage, Duration::from_secs(3600));
+
+        let result = service
+            .generate_token_pair("user123", &session_manager)
+            .await;
+        assert!(result.is_ok());
+
+        let response = result.unwrap();
+        assert!(!response.access_token.is_empty());
+        assert!(!response.refresh_token.is_empty());
+        assert_eq!(response.token_type, "Bearer");
+
+        // Verify refresh token has session
+        let claims = service.get_claims(&response.refresh_token).unwrap();
+        assert!(claims.sid.is_some());
+
+        // Verify session exists
+        let sid = claims.sid.unwrap();
+        let session = session_manager.get_session(&sid).await.unwrap();
+        assert!(session.is_some());
+        assert_eq!(session.unwrap().user_id, "user123");
     }
 }
