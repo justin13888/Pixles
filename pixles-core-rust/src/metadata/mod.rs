@@ -3,12 +3,12 @@ use std::path::Path;
 
 use crate::constants::SIDECAR_EXTENSIONS;
 
-mod filter;
 mod file;
+mod filter;
 mod types;
 
-pub use filter::*;
 pub use file::*;
+pub use filter::*;
 pub use types::*;
 
 /// Detect if file is a sidecar file. Automatically returns false if it is not a

@@ -9,7 +9,7 @@ use axum::{
     extract::State,
     http::{HeaderMap, HeaderName, Method, header},
     response::{Html, IntoResponse},
-    routing::{get, post},
+    routing::get,
 };
 use config::GraphqlServerConfig;
 use context::{AppContext, DbContext, UserContext};

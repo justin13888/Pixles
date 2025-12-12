@@ -7,7 +7,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 
-use super::Session;
 use crate::errors::AuthError;
 
 #[async_trait::async_trait]
@@ -145,6 +144,12 @@ impl SessionStorage for RedisSessionStorage {
 pub struct InMemorySessionStorage {
     sessions: Arc<RwLock<HashMap<String, String>>>,
     user_sessions: Arc<RwLock<HashMap<String, Vec<String>>>>,
+}
+
+impl Default for InMemorySessionStorage {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl InMemorySessionStorage {

@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, Json};
+use axum::{Json, response::IntoResponse};
 use docs::TAGS;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;

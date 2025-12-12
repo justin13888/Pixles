@@ -12,8 +12,7 @@ pub fn are_there_nested_paths(paths: &[PathBuf]) -> std::io::Result<bool> {
 
     let mut ancestors = HashSet::new();
 
-    for path in paths
-    {
+    for path in paths {
         let absolute_path = path::absolute(path)?;
         // Ensure the path is absolute
         debug_assert!(
@@ -23,15 +22,13 @@ pub fn are_there_nested_paths(paths: &[PathBuf]) -> std::io::Result<bool> {
         );
 
         // Check if the path is already in the ancestors
-        if ancestors.contains(&absolute_path)
-        {
+        if ancestors.contains(&absolute_path) {
             return Ok(true);
         }
 
         // Add ancestors of the path to the set
         let current_path_ancestors = absolute_path.ancestors();
-        for ancestor in current_path_ancestors.into_iter()
-        {
+        for ancestor in current_path_ancestors.into_iter() {
             ancestors.insert(ancestor.to_path_buf());
         }
     }

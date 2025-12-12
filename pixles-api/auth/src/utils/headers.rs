@@ -12,8 +12,7 @@ pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, Claim
         .map_err(|_| ClaimValidationError::UnexpectedHeaderFormat)?;
 
     // Check if it's a Bearer token
-    if !auth_header.starts_with("Bearer ")
-    {
+    if !auth_header.starts_with("Bearer ") {
         return Err(ClaimValidationError::UnexpectedHeaderFormat);
     }
 

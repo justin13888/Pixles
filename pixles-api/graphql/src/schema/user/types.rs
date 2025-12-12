@@ -2,7 +2,6 @@ use async_graphql::*;
 use chrono::{DateTime, Utc};
 use entity::user;
 use nanoid::nanoid;
-use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 
 #[derive(SimpleObject, Clone, Serialize, Deserialize)]

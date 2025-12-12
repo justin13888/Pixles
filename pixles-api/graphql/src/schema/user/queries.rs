@@ -1,4 +1,4 @@
-use super::{statistics::UserStatisticsQuery, User, UserStatistics};
+use super::{User, statistics::UserStatisticsQuery};
 use async_graphql::*;
 use chrono::Utc;
 pub struct UserQuery {

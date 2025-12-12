@@ -1,7 +1,7 @@
 use async_graphql::*;
 use chrono::{DateTime, Utc};
 
-use crate::schema::{user::User, Tag};
+use crate::schema::{Tag, user::User};
 
 #[derive(Enum, Clone, Copy, Eq, PartialEq)]
 pub enum AssetType {

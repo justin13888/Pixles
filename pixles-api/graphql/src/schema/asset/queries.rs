@@ -1,8 +1,7 @@
-use crate::schema::{user::User, SortDirection};
+use crate::schema::SortDirection;
 
-use super::{AssetFilter, AssetMetadata, AssetSort, AssetType, UploadSession, UploadSessionFilter};
+use super::{AssetFilter, AssetMetadata, AssetSort, UploadSession, UploadSessionFilter};
 use async_graphql::*;
-use chrono::Utc;
 
 pub struct AssetQuery;
 

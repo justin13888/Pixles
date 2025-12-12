@@ -33,12 +33,9 @@ impl Config {
             api_endpoint: std::env::var("PIXLES_API_ENDPOINT")
                 .unwrap_or_else(|_| "https://api.pixles.com".to_string()),
             auth_token: std::env::var("PIXLES_AUTH_TOKEN").ok(),
-            user_id: if config_exists
-            {
+            user_id: if config_exists {
                 Some("user@example.com".to_string()) // Mock user
-            }
-            else
-            {
+            } else {
                 None
             },
         })

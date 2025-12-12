@@ -1,5 +1,4 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::SystemTime;
 
 use chrono::{DateTime, Utc};
@@ -9,7 +8,7 @@ use humansize::{BINARY, format_size};
 
 use crate::config::Config;
 use crate::utils::directories::{
-    get_cache_dir, get_config_dir, get_config_file_path, get_data_dir, get_sync_dir,
+    get_cache_dir, get_config_dir, get_config_file_path, get_data_dir,
 };
 use crate::utils::files::get_available_space;
 
@@ -117,12 +116,9 @@ impl AuthStatus {
         // Since backend is not implemented, we'll mock the data
         let username = config.user_id.clone(); // TODO: Fetch from server, otherwise use cache
         let token_valid = config.auth_token.is_some(); // Assume token is valid if it exists
-        let token_expires_at = if token_valid
-        {
+        let token_expires_at = if token_valid {
             Some(Utc::now() + chrono::Duration::days(30)) // Mock expiry 30 days from now
-        }
-        else
-        {
+        } else {
             None
         };
 
@@ -136,32 +132,24 @@ impl AuthStatus {
     pub fn display(&self) {
         println!("{}", "Authentication Status:".bright_yellow().bold());
 
-        if self.username.is_some()
-        {
+        if self.username.is_some() {
             println!("  {} {}", "Status:".dimmed(), "Logged in".green());
-            if let Some(user) = &self.username
-            {
+            if let Some(user) = &self.username {
                 println!("  {} {}", "User:".dimmed(), user.cyan());
             }
-            if self.token_valid
-            {
+            if self.token_valid {
                 println!("  {} {}", "Token:".dimmed(), "Valid".green());
-            }
-            else
-            {
+            } else {
                 println!("  {} {}", "Token:".dimmed(), "Invalid".red());
             }
-            if let Some(expires) = &self.token_expires_at
-            {
+            if let Some(expires) = &self.token_expires_at {
                 println!(
                     "  {} {}",
                     "Expires:".dimmed(),
                     expires.to_rfc3339().dimmed()
                 );
             }
-        }
-        else
-        {
+        } else {
             println!("  {} {}", "Status:".dimmed(), "Not logged in".red());
         }
     }
@@ -192,29 +180,22 @@ impl LocalEnvStatus {
     pub fn display(&self) {
         println!("{}", "Local Environment Status:".bright_yellow().bold());
 
-        if let Some(config_dir) = &self.config_dir
-        {
+        if let Some(config_dir) = &self.config_dir {
             println!(
                 "  {} {}",
                 "Config Directory:".dimmed(),
                 config_dir.display().to_string().cyan()
             );
-            if self.config_file_exists
-            {
+            if self.config_file_exists {
                 println!("  {} {}", "Config File:".dimmed(), "Found".green());
-            }
-            else
-            {
+            } else {
                 println!("  {} {}", "Config File:".dimmed(), "Not found".yellow());
             }
-        }
-        else
-        {
+        } else {
             println!("  {} {}", "Config Directory:".dimmed(), "Not found".red());
         }
 
-        if let Some(config_file_path) = &self.config_file_path
-        {
+        if let Some(config_file_path) = &self.config_file_path {
             println!(
                 "  {} {}",
                 "Config File Path:".dimmed(),
@@ -222,8 +203,7 @@ impl LocalEnvStatus {
             );
         }
 
-        if let Some(data_dir) = &self.data_dir
-        {
+        if let Some(data_dir) = &self.data_dir {
             println!(
                 "  {} {}",
                 "Data Directory:".dimmed(),
@@ -231,8 +211,7 @@ impl LocalEnvStatus {
             );
         }
 
-        if let Some(cache_dir) = &self.cache_dir
-        {
+        if let Some(cache_dir) = &self.cache_dir {
             println!(
                 "  {} {}",
                 "Cache Directory:".dimmed(),
@@ -240,8 +219,7 @@ impl LocalEnvStatus {
             );
         }
 
-        if let Some(space) = self.available_disk_space
-        {
+        if let Some(space) = self.available_disk_space {
             println!(
                 "  {} {}",
                 "Available Space:".dimmed(),
@@ -280,22 +258,17 @@ impl ServerStatus {
             self.api_endpoint.cyan()
         );
 
-        match &self.connection_status
-        {
-            ConnectionStatus::Connected =>
-            {
+        match &self.connection_status {
+            ConnectionStatus::Connected => {
                 println!("  {} {}", "Connection:".dimmed(), "Connected".green());
             }
-            ConnectionStatus::Disconnected =>
-            {
+            ConnectionStatus::Disconnected => {
                 println!("  {} {}", "Connection:".dimmed(), "Disconnected".red());
             }
-            ConnectionStatus::Unknown =>
-            {
+            ConnectionStatus::Unknown => {
                 println!("  {} {}", "Connection:".dimmed(), "Unknown".yellow());
             }
-            ConnectionStatus::Error(err) =>
-            {
+            ConnectionStatus::Error(err) => {
                 println!(
                     "  {} {}",
                     "Connection:".dimmed(),
@@ -304,17 +277,13 @@ impl ServerStatus {
             }
         }
 
-        if let Some(version) = &self.api_version
-        {
+        if let Some(version) = &self.api_version {
             println!("  {} {}", "API Version:".dimmed(), version.cyan());
-        }
-        else
-        {
+        } else {
             println!("  {} {}", "API Version:".dimmed(), "Unknown".dimmed());
         }
 
-        if let Some(time) = self.response_time
-        {
+        if let Some(time) = self.response_time {
             println!(
                 "  {} {}ms",
                 "Response Time:".dimmed(),
@@ -322,8 +291,7 @@ impl ServerStatus {
             );
         }
 
-        if let Some(health) = &self.server_health
-        {
+        if let Some(health) = &self.server_health {
             println!("  {} {}", "Server Health:".dimmed(), health.dimmed());
         }
     }
@@ -346,16 +314,13 @@ impl SyncStatus {
     pub fn display(&self) {
         println!("{}", "Sync Status:".bright_yellow().bold());
 
-        if let Some(last_sync) = self.last_sync
-        {
+        if let Some(last_sync) = self.last_sync {
             println!(
                 "  {} {}",
                 "Last Sync:".dimmed(),
                 format!("{:?}", last_sync).cyan()
             );
-        }
-        else
-        {
+        } else {
             println!("  {} {}", "Last Sync:".dimmed(), "Never".dimmed());
         }
 
@@ -370,16 +335,13 @@ impl SyncStatus {
             self.pending_downloads.to_string().cyan()
         );
 
-        if self.sync_conflicts > 0
-        {
+        if self.sync_conflicts > 0 {
             println!(
                 "  {} {}",
                 "Sync Conflicts:".dimmed(),
                 self.sync_conflicts.to_string().red()
             );
-        }
-        else
-        {
+        } else {
             println!("  {} {}", "Sync Conflicts:".dimmed(), "None".green());
         }
 
@@ -389,16 +351,13 @@ impl SyncStatus {
             self.local_file_count.to_string().cyan()
         );
 
-        if let Some(remote_count) = self.remote_file_count
-        {
+        if let Some(remote_count) = self.remote_file_count {
             println!(
                 "  {} {}",
                 "Remote Files:".dimmed(),
                 remote_count.to_string().cyan()
             );
-        }
-        else
-        {
+        } else {
             println!("  {} {}", "Remote Files:".dimmed(), "Unknown".dimmed());
         }
     }

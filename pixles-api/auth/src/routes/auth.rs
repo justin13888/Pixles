@@ -3,7 +3,6 @@ use axum::extract::State;
 use axum::http::HeaderMap;
 use docs::TAGS;
 use secrecy::ExposeSecret;
-use tracing::trace;
 
 use crate::claims::Claims;
 use crate::errors::{AuthError, ClaimValidationError};

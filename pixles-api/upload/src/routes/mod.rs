@@ -11,7 +11,7 @@
 //     Router,
 // };
 use axum::{
-    Json, Router,
+    Json,
     extract::{Path, Query, State},
     response::IntoResponse,
 };

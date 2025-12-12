@@ -1,7 +1,6 @@
 use std::fmt;
 
 use colored::Colorize;
-use eyre::eyre;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection, DbErr};
 use thiserror::Error;
@@ -18,8 +17,7 @@ pub enum InitDbError {
 
 impl fmt::Display for InitDbError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self
-        {
+        match self {
             InitDbError::Path(msg) => write!(f, "Path error: {msg}"),
             InitDbError::Db(err) => write!(f, "Database error: {err}"),
             InitDbError::Io(err) => write!(f, "IO error: {err}"),
@@ -33,8 +31,7 @@ pub async fn init_sqlite() -> Result<DatabaseConnection, InitDbError> {
     ))?;
     {
         // Create the database directory if it doesn't exist
-        if let Some(parent) = db_path.parent()
-        {
+        if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
     }

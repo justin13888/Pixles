@@ -1,10 +1,10 @@
-use axum::{Router, extract::DefaultBodyLimit};
+use axum::extract::DefaultBodyLimit;
 use config::UploadServerConfig;
 use eyre::Result;
 use metadata::FileDatabase;
 use sea_orm::DatabaseConnection;
 
-use tower_http::cors::{AllowOrigin, Any, CorsLayer};
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 use utoipa_axum::router::OpenApiRouter;
 

@@ -1,7 +1,6 @@
 use std::{
-    cell::LazyCell,
     fs,
-    sync::{Arc, LazyLock, Mutex},
+    sync::{LazyLock, Mutex},
 };
 
 use serde::{Deserialize, Serialize};
@@ -34,16 +33,14 @@ impl FileDatabase {
     pub async fn new(config: UploadServerConfig) -> Result<Self, sled::Error> {
         // Ensure the upload directory exists
         fs::create_dir_all(&config.upload_dir).map_err(|e| {
-            sled::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            sled::Error::Io(std::io::Error::other(
                 format!("Failed to create upload directory: {}", e),
             ))
         })?;
 
         // Ensure the database directory exists
         fs::create_dir_all(&config.sled_db_dir).map_err(|e| {
-            sled::Error::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            sled::Error::Io(std::io::Error::other(
                 format!("Failed to create database directory: {}", e),
             ))
         })?;
@@ -52,14 +49,12 @@ impl FileDatabase {
         let db = sled::open(&config.sled_db_dir)?;
 
         // Initialize cache size tracker
-        if let Ok(Some(size_bytes)) = db.get("cache_size") {
-            if let Ok(size_str) = std::str::from_utf8(&size_bytes) {
-                if let Ok(size) = size_str.parse::<usize>() {
+        if let Ok(Some(size_bytes)) = db.get("cache_size")
+            && let Ok(size_str) = std::str::from_utf8(&size_bytes)
+                && let Ok(size) = size_str.parse::<usize>() {
                     let mut cache_size = CACHE_SIZE.lock().unwrap();
                     *cache_size = size;
                 }
-            }
-        }
 
         Ok(Self { db, config })
     }
