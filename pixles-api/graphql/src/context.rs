@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::Arc};
+use std::collections::HashSet;
 
 use async_graphql::{Error, ErrorExtensions, ServerError};
 use auth::{
@@ -33,7 +33,7 @@ impl UserContext {
         let mut scopes = None;
         let user_type: UserType = match get_token_from_headers(headers) {
             Ok(token) => {
-                let claims = auth_service.get_claims(&token.expose_secret())?;
+                let claims = auth_service.get_claims(token.expose_secret())?;
 
                 scopes = Some(claims.scopes);
 
@@ -55,7 +55,7 @@ impl UserContext {
 
 #[derive(Debug, Clone)]
 pub struct DbContext {
-    pub conn: Arc<DatabaseConnection>,
+    pub conn: DatabaseConnection,
 }
 
 #[derive(Debug, Clone)]

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::Router;
 use config::MetadataServerConfig;
 use sea_orm::DatabaseConnection;
@@ -41,7 +39,7 @@ impl Greeter for MyGreeter {
 
 // TODO: flesh this out vv
 pub async fn get_router<C: Into<MetadataServerConfig>>(
-    conn: Arc<DatabaseConnection>,
+    conn: DatabaseConnection,
     config: C,
 ) -> Result<Router> {
     let greeter = MyGreeter::default();

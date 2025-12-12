@@ -125,9 +125,6 @@ pub enum ValidateTokenResponses {
 
     #[response(status = 401, description = "Invalid token")]
     Invalid(AuthError),
-
-    #[response(status = 500, description = "Internal server error")]
-    InternalServerError(#[ref_response] InternalServerError),
 }
 
 impl axum::response::IntoResponse for ValidateTokenResponses {
@@ -143,7 +140,6 @@ impl axum::response::IntoResponse for ValidateTokenResponses {
                 let body = Json(ApiError::new(e.to_string()));
                 (status, body).into_response()
             }
-            Self::InternalServerError(e) => e.into_response(),
         }
     }
 }

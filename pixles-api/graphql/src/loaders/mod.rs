@@ -1,6 +1,5 @@
 // use async_graphql::{FieldError, dataloader::*};
 use sea_orm::DatabaseConnection;
-use std::sync::Arc;
 
 // use crate::schema::user::User;
 // use entity::user;
@@ -37,7 +36,7 @@ pub struct Loaders;
 // }
 
 impl Loaders {
-    pub fn new(conn: Arc<DatabaseConnection>) -> Self {
+    pub fn new(conn: DatabaseConnection) -> Self {
         Self {}
         // Self {
         //     user_loader: DataLoader::new(UserLoader { conn }, tokio::spawn),

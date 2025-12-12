@@ -19,17 +19,13 @@ use crate::utils::hash::hash_password;
     tags = ["Pixles Authentication API"]
 )]
 pub async fn reset_password_request(
-    State(AppState {
-        conn,
-        email_service,
-        ..
-    }): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<ResetPasswordRequestPayload>,
 ) -> ResetPasswordRequestResponses {
     let email = payload.email;
 
     // Find user by email
-    let user = match UserService::Query::find_user_by_email(&conn, &email).await {
+    let user = match UserService::Query::find_user_by_email(&state.conn, &email).await {
         Ok(user) => user,
         Err(e) => return ResetPasswordRequestResponses::InternalServerError(e.into()),
     };
@@ -41,7 +37,7 @@ pub async fn reset_password_request(
 
         // Update user with token
         if let Err(e) = UserService::Mutation::update_password_reset_token(
-            &conn,
+            &state.conn,
             user.id.clone(),
             token.clone(),
             expires_at,
@@ -52,7 +48,8 @@ pub async fn reset_password_request(
         }
 
         // Send email
-        if let Err(e) = email_service
+        if let Err(e) = state
+            .email_service
             .send_password_reset_email(&user.email, &token)
             .await
         {
@@ -78,11 +75,7 @@ pub async fn reset_password_request(
     tags = ["Pixles Authentication API"]
 )]
 pub async fn reset_password(
-    State(AppState {
-        conn,
-        session_manager,
-        ..
-    }): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<ResetPasswordPayload>,
 ) -> PasswordResetResponses {
     let ResetPasswordPayload {
@@ -91,7 +84,7 @@ pub async fn reset_password(
     } = payload;
 
     // Find user by token
-    let user = match UserService::Query::find_user_by_reset_token(&conn, &token).await {
+    let user = match UserService::Query::find_user_by_reset_token(&state.conn, &token).await {
         Ok(user) => user,
         Err(e) => return PasswordResetResponses::InternalServerError(e.into()),
     };
@@ -124,13 +117,14 @@ pub async fn reset_password(
 
     // Confirm reset
     if let Err(e) =
-        UserService::Mutation::confirm_password_reset(&conn, user.id.clone(), password_hash).await
+        UserService::Mutation::confirm_password_reset(&state.conn, user.id.clone(), password_hash)
+            .await
     {
         return PasswordResetResponses::InternalServerError(e.into());
     }
 
     // Revoke all existing sessions for security
-    if let Err(e) = session_manager.revoke_all_for_user(&user.id).await {
+    if let Err(e) = state.session_manager.revoke_all_for_user(&user.id).await {
         tracing::error!(
             "Failed to revoke sessions after password reset for user {}: {}",
             user.id,

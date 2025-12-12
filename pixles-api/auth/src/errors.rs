@@ -3,7 +3,7 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use thiserror::Error;
-use utoipa::{PartialSchema, ToResponse, ToSchema};
+use utoipa::ToSchema;
 
 /// Authentication error
 #[derive(Error, Debug, ToSchema)]
@@ -22,7 +22,7 @@ impl IntoResponse for AuthError {
         let (status, error_message) = match self {
             AuthError::InvalidCredentials => (StatusCode::NOT_FOUND, "User not found".to_string()),
             AuthError::InvalidToken(e) => (StatusCode::UNAUTHORIZED, e.to_string()),
-            AuthError::InternalServerError(e) => (
+            AuthError::InternalServerError(_e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_string(),
             ), // Don't expose internal error details

@@ -26,7 +26,7 @@ use crate::utils::headers::get_token_from_headers;
     tags = ["Pixles Authentication API"]
 )]
 pub async fn get_user_profile(
-    State(AppState { config, conn, .. }): State<AppState>,
+    State(state): State<AppState>,
     headers: HeaderMap,
 ) -> UserProfileResponses {
     // Authorize user
@@ -34,14 +34,17 @@ pub async fn get_user_profile(
         Ok(token_string) => token_string,
         Err(e) => return UserProfileResponses::Unauthorized(e.into()),
     };
-    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
+    let token = match Claims::decode(
+        token_string.expose_secret(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
         Ok(token) => token,
         Err(e) => return UserProfileResponses::Unauthorized(ClaimValidationError::from(e).into()),
     };
     let user_id = token.claims.sub;
 
     // Fetch user profile from database
-    let user_model = match UserService::Query::find_user_by_id(&conn, user_id).await {
+    let user_model = match UserService::Query::find_user_by_id(&state.conn, user_id).await {
         Ok(Some(user)) => user,
         Ok(None) => return UserProfileResponses::UserNotFound,
         Err(e) => return UserProfileResponses::InternalServerError(e.into()),
@@ -71,7 +74,7 @@ pub async fn get_user_profile(
     tags = ["Pixles Authentication API"]
 )]
 pub async fn update_user_profile(
-    State(AppState { config, conn, .. }): State<AppState>,
+    State(state): State<AppState>,
     headers: HeaderMap,
     Json(payload): Json<UpdateProfileRequest>,
 ) -> UpdateUserProfileResponses {
@@ -80,7 +83,10 @@ pub async fn update_user_profile(
         Ok(token_string) => token_string,
         Err(e) => return UpdateUserProfileResponses::Unauthorized(e.into()),
     };
-    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
+    let token = match Claims::decode(
+        token_string.expose_secret(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
         Ok(token) => token,
         Err(e) => {
             return UpdateUserProfileResponses::Unauthorized(ClaimValidationError::from(e).into());
@@ -89,7 +95,8 @@ pub async fn update_user_profile(
     let user_id = token.claims.sub;
 
     // Fetch current user to check password if needed
-    let current_user = match UserService::Query::find_user_by_id(&conn, user_id.clone()).await {
+    let current_user = match UserService::Query::find_user_by_id(&state.conn, user_id.clone()).await
+    {
         Ok(Some(user)) => user,
         Ok(None) => return UpdateUserProfileResponses::UserNotFound,
         Err(e) => return UpdateUserProfileResponses::InternalServerError(e.into()),
@@ -114,7 +121,7 @@ pub async fn update_user_profile(
 
     // Update user profile in database
     let updated_user = match UserService::Mutation::update_user(
-        &conn,
+        &state.conn,
         user_id,
         payload.username,
         None, // Name update not exposed in request yet?

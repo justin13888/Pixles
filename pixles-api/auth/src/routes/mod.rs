@@ -2,10 +2,6 @@ mod auth;
 mod password;
 mod profile;
 
-pub use auth::*;
-pub use password::*;
-pub use profile::*;
-
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
@@ -31,6 +27,3 @@ pub(super) fn get_router(state: AppState) -> OpenApiRouter {
 // - Multiple failed login attempts
 // - Unusual authentication patterns
 // - Rate limit threshold breaches
-
-// TODO: Double check on implementation with best practices
-// TODO: Add unit tests

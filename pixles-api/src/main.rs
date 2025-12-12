@@ -5,10 +5,7 @@ use listenfd::ListenFd;
 use migration::{Migrator, MigratorTrait};
 use routes::version::get_version;
 use sea_orm::Database;
-use std::{
-    net::{Ipv4Addr, SocketAddrV4},
-    sync::Arc,
-};
+use std::net::{Ipv4Addr, SocketAddrV4};
 use tokio::net::TcpListener;
 use tracing::{debug, info};
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -50,12 +47,12 @@ async fn main() -> Result<()> {
     debug!("Environment settings loaded: {:?}", env);
 
     // Initialize database connection
-    let conn = Arc::new(Database::connect(env.database.url).await?);
+    let conn = Database::connect(env.database.url).await?;
 
     // Run auto migration in dev
     #[cfg(debug_assertions)]
     {
-        Migrator::up(conn.as_ref(), None).await?;
+        Migrator::up(&conn, None).await?;
     }
 
     let mut openapi_router = OpenApiRouter::new();

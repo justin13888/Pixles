@@ -87,7 +87,7 @@ fn create_cors_layer() -> CorsLayer {
 }
 
 pub async fn get_router<C: Into<GraphqlServerConfig>>(
-    conn: Arc<DatabaseConnection>,
+    conn: DatabaseConnection,
     config: C,
     auth_config: AuthConfig,
 ) -> Result<Router> {
@@ -107,7 +107,10 @@ pub async fn get_router<C: Into<GraphqlServerConfig>>(
     };
 
     // Build router
-    let mut app = Router::new().route("/", get(graphql_handler).post(graphql_handler).with_state(state));
+    let mut app = Router::new().route(
+        "/",
+        get(graphql_handler).post(graphql_handler).with_state(state),
+    );
     #[cfg(debug_assertions)]
     {
         app = app.route("/playground", get(|| graphiql("/v1/graphql")));

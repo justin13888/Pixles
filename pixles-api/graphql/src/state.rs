@@ -8,7 +8,7 @@ use crate::{config::GraphqlServerConfig, schema::AppSchema};
 #[derive(Clone)]
 pub struct AppState {
     pub schema: AppSchema,
-    pub conn: Arc<DatabaseConnection>,
+    pub conn: DatabaseConnection,
     pub config: GraphqlServerConfig,
     pub auth_service: Arc<AuthService>,
 }

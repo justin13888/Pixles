@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use config::AuthConfig;
 use eyre::Result;
 use sea_orm::DatabaseConnection;
@@ -44,7 +42,7 @@ pub struct AuthApiDoc;
 
 #[cfg(feature = "server")]
 pub async fn get_router<C: Into<AuthConfig>>(
-    conn: Arc<DatabaseConnection>,
+    conn: DatabaseConnection,
     config: C,
 ) -> Result<OpenApiRouter> {
     let config = config.into();
@@ -62,12 +60,7 @@ pub async fn get_router<C: Into<AuthConfig>>(
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any); // TODO: Restrict later
-    let state = AppState {
-        conn,
-        config,
-        session_manager,
-        email_service,
-    };
+    let state = AppState::new(conn, config, session_manager, email_service);
 
     Ok(OpenApiRouter::with_openapi(AuthApiDoc::openapi())
         .merge(routes::get_router(state))

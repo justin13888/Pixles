@@ -3,7 +3,7 @@ use config::UploadServerConfig;
 use eyre::Result;
 use metadata::FileDatabase;
 use sea_orm::DatabaseConnection;
-use std::sync::Arc;
+
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing::info;
 use utoipa_axum::router::OpenApiRouter;
@@ -17,7 +17,7 @@ mod routes;
 mod state;
 
 pub async fn get_router<C: Into<UploadServerConfig>>(
-    conn: Arc<DatabaseConnection>,
+    conn: DatabaseConnection,
     config: C,
 ) -> Result<OpenApiRouter> {
     let config = config.into();

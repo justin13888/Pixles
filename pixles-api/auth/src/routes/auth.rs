@@ -30,12 +30,7 @@ use crate::utils::headers::get_token_from_headers;
     tags = ["Pixles Authentication API"]
 )]
 pub async fn register_user(
-    State(AppState {
-        config,
-        conn,
-        session_manager,
-        ..
-    }): State<AppState>,
+    State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
 ) -> RegisterUserResponses {
     // Validate request
@@ -64,8 +59,10 @@ pub async fn register_user(
         return RegisterUserResponses::BadRequest(BadRegisterUserRequestError::Password);
     }
 
+    let conn = &state.conn;
+
     // Check if email already exists
-    match UserService::Query::find_user_by_email(&conn, &email).await {
+    match UserService::Query::find_user_by_email(conn, &email).await {
         Ok(user) => {
             if user.is_some() {
                 trace!("User with email {} already exists", email);
@@ -76,7 +73,7 @@ pub async fn register_user(
     }
 
     // Check if username already exists
-    let user = match UserService::Query::find_user_by_username(&conn, &username).await {
+    let user = match UserService::Query::find_user_by_username(conn, &username).await {
         Ok(user) => user,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     };
@@ -90,7 +87,7 @@ pub async fn register_user(
         Ok(password_hash) => password_hash,
         Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
     };
-    let user = match UserService::Mutation::create_user(&conn, email, name, username, password_hash)
+    let user = match UserService::Mutation::create_user(conn, email, name, username, password_hash)
         .await
     {
         Ok(user) => user,
@@ -99,11 +96,16 @@ pub async fn register_user(
     let user_id = &user.id;
 
     // Generate tokens
-    let token_response =
-        match generate_tokens(user_id, &config.jwt_eddsa_encoding_key, &session_manager).await {
-            Ok(token_response) => token_response,
-            Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
-        };
+    let token_response = match generate_tokens(
+        user_id,
+        &state.config.jwt_eddsa_encoding_key,
+        &state.session_manager,
+    )
+    .await
+    {
+        Ok(token_response) => token_response,
+        Err(e) => return RegisterUserResponses::InternalServerError(e.into()),
+    };
 
     RegisterUserResponses::Success(token_response)
 }
@@ -118,18 +120,14 @@ pub async fn register_user(
     tags = ["Pixles Authentication API"]
 )]
 pub async fn login_user(
-    State(AppState {
-        config,
-        conn,
-        session_manager,
-        ..
-    }): State<AppState>,
+    State(state): State<AppState>,
     Json(request): Json<LoginRequest>,
 ) -> LoginResponses {
     let LoginRequest { email, password } = request;
+    let conn = &state.conn;
 
     // Find email by email
-    let user = match UserService::Query::find_user_by_email(&conn, &email).await {
+    let user = match UserService::Query::find_user_by_email(conn, &email).await {
         Ok(user) => user,
         Err(e) => return LoginResponses::InternalServerError(e.into()),
     };
@@ -144,19 +142,24 @@ pub async fn login_user(
 
         if is_password_valid {
             // Track success
-            if let Err(e) = UserService::Mutation::track_login_success(&conn, user.id.clone()).await
+            if let Err(e) = UserService::Mutation::track_login_success(conn, user.id.clone()).await
             {
                 tracing::error!("Failed to track login success: {}", e);
             }
 
-            match generate_tokens(&user.id, &config.jwt_eddsa_encoding_key, &session_manager).await
+            match generate_tokens(
+                &user.id,
+                &state.config.jwt_eddsa_encoding_key,
+                &state.session_manager,
+            )
+            .await
             {
                 Ok(token_response) => LoginResponses::Success(token_response),
                 Err(e) => LoginResponses::InternalServerError(e.into()),
             }
         } else {
             // Track failure
-            if let Err(e) = UserService::Mutation::track_login_failure(&conn, user.id).await {
+            if let Err(e) = UserService::Mutation::track_login_failure(conn, user.id).await {
                 tracing::error!("Failed to track login failure: {}", e);
             }
 
@@ -182,15 +185,11 @@ pub async fn login_user(
     tags = ["Pixles Authentication API"]
 )]
 pub async fn refresh_token(
-    State(AppState {
-        config,
-        session_manager,
-        ..
-    }): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<RefreshTokenRequest>,
 ) -> RefreshTokenResponses {
     // For this example, we'll simulate token validation and renewal
-    let token = match Claims::decode(&payload.refresh_token, &config.jwt_eddsa_decoding_key) {
+    let token = match Claims::decode(&payload.refresh_token, &state.config.jwt_eddsa_decoding_key) {
         Ok(token) => token,
         Err(e) => {
             return RefreshTokenResponses::InvalidRefreshToken(
@@ -209,7 +208,7 @@ pub async fn refresh_token(
     };
 
     // Validate session
-    let session = match session_manager.get_session(&sid).await {
+    let session = match state.session_manager.get_session(&sid).await {
         Ok(Some(s)) => s,
         Ok(None) => {
             return RefreshTokenResponses::InvalidRefreshToken(
@@ -227,17 +226,22 @@ pub async fn refresh_token(
     }
 
     // Revoke old session (Rotation)
-    if let Err(e) = session_manager.revoke_session(&sid).await {
+    if let Err(e) = state.session_manager.revoke_session(&sid).await {
         return RefreshTokenResponses::InternalServerError(e.into());
     }
 
     let user_id = token.claims.sub;
 
-    let token_response =
-        match generate_tokens(&user_id, &config.jwt_eddsa_encoding_key, &session_manager).await {
-            Ok(token_response) => token_response,
-            Err(e) => return RefreshTokenResponses::InternalServerError(e.into()),
-        };
+    let token_response = match generate_tokens(
+        &user_id,
+        &state.config.jwt_eddsa_encoding_key,
+        &state.session_manager,
+    )
+    .await
+    {
+        Ok(token_response) => token_response,
+        Err(e) => return RefreshTokenResponses::InternalServerError(e.into()),
+    };
 
     RefreshTokenResponses::Success(token_response)
 }
@@ -254,7 +258,7 @@ pub async fn refresh_token(
     tags = ["Pixles Authentication API"]
 )]
 pub async fn validate_token(
-    State(AppState { config, .. }): State<AppState>,
+    State(state): State<AppState>,
     headers: HeaderMap,
 ) -> ValidateTokenResponses {
     // Get token string
@@ -264,7 +268,10 @@ pub async fn validate_token(
     };
 
     // Validate token
-    match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
+    match Claims::decode(
+        token_string.expose_secret(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
         Ok(token) => ValidateTokenResponses::Valid(ValidateTokenResponse::Valid(token.claims.sub)),
         Err(e) => ValidateTokenResponses::Invalid(ClaimValidationError::from(e).into()),
     }
@@ -281,14 +288,7 @@ pub async fn validate_token(
     responses(LogoutResponses),
     tags = ["Pixles Authentication API"]
 )]
-pub async fn logout(
-    State(AppState {
-        config,
-        session_manager,
-        ..
-    }): State<AppState>,
-    headers: HeaderMap,
-) -> LogoutResponses {
+pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> LogoutResponses {
     // Authorize user
     let token_string = match get_token_from_headers(&headers) {
         Ok(token_string) => token_string,
@@ -296,16 +296,19 @@ pub async fn logout(
     };
 
     // Just validate the token signatures
-    let token = match Claims::decode(token_string.expose_secret(), &config.jwt_eddsa_decoding_key) {
+    let token = match Claims::decode(
+        token_string.expose_secret(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
         Ok(t) => t,
         Err(e) => return LogoutResponses::Unauthorized(ClaimValidationError::from(e).into()),
     };
 
     // If it has a session ID, revoke it
-    if let Some(sid) = token.claims.sid {
-        if let Err(e) = session_manager.revoke_session(&sid).await {
-            return LogoutResponses::InternalServerError(e.into());
-        }
+    if let Some(sid) = token.claims.sid
+        && let Err(e) = state.session_manager.revoke_session(&sid).await
+    {
+        return LogoutResponses::InternalServerError(e.into());
     }
 
     LogoutResponses::Success
