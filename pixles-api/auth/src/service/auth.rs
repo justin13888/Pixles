@@ -10,6 +10,7 @@ use crate::models::responses::TokenResponse;
 use crate::session::SessionManager;
 use crate::utils::hash::{hash_password, verify_password};
 use crate::validation::RegistrationValidator;
+use secrecy::{ExposeSecret, SecretString};
 
 #[derive(Clone)]
 pub struct AuthService {
@@ -65,8 +66,8 @@ impl AuthService {
             return Err(AuthError::UserAlreadyExists);
         }
 
-        let password_hash =
-            hash_password(&password).map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
+        let password_hash = hash_password(password.expose_secret())
+            .map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
 
         // TODO: Handle unique constraint violation from DB if race condition occurs
         let user = UserService::Mutation::create_user(conn, email, name, username, password_hash)
@@ -81,14 +82,14 @@ impl AuthService {
         conn: &DatabaseConnection,
         session_manager: &SessionManager,
         email: &str,
-        password: &str,
+        password: &SecretString,
     ) -> Result<TokenResponse, AuthError> {
         let user = UserService::Query::find_user_by_email(conn, email)
             .await
             .map_err(|e| AuthError::InternalServerError(e.into()))?;
 
         if let Some(user) = user {
-            let is_valid = verify_password(password, &user.password_hash)
+            let is_valid = verify_password(password.expose_secret(), &user.password_hash)
                 .map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
 
             if is_valid {
@@ -126,8 +127,8 @@ impl AuthService {
             TokenService::create_refresh_token(user_id, sid, &self.config.jwt_eddsa_encoding_key)?;
 
         Ok(TokenResponse {
-            access_token,
-            refresh_token,
+            access_token: access_token.into(),
+            refresh_token: refresh_token.into(),
             token_type: "Bearer".to_string(),
             expires_by,
         })
@@ -198,12 +199,14 @@ mod tests {
         assert!(result.is_ok());
 
         let response = result.unwrap();
-        assert!(!response.access_token.is_empty());
-        assert!(!response.refresh_token.is_empty());
+        assert!(!response.access_token.expose_secret().is_empty());
+        assert!(!response.refresh_token.expose_secret().is_empty());
         assert_eq!(response.token_type, "Bearer");
 
         // Verify refresh token has session
-        let claims = service.get_claims(&response.refresh_token).unwrap();
+        let claims = service
+            .get_claims(response.refresh_token.expose_secret())
+            .unwrap();
         assert!(claims.sid.is_some());
 
         // Verify session exists

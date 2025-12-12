@@ -1,16 +1,21 @@
+use super::UserProfile;
+use super::errors::*;
+use crate::claims::Claims;
+use crate::errors::{AuthError, ClaimValidationError};
 use axum::Json;
 use axum::http::StatusCode;
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use utoipa::{ToResponse, ToSchema};
 
-use super::UserProfile;
-use super::errors::*;
-use crate::errors::AuthError;
-
-#[derive(Serialize, Deserialize, ToSchema, ToResponse)]
+#[derive(Serialize, Deserialize, ToSchema, ToResponse, Debug)]
 pub struct TokenResponse {
-    pub access_token: String,
-    pub refresh_token: String,
+    #[schema(value_type = String)]
+    #[serde(serialize_with = "crate::models::serialize_secret")]
+    pub access_token: SecretString,
+    #[schema(value_type = String)]
+    #[serde(serialize_with = "crate::models::serialize_secret")]
+    pub refresh_token: SecretString,
     /// E.g. "Bearer"
     pub token_type: String,
     /// Access token expiry in seconds
@@ -27,6 +32,17 @@ pub enum RegisterUserResponses {
     UserAlreadyExists,
     #[response(status = 500, description = "Internal server error")]
     InternalServerError(#[ref_response] InternalServerError),
+}
+
+impl From<Result<TokenResponse, AuthError>> for RegisterUserResponses {
+    fn from(result: Result<TokenResponse, AuthError>) -> Self {
+        match result {
+            Ok(token) => Self::Success(token),
+            Err(AuthError::UserAlreadyExists) => Self::UserAlreadyExists,
+            Err(AuthError::BadRequest(e)) => Self::BadRequest(e),
+            Err(e) => Self::InternalServerError(e.into()),
+        }
+    }
 }
 
 impl axum::response::IntoResponse for RegisterUserResponses {
@@ -62,6 +78,16 @@ pub enum LoginResponses {
 
     #[response(status = 500, description = "Internal server error")]
     InternalServerError(#[ref_response] InternalServerError),
+}
+
+impl From<Result<TokenResponse, AuthError>> for LoginResponses {
+    fn from(result: Result<TokenResponse, AuthError>) -> Self {
+        match result {
+            Ok(token) => Self::Success(token),
+            Err(AuthError::InvalidCredentials) => Self::InvalidCredentials,
+            Err(e) => Self::InternalServerError(e.into()),
+        }
+    }
 }
 
 impl axum::response::IntoResponse for LoginResponses {
@@ -100,6 +126,15 @@ pub enum RefreshTokenResponses {
     InternalServerError(#[ref_response] InternalServerError),
 }
 
+impl From<Result<TokenResponse, AuthError>> for RefreshTokenResponses {
+    fn from(result: Result<TokenResponse, AuthError>) -> Self {
+        match result {
+            Ok(token) => Self::Success(token),
+            Err(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
 impl axum::response::IntoResponse for RefreshTokenResponses {
     fn into_response(self) -> axum::response::Response {
         match self {
@@ -125,6 +160,15 @@ pub enum ValidateTokenResponses {
 
     #[response(status = 401, description = "Invalid token")]
     Invalid(AuthError),
+}
+
+impl From<Result<Claims, ClaimValidationError>> for ValidateTokenResponses {
+    fn from(result: Result<Claims, ClaimValidationError>) -> Self {
+        match result {
+            Ok(claims) => Self::Valid(ValidateTokenResponse::Valid(claims.sub)),
+            Err(e) => Self::Invalid(e.into()),
+        }
+    }
 }
 
 impl axum::response::IntoResponse for ValidateTokenResponses {

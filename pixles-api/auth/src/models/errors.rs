@@ -62,6 +62,7 @@ impl ToSchema for InternalServerError {
 
 impl IntoResponse for InternalServerError {
     fn into_response(self) -> Response {
+        tracing::error!(?self, "Internal server error");
         let response = if cfg!(debug_assertions) {
             self.to_string()
         } else {

@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -7,25 +8,35 @@ pub struct RegisterRequest {
     pub username: String,
     pub name: String,
     pub email: String,
-    pub password: String,
+    #[schema(value_type = String)]
+    #[serde(serialize_with = "crate::models::serialize_secret")]
+    pub password: SecretString,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 #[schema(example = json!({"email": "johndoe@email.com", "password": "password"}))]
 pub struct LoginRequest {
     pub email: String,
-    pub password: String,
+    #[schema(value_type = String)]
+    #[serde(serialize_with = "crate::models::serialize_secret")]
+    pub password: SecretString,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RefreshTokenRequest {
-    pub refresh_token: String,
+    #[schema(value_type = String)]
+    #[serde(serialize_with = "crate::models::serialize_secret")]
+    pub refresh_token: SecretString,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct UpdateProfileRequest {
     pub username: Option<String>,
     pub email: Option<String>,
-    pub current_password: Option<String>,
-    pub new_password: Option<String>,
+    #[schema(value_type = Option<String>)]
+    #[serde(serialize_with = "crate::models::serialize_secret_option")]
+    pub current_password: Option<SecretString>,
+    #[schema(value_type = Option<String>)]
+    #[serde(serialize_with = "crate::models::serialize_secret_option")]
+    pub new_password: Option<SecretString>,
 }

@@ -107,8 +107,11 @@ pub async fn update_user_profile(
         payload.current_password.as_ref(),
         payload.new_password.as_ref(),
     ) {
-        match verify_password(current_password, &current_user.password_hash) {
-            Ok(true) => match hash_password(new_password) {
+        match verify_password(
+            current_password.expose_secret(),
+            &current_user.password_hash,
+        ) {
+            Ok(true) => match hash_password(new_password.expose_secret()) {
                 Ok(hash) => Some(hash),
                 Err(e) => return UpdateUserProfileResponses::InternalServerError(e.into()),
             },

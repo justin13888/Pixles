@@ -5,11 +5,11 @@ use docs::TAGS;
 use secrecy::ExposeSecret;
 
 use crate::claims::Claims;
-use crate::errors::{AuthError, ClaimValidationError};
+use crate::errors::ClaimValidationError;
 use crate::models::requests::{LoginRequest, RefreshTokenRequest, RegisterRequest};
 use crate::models::responses::{
     LoginResponses, LogoutResponses, RefreshTokenResponses, RegisterUserResponses,
-    ValidateTokenResponse, ValidateTokenResponses,
+    ValidateTokenResponses,
 };
 use crate::state::AppState;
 use crate::utils::headers::get_token_from_headers;
@@ -27,16 +27,11 @@ pub async fn register_user(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
 ) -> RegisterUserResponses {
-    match state
+    state
         .auth_service
         .register_user(&state.conn, &state.session_manager, request)
         .await
-    {
-        Ok(token_response) => RegisterUserResponses::Success(token_response),
-        Err(AuthError::UserAlreadyExists) => RegisterUserResponses::UserAlreadyExists,
-        Err(AuthError::BadRequest(e)) => RegisterUserResponses::BadRequest(e),
-        Err(e) => RegisterUserResponses::InternalServerError(e.into()),
-    }
+        .into()
 }
 
 /// Login a user
@@ -54,15 +49,11 @@ pub async fn login_user(
 ) -> LoginResponses {
     let LoginRequest { email, password } = request;
 
-    match state
+    state
         .auth_service
         .authenticate_user(&state.conn, &state.session_manager, &email, &password)
         .await
-    {
-        Ok(token_response) => LoginResponses::Success(token_response),
-        Err(AuthError::InvalidCredentials) => LoginResponses::InvalidCredentials,
-        Err(e) => LoginResponses::InternalServerError(e.into()),
-    }
+        .into()
 }
 
 /// Refresh an access token using a refresh token
@@ -78,7 +69,10 @@ pub async fn refresh_token(
     State(state): State<AppState>,
     Json(payload): Json<RefreshTokenRequest>,
 ) -> RefreshTokenResponses {
-    let token = match Claims::decode(&payload.refresh_token, &state.config.jwt_eddsa_decoding_key) {
+    let token = match Claims::decode(
+        payload.refresh_token.expose_secret(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
         Ok(token) => token,
         Err(e) => {
             return RefreshTokenResponses::InvalidRefreshToken(
@@ -121,14 +115,11 @@ pub async fn refresh_token(
 
     let user_id = token.claims.sub;
 
-    match state
+    state
         .auth_service
         .generate_token_pair(&user_id, &state.session_manager)
         .await
-    {
-        Ok(token_response) => RefreshTokenResponses::Success(token_response),
-        Err(e) => RefreshTokenResponses::InternalServerError(e.into()),
-    }
+        .into()
 }
 
 /// Validate an access token
@@ -153,10 +144,10 @@ pub async fn validate_token(
     };
 
     // Validate token
-    match state.auth_service.get_claims(token_string.expose_secret()) {
-        Ok(claims) => ValidateTokenResponses::Valid(ValidateTokenResponse::Valid(claims.sub)),
-        Err(e) => ValidateTokenResponses::Invalid(e.into()),
-    }
+    state
+        .auth_service
+        .get_claims(token_string.expose_secret())
+        .into()
 }
 
 /// Logout user and invalidate tokens

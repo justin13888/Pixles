@@ -1,5 +1,6 @@
 use crate::models::errors::BadRegisterUserRequestError;
 use crate::models::requests::RegisterRequest;
+use secrecy::ExposeSecret;
 use service::user as UserService;
 
 pub struct RegistrationValidator;
@@ -8,7 +9,7 @@ impl RegistrationValidator {
     pub fn validate(request: &RegisterRequest) -> Result<(), BadRegisterUserRequestError> {
         Self::validate_username(&request.username)?;
         Self::validate_email(&request.email)?;
-        Self::validate_password(&request.password)?;
+        Self::validate_password(request.password.expose_secret())?;
         Ok(())
     }
 
@@ -43,7 +44,7 @@ mod tests {
         let request = RegisterRequest {
             username: "valid_user".to_string(),
             email: "test@example.com".to_string(),
-            password: "Password123!".to_string(),
+            password: "Password123!".into(),
             name: "Test User".to_string(),
         };
         assert!(RegistrationValidator::validate(&request).is_ok());
