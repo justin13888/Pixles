@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
+#[schema(example = json!({"email": "johndoe@email.com"}))]
 pub struct ResetPasswordRequestPayload {
     pub email: String,
 }
