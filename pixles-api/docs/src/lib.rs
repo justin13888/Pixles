@@ -19,6 +19,9 @@ pub mod TAGS {
         (name = TAGS::API, description = "Pixles API"),
         (name = TAGS::AUTH, description = "Pixles Authentication API"),
         (name = TAGS::UPLOAD, description = "Pixles Upload API"),
+    ),
+    servers(
+        (url = "/v1", description = "Current Server URL")
     )
 )]
 pub struct ApiDoc;
@@ -27,8 +30,7 @@ struct SecurityAddon;
 
 impl Modify for SecurityAddon {
     fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        if let Some(components) = openapi.components.as_mut()
-        {
+        if let Some(components) = openapi.components.as_mut() {
             components.add_security_scheme(
                 "api_key",
                 SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("todo_apikey"))),
@@ -42,8 +44,7 @@ pub fn get_router(router: OpenApiRouter) -> Router {
         .merge(router)
         .split_for_parts();
 
-    if cfg!(feature = "openapi")
-    {
+    if cfg!(feature = "openapi") {
         const SCALAR_ROUTE: &str = "/openapi";
         debug!("OpenAPI documentation enabled at {}", SCALAR_ROUTE);
         let mut router = router.merge(Scalar::with_url(SCALAR_ROUTE, api.clone()));
@@ -51,9 +52,7 @@ pub fn get_router(router: OpenApiRouter) -> Router {
         router = router.route("/openapi.json", axum::routing::get(get_openapi_json));
 
         router
-    }
-    else
-    {
+    } else {
         debug!("OpenAPI Documentation is not used");
         router
     }
