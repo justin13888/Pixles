@@ -248,6 +248,9 @@ pub enum UpdateUserProfileResponses {
     #[response(status = 401, description = "Unauthorized")]
     Unauthorized(AuthError),
 
+    #[response(status = 400, description = "Invalid password")]
+    InvalidPassword,
+
     #[response(status = 404, description = "User not found")]
     UserNotFound,
 
@@ -266,6 +269,11 @@ impl axum::response::IntoResponse for UpdateUserProfileResponses {
             Self::Unauthorized(e) => {
                 let status = StatusCode::UNAUTHORIZED;
                 let body = Json(ApiError::new(e.to_string()));
+                (status, body).into_response()
+            }
+            Self::InvalidPassword => {
+                let status = StatusCode::BAD_REQUEST;
+                let body = Json(ApiError::new("Invalid password"));
                 (status, body).into_response()
             }
             Self::UserNotFound => {

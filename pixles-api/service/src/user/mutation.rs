@@ -23,33 +23,35 @@ impl Mutation {
         .await
     }
 
-    // pub async fn update_user_by_id(
-    //     db: &DbConn,
-    //     id: i32,
-    //     form_data: user::Model,
-    // ) -> Result<user::Model, DbErr> {
-    //     let user: user::ActiveModel = User::find_by_id(id)
-    //         .one(db)
-    //         .await?
-    //         .ok_or(DbErr::Custom("Cannot find user.".to_owned()))
-    //         .map(Into::into)?;
+    pub async fn update_user(
+        db: &DbConn,
+        id: String,
+        username: Option<String>,
+        name: Option<String>,
+        email: Option<String>,
+        password_hash: Option<String>,
+    ) -> Result<user::Model, DbErr> {
+        let user: user::ActiveModel = User::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?
+            .into();
 
-    //     user::ActiveModel {
-    //         id: user.id,
-    //         title: Set(form_data.title.to_owned()),
-    //         text: Set(form_data.text.to_owned()),
-    //     }
-    //     .update(db)
-    //     .await
-    // }
+        let mut user = user;
 
-    // pub async fn delete_user(db: &DbConn, id: i32) -> Result<DeleteResult, DbErr> {
-    //     let user: user::ActiveModel = User::find_by_id(id)
-    //         .one(db)
-    //         .await?
-    //         .ok_or(DbErr::Custom("Cannot find user.".to_owned()))
-    //         .map(Into::into)?;
+        if let Some(username) = username {
+            user.username = Set(username);
+        }
+        if let Some(name) = name {
+            user.name = Set(name);
+        }
+        if let Some(email) = email {
+            user.email = Set(email);
+        }
+        if let Some(password_hash) = password_hash {
+            user.password_hash = Set(password_hash);
+        }
 
-    //     user.delete(db).await
-    // }
+        user.update(db).await
+    }
 }
