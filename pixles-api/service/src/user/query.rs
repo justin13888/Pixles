@@ -61,4 +61,17 @@ impl Query {
     //     // Fetch paginated users
     //     paginator.fetch_page(page - 1).await.map(|p| (p, num_pages))
     // }
+    //     paginator.fetch_page(page - 1).await.map(|p| (p, num_pages))
+    // }
+
+    /// Returns user by password reset token
+    pub async fn find_user_by_reset_token(
+        db: &DbConn,
+        token: &str,
+    ) -> Result<Option<user::Model>, DbErr> {
+        User::find()
+            .filter(user::Column::PasswordResetToken.eq(token))
+            .one(db)
+            .await
+    }
 }

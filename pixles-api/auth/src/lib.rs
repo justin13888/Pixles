@@ -20,6 +20,8 @@ pub mod roles;
 mod routes;
 pub mod service;
 #[cfg(feature = "server")]
+pub mod session;
+#[cfg(feature = "server")]
 mod state;
 pub mod utils;
 
@@ -47,11 +49,25 @@ pub async fn get_router<C: Into<AuthConfig>>(
 ) -> Result<OpenApiRouter> {
     let config = config.into();
 
+    let session_manager = session::SessionManager::new(
+        config.valkey_url.clone(),
+        std::time::Duration::from_secs(config.jwt_refresh_token_duration_seconds),
+    )
+    .await?;
+
+    // Initialize Email Service
+    let email_service = service::EmailService::new();
+
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any); // TODO: Restrict later
-    let state = AppState { conn, config };
+    let state = AppState {
+        conn,
+        config,
+        session_manager,
+        email_service,
+    };
 
     Ok(OpenApiRouter::with_openapi(AuthApiDoc::openapi())
         .merge(routes::get_router(state))

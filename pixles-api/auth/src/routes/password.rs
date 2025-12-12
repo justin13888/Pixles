@@ -1,12 +1,13 @@
 use axum::Json;
 use axum::extract::State;
 use docs::TAGS;
-use utoipa_axum::router::OpenApiRouter;
-use utoipa_axum::routes;
+use service::user as UserService;
+use tracing::trace;
 
 use crate::models::responses::{PasswordResetResponses, ResetPasswordRequestResponses};
 use crate::models::{ResetPasswordPayload, ResetPasswordRequestPayload};
 use crate::state::AppState;
+use crate::utils::hash::hash_password;
 
 /// Request password reset
 #[utoipa::path(
@@ -18,24 +19,50 @@ use crate::state::AppState;
     tags = ["Pixles Authentication API"]
 )]
 pub async fn reset_password_request(
-    State(AppState { config, .. }): State<AppState>,
+    State(AppState {
+        conn,
+        email_service,
+        ..
+    }): State<AppState>,
     Json(payload): Json<ResetPasswordRequestPayload>,
 ) -> ResetPasswordRequestResponses {
-    // In a real implementation, you would:
-    // 1. Check if user exists
-    // 2. Generate a password reset token
-    // 3. Store token in database with expiry
-    // 4. Send email with reset link
+    let email = payload.email;
 
-    // TODO: Implement reset password request
-    // Needs DB schema update to store reset tokens.
+    // Find user by email
+    let user = match UserService::Query::find_user_by_email(&conn, &email).await {
+        Ok(user) => user,
+        Err(e) => return ResetPasswordRequestResponses::InternalServerError(e.into()),
+    };
 
-    // For this example, we'll simulate successful request
-    // In real app, check if email exists in database
-    if payload.email.contains("example.com") { // Simple mock check
-        // In real app, send email with reset link
+    if let Some(user) = user {
+        // Generate token
+        let token = nanoid::nanoid!();
+        let expires_at = chrono::Utc::now() + chrono::Duration::hours(1);
+
+        // Update user with token
+        if let Err(e) = UserService::Mutation::update_password_reset_token(
+            &conn,
+            user.id.clone(),
+            token.clone(),
+            expires_at,
+        )
+        .await
+        {
+            return ResetPasswordRequestResponses::InternalServerError(e.into());
+        }
+
+        // Send email
+        if let Err(e) = email_service
+            .send_password_reset_email(&user.email, &token)
+            .await
+        {
+            tracing::error!("Failed to send reset email to {}: {}", user.email, e);
+            // We return success to not leak that email exists/failed, but we might want to alert ops
+        }
     } else {
-        // TODO: Ensure it doesn't leak if email exists with consistent response time
+        // User not found - pretend success to avoid enumeration
+        trace!("Password reset requested for non-existent email: {}", email);
+        // Ideally sleep here to match DB timing
     }
 
     ResetPasswordRequestResponses::Success
@@ -51,22 +78,65 @@ pub async fn reset_password_request(
     tags = ["Pixles Authentication API"]
 )]
 pub async fn reset_password(
-    State(AppState { config, .. }): State<AppState>,
+    State(AppState {
+        conn,
+        session_manager,
+        ..
+    }): State<AppState>,
     Json(payload): Json<ResetPasswordPayload>,
 ) -> PasswordResetResponses {
-    // In a real implementation, you would:
-    // 1. Validate reset token from database
-    // 2. Check if token is expired
-    // 3. Update user's password
-    // 4. Invalidate the reset token
+    let ResetPasswordPayload {
+        token,
+        new_password,
+    } = payload;
 
-    // TODO: Implement password reset
-    // Needs DB schema update.
+    // Find user by token
+    let user = match UserService::Query::find_user_by_reset_token(&conn, &token).await {
+        Ok(user) => user,
+        Err(e) => return PasswordResetResponses::InternalServerError(e.into()),
+    };
 
-    // For this example, we'll simulate successful password reset
-    if payload.token == "valid_reset_token" {
-        PasswordResetResponses::Success
+    let user = match user {
+        Some(user) => user,
+        None => return PasswordResetResponses::InvalidToken,
+    };
+
+    // Check expiry
+    if let Some(expires_at) = user.password_reset_expires_at {
+        if expires_at < chrono::Utc::now() {
+            return PasswordResetResponses::InvalidToken;
+        }
     } else {
-        PasswordResetResponses::InvalidToken
+        return PasswordResetResponses::InvalidToken;
     }
+
+    // Validate new password strength
+    if let Err(e) = UserService::is_valid_password(&new_password) {
+        trace!("Invalid password during reset for user {}: {}", user.id, e);
+        return PasswordResetResponses::InvalidNewPassword;
+    }
+
+    // Hash password
+    let password_hash = match hash_password(&new_password) {
+        Ok(hash) => hash,
+        Err(e) => return PasswordResetResponses::InternalServerError(e.into()),
+    };
+
+    // Confirm reset
+    if let Err(e) =
+        UserService::Mutation::confirm_password_reset(&conn, user.id.clone(), password_hash).await
+    {
+        return PasswordResetResponses::InternalServerError(e.into());
+    }
+
+    // Revoke all existing sessions for security
+    if let Err(e) = session_manager.revoke_all_for_user(&user.id).await {
+        tracing::error!(
+            "Failed to revoke sessions after password reset for user {}: {}",
+            user.id,
+            e
+        );
+    }
+
+    PasswordResetResponses::Success
 }

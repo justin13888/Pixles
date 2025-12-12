@@ -38,6 +38,9 @@ pub struct Claims {
     pub iss: String,
 
     // Custom claims
+    /// Session ID (optional, used for refresh tokens linked to sessions)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
     /// User type
     pub role: UserRole,
     /// Permissions/scopes granted to this token
@@ -51,6 +54,7 @@ impl Claims {
         user_role: UserRole,
         expiry_duration: D,
         scopes: Vec<Scope>,
+        sid: Option<String>,
     ) -> Self {
         let expiry_duration = expiry_duration.into();
         let iat = Utc::now().timestamp() as u64;
@@ -63,6 +67,7 @@ impl Claims {
             jti: uuid::Uuid::new_v4().to_string(),
             iss: ISSUER.to_string(),
 
+            sid,
             role: user_role,
             scopes,
         }
@@ -75,16 +80,18 @@ impl Claims {
             UserRole::User,
             Duration::from_secs(ACCESS_TOKEN_EXPIRY),
             scopes,
+            None,
         )
     }
 
     /// Returns new refresh token claims
-    pub fn new_refresh_token(user_id: String) -> Self {
+    pub fn new_refresh_token(user_id: String, sid: String) -> Self {
         Self::new(
             user_id,
             UserRole::User,
             Duration::from_secs(REFRESH_TOKEN_EXPIRY),
             vec![Scope::RefreshToken],
+            Some(sid),
         )
     }
 
@@ -152,7 +159,7 @@ mod tests {
         let scopes = vec![Scope::WriteUser, Scope::ReadUser];
 
         // Create claims
-        let claims = Claims::new(user_id, UserRole::User, expiry_duration, scopes);
+        let claims = Claims::new(user_id, UserRole::User, expiry_duration, scopes, None);
 
         // Encode and decode
         let token = claims.encode(&encoding_key).unwrap();
@@ -177,6 +184,7 @@ mod tests {
             iat: Utc::now().timestamp() as u64,
             jti: uuid::Uuid::new_v4().to_string(),
             iss: ISSUER.to_string(),
+            sid: None, // Added sid
             role: UserRole::User,
             scopes,
         };
@@ -194,7 +202,13 @@ mod tests {
         let user_id = nanoid::nanoid!().to_string();
         let scopes = vec![Scope::WriteUser, Scope::ReadUser];
 
-        let mut claims = Claims::new(user_id, UserRole::User, Duration::from_secs(1000), scopes);
+        let mut claims = Claims::new(
+            user_id,
+            UserRole::User,
+            Duration::from_secs(1000),
+            scopes,
+            None,
+        );
         claims.iss = "my-invalid-issuer".to_string();
         let token = claims.encode(&encoding_key).unwrap();
         let _decoded = Claims::decode(&token, &decoding_key).unwrap();
@@ -209,6 +223,7 @@ mod tests {
             UserRole::User,
             Duration::from_secs(1000),
             vec![Scope::WriteUser, Scope::ReadUser],
+            None,
         );
         assert!(claims.has_scopes(&[Scope::WriteUser]));
         assert!(claims.has_scopes(&[Scope::ReadUser]));

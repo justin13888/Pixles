@@ -12,14 +12,20 @@ pub enum AuthError {
     InvalidCredentials,
     #[error("Invalid token")]
     InvalidToken(#[from] ClaimValidationError),
+    #[error("Internal server error")]
+    #[schema(value_type = String)]
+    InternalServerError(#[from] eyre::Report), // Using eyre::Report or Box<dyn StdError> or similar
 }
 
 impl IntoResponse for AuthError {
     fn into_response(self) -> Response {
-        let (status, error_message) = match self
-        {
+        let (status, error_message) = match self {
             AuthError::InvalidCredentials => (StatusCode::NOT_FOUND, "User not found".to_string()),
             AuthError::InvalidToken(e) => (StatusCode::UNAUTHORIZED, e.to_string()),
+            AuthError::InternalServerError(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error".to_string(),
+            ), // Don't expose internal error details
         };
 
         (status, error_message).into_response()
@@ -43,10 +49,8 @@ pub enum ClaimValidationError {
 
 impl From<jsonwebtoken::errors::Error> for ClaimValidationError {
     fn from(error: jsonwebtoken::errors::Error) -> Self {
-        match error.kind()
-        {
-            jsonwebtoken::errors::ErrorKind::InvalidToken =>
-            {
+        match error.kind() {
+            jsonwebtoken::errors::ErrorKind::InvalidToken => {
                 ClaimValidationError::TokenInvalid(error.to_string())
             }
             jsonwebtoken::errors::ErrorKind::ExpiredSignature => ClaimValidationError::TokenExpired,
@@ -57,8 +61,7 @@ impl From<jsonwebtoken::errors::Error> for ClaimValidationError {
 
 impl IntoResponse for ClaimValidationError {
     fn into_response(self) -> Response {
-        let (status, error_message) = match self
-        {
+        let (status, error_message) = match self {
             ClaimValidationError::TokenMissing => (StatusCode::UNAUTHORIZED, "Token missing"),
             ClaimValidationError::TokenInvalid(_) => (StatusCode::UNAUTHORIZED, "Invalid token"),
             ClaimValidationError::TokenExpired => (StatusCode::UNAUTHORIZED, "Token expired"),

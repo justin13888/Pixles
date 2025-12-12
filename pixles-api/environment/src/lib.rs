@@ -66,6 +66,10 @@ pub struct ServerConfig {
     #[cfg(feature = "upload")]
     /// Sled database directory
     pub sled_db_dir: PathBuf,
+
+    #[cfg(feature = "auth")]
+    /// Valkey URL (e.g. "redis://127.0.0.1:6379")
+    pub valkey_url: String,
 }
 // TODO: Separate out these configs into environment variables struct ^^
 
@@ -167,6 +171,8 @@ impl Environment {
                 sled_db_dir: load_env("SLED_DB_DIR")
                     .unwrap_or(String::from("./.metadata"))
                     .into(),
+                #[cfg(feature = "auth")]
+                valkey_url: load_env("VALKEY_URL").unwrap_or("redis://127.0.0.1:8080".to_string()),
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {
                 LevelFilter::TRACE

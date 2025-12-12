@@ -151,7 +151,7 @@ impl axum::response::IntoResponse for ValidateTokenResponses {
 #[derive(utoipa::IntoResponses)]
 pub enum ResetPasswordRequestResponses {
     /// Success response
-    #[response(status = 200, description = "Password reset request sent if it exist")]
+    #[response(status = 200, description = "Password reset request sent if it exists")]
     Success,
 
     #[response(status = 500, description = "Internal server error")]
@@ -179,6 +179,9 @@ pub enum PasswordResetResponses {
     #[response(status = 400, description = "Invalid or expired token")]
     InvalidToken,
 
+    #[response(status = 400, description = "Invalid new password")]
+    InvalidNewPassword,
+
     #[response(status = 500, description = "Internal server error")]
     InternalServerError(#[ref_response] InternalServerError),
 }
@@ -194,6 +197,11 @@ impl axum::response::IntoResponse for PasswordResetResponses {
             Self::InvalidToken => {
                 let status = StatusCode::BAD_REQUEST;
                 let body = Json(ApiError::new("Invalid or expired token"));
+                (status, body).into_response()
+            }
+            Self::InvalidNewPassword => {
+                let status = StatusCode::BAD_REQUEST;
+                let body = Json(ApiError::new("Invalid new password"));
                 (status, body).into_response()
             }
             Self::InternalServerError(e) => e.into_response(),

@@ -25,6 +25,14 @@ pub struct Model {
     pub needs_onboarding: bool,
     #[sea_orm(unique, column_type = "String(StringLen::N(255))")]
     pub password_hash: String,
+    #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
+    pub password_reset_token: Option<String>,
+    #[sea_orm(column_type = "TimestampWithTimeZone", nullable)]
+    pub password_reset_expires_at: Option<DateTime<Utc>>,
+    #[sea_orm(column_type = "TimestampWithTimeZone", nullable)]
+    pub last_login_at: Option<DateTime<Utc>>,
+    #[sea_orm(default_value = "0")]
+    pub failed_login_attempts: i32,
     // pub external_id: String,
     #[sea_orm(indexed)]
     pub is_admin: bool,

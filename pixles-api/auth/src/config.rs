@@ -19,6 +19,9 @@ pub struct AuthConfig {
     pub jwt_refresh_token_duration_seconds: u64,
     /// JWT access token duration in seconds
     pub jwt_access_token_duration_seconds: u64,
+
+    /// Valkey URL
+    pub valkey_url: String,
 }
 
 impl From<&ServerConfig> for AuthConfig {
@@ -31,6 +34,7 @@ impl From<&ServerConfig> for AuthConfig {
             jwt_eddsa_decoding_key: (*config.jwt_eddsa_decoding_key).clone(),
             jwt_refresh_token_duration_seconds: config.jwt_refresh_token_duration_seconds,
             jwt_access_token_duration_seconds: config.jwt_access_token_duration_seconds,
+            valkey_url: config.valkey_url.clone(),
         }
     }
 }

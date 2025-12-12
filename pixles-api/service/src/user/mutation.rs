@@ -5,6 +5,7 @@ use sea_orm::*;
 pub struct Mutation;
 
 impl Mutation {
+    /// Creates a new user
     pub async fn create_user(
         db: &DbConn,
         username: String,
@@ -23,6 +24,7 @@ impl Mutation {
         .await
     }
 
+    /// Updates an existing user
     pub async fn update_user(
         db: &DbConn,
         id: String,
@@ -51,6 +53,73 @@ impl Mutation {
         if let Some(password_hash) = password_hash {
             user.password_hash = Set(password_hash);
         }
+
+        user.update(db).await
+    }
+
+    /// Tracks a successful login for a user
+    pub async fn track_login_success(db: &DbConn, id: String) -> Result<user::Model, DbErr> {
+        let user_model = User::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
+
+        let mut user: user::ActiveModel = user_model.into();
+        user.last_login_at = Set(Some(chrono::Utc::now()));
+        user.failed_login_attempts = Set(0);
+
+        user.update(db).await
+    }
+
+    /// Tracks a failed login attempt for a user
+    pub async fn track_login_failure(db: &DbConn, id: String) -> Result<user::Model, DbErr> {
+        let user_model = User::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
+
+        // Increment failed attempts
+        let current_attempts = user_model.failed_login_attempts;
+        let mut user: user::ActiveModel = user_model.into();
+        user.failed_login_attempts = Set(current_attempts + 1);
+
+        user.update(db).await
+    }
+
+    /// Updates a user's password reset token
+    pub async fn update_password_reset_token(
+        db: &DbConn,
+        id: String,
+        token: String,
+        expires_at: chrono::DateTime<chrono::Utc>,
+    ) -> Result<user::Model, DbErr> {
+        let user_model = User::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
+
+        let mut user: user::ActiveModel = user_model.into();
+        user.password_reset_token = Set(Some(token));
+        user.password_reset_expires_at = Set(Some(expires_at));
+
+        user.update(db).await
+    }
+
+    /// Confirms a password reset for a user
+    pub async fn confirm_password_reset(
+        db: &DbConn,
+        id: String,
+        new_password_hash: String,
+    ) -> Result<user::Model, DbErr> {
+        let user_model = User::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
+
+        let mut user: user::ActiveModel = user_model.into();
+        user.password_hash = Set(new_password_hash);
+        user.password_reset_token = Set(None);
+        user.password_reset_expires_at = Set(None);
 
         user.update(db).await
     }

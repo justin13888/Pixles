@@ -4,6 +4,8 @@ use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
 use utoipa::{ToResponse, ToSchema};
 
+// TODO: Convert this to use thiserror::Error trait
+
 #[derive(ToSchema, ToResponse)]
 #[schema(description = "Internal server error")]
 #[response(description = "Internal server error")]
@@ -32,6 +34,30 @@ impl From<password_hash::errors::Error> for InternalServerError {
     fn from(error: password_hash::errors::Error) -> Self {
         InternalServerError {
             error: format!("Password hash error: {error}"),
+        }
+    }
+}
+
+impl From<crate::errors::AuthError> for InternalServerError {
+    fn from(error: crate::errors::AuthError) -> Self {
+        InternalServerError {
+            error: format!("Auth error: {error}"),
+        }
+    }
+}
+
+impl From<redis::RedisError> for InternalServerError {
+    fn from(error: redis::RedisError) -> Self {
+        InternalServerError {
+            error: format!("Redis error: {error}"),
+        }
+    }
+}
+
+impl From<eyre::Report> for InternalServerError {
+    fn from(error: eyre::Report) -> Self {
+        InternalServerError {
+            error: format!("Internal error: {error}"),
         }
     }
 }
@@ -70,9 +96,9 @@ impl ApiError {
 #[derive(Serialize, Deserialize, ToSchema)]
 pub enum BadRegisterUserRequestError {
     #[schema(rename = "Invalid email")]
-    InvalidEmail,
+    Email,
     #[schema(rename = "Invalid username")]
-    InvalidUsername,
+    Username,
     #[schema(rename = "Invalid password")]
-    InvalidPassword,
+    Password,
 }
