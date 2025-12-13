@@ -101,7 +101,7 @@ pub fn get_router(v1_router: ApiRouter) -> (Router, OpenApi) {
 
     let mut app = ApiRouter::new()
         .nest("/v1", v1_router)
-        .api_route("/openapi.json", get(serve_openapi));
+        .route("/openapi.json", get(serve_openapi));
 
     if cfg!(feature = "openapi") {
         const SCALAR_ROUTE: &str = "/openapi";
