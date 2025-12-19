@@ -2865,6 +2865,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "pixles-media"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "chrono",
+ "indexmap",
+ "serde",
+ "thiserror 2.0.17",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "pixles-sdk"
 version = "0.1.0"
 dependencies = [
