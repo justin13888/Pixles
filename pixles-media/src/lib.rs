@@ -1,3 +1,5 @@
-pub fn foo() -> String {
-    "f".to_string()
-}
+pub mod core;
+#[cfg(feature = "fs")]
+pub mod fs;
+pub mod image;
+pub mod video;

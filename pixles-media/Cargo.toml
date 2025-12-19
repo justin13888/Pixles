@@ -6,8 +6,13 @@ edition = "2024"
 [dependencies]
 base64 = { workspace = true }
 chrono = { workspace = true }
+file-format = { workspace = true, optional = true }
 indexmap = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+[features]
+default = ["fs"]
+fs = ["file-format"]
