@@ -14,7 +14,29 @@ pub enum ImageMediaType {
     Png,
     Tiff,
     Avif,
+    WebP,
+    Gif,
+    Bmp,
+    Raw(RawImageMediaType),
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum RawImageMediaType {
+    /// Adobe Digital Negative
+    Dng,
+    /// Sony ARW
+    Arw,
+    /// Canon CR2
+    Cr2,
+    /// Canon CR3
+    Cr3,
+    /// Nikon NEF
+    Nef,
+    /// Fujifilm RAF
+    Raf,
+}
+
+// Image Output Settings
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ImageOutputSettings {
@@ -24,6 +46,9 @@ pub enum ImageOutputSettings {
     Png(PngSettings),
     Tiff(TiffSettings),
     Avif(AvifSettings),
+    WebP(WebPSettings),
+    // Gif(GifSettings),
+    // Dng(DngSettings),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -72,6 +97,13 @@ pub struct AvifSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct WebPSettings {
+    pub quality: u8, // 0-100
+    pub lossless: bool,
+    pub effort: u8, // 0-6
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum VideoMediaType {
     Mp4,
     Webm,
@@ -79,6 +111,8 @@ pub enum VideoMediaType {
     Avi,
     Mkv,
 }
+
+// Video Output Settings
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum VideoOutputSettings {

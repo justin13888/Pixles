@@ -10,6 +10,7 @@ file-format = { workspace = true, optional = true }
 indexmap = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+thumbhash = "0.1.0"
 tokio = { workspace = true }
 tracing = { workspace = true }
 
