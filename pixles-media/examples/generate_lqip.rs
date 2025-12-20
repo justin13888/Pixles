@@ -1,9 +1,6 @@
 use std::path::PathBuf;
 
-use pixles_media::{
-    core::lqip::LQIP,
-    image::{Image, jpeg::JpegImage},
-};
+use pixles_media::image::{Image, formats::jpeg::JpegImage, lqip::LQIP};
 
 #[tokio::main]
 pub async fn main() {

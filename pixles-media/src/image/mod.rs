@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::image::{metadata::ImageMetadata, rgba::RGBAImage};
 
 pub mod formats;
+pub mod lqip;
 pub mod metadata;
 pub mod rgba;
 
