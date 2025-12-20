@@ -6,7 +6,7 @@ use tokio::fs;
 
 use crate::{
     core::types::{ImageMediaType, MediaType, VideoMediaType},
-    image::{Image, ImageFile, jpeg::JpegImage, rgba::RGBAImage},
+    image::{Image, ImageFile, formats::jpeg::JpegImage, rgba::RGBAImage},
     video::VideoFile,
 };
 
