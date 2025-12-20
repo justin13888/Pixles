@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::metadata::{ColorSpace, DeviceMetadata, geo::GpsLocation};
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ImageMetadata {
     // Basic File Information
@@ -8,8 +10,8 @@ pub struct ImageMetadata {
     pub file_size_bytes: u64,
     pub width: u32,
     pub height: u32,
-    pub bit_depth: u8,           // 8, 10, 12, 14, 16
-    pub color_space: ColorSpace, // sRGB, AdobeRGB, ProPhoto, etc.
+    pub bit_depth: u8, // 8, 10, 12, 14, 16
+    pub color_space: ColorSpace,
 
     // Capture Device Information (EXIF)
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -36,25 +38,6 @@ pub struct ImageMetadata {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ColorSpace {
-    Srgb,
-    AdobeRgb,
-    DisplayP3,
-    ProPhoto,
-    Linear,
-    Other(String),
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DeviceMetadata {
-    pub make: String,         // e.g., "Sony"
-    pub model: String,        // e.g., "A7IV"
-    pub lens: Option<String>, // e.g., "FE 35mm F1.4 GM"
-    pub serial_number: Option<String>,
-    pub software_version: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CaptureSettings {
     pub iso: u32,
     pub aperture: f32,         // f/1.8
@@ -64,13 +47,6 @@ pub struct CaptureSettings {
     pub exposure_bias: f32,           // 0.0, -1.0, etc.
     pub white_balance: String,        // "Auto", "Manual", "5500K"
     pub capture_time: Option<String>, // ISO 8601 string
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct GpsLocation {
-    pub latitude: f64,
-    pub longitude: f64,
-    pub altitude: Option<f32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -89,10 +65,4 @@ pub struct RawSpecifics {
     pub black_level: Option<u32>,
     pub white_level: Option<u32>,
     pub is_compressed: bool,
-}
-
-impl Default for ColorSpace {
-    fn default() -> Self {
-        ColorSpace::Srgb
-    }
 }
