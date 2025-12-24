@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::image::{metadata::ImageMetadata, rgba::RGBAImage};
 
@@ -23,6 +24,16 @@ pub trait Image: std::fmt::Debug + Send + Sync {
     ) -> impl std::future::Future<Output = Result<Box<Self>, String>> + Send
     where
         Self: Sized;
+}
+
+pub trait ImageEncode: Image {
+    fn encode(&self) -> Result<Vec<u8>, EncodeError>;
+}
+
+#[derive(Error, Debug)]
+pub enum EncodeError {
+    #[error("Failed to encode image: {0}")]
+    FailedToEncode(String),
 }
 
 /// Returns dimensions that maintain aspect ratio while ensuring the largest dimension is at most target_max

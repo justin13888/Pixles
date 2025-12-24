@@ -3,9 +3,9 @@ use std::path::Path;
 use crate::image::{EncodeError, Image, ImageEncode, ImageMetadata, RGBAImage};
 
 #[derive(Debug, Clone)]
-pub struct JpegImage {}
+pub struct HeifImage {}
 
-impl Image for JpegImage {
+impl Image for HeifImage {
     fn get_rgba(&self) -> RGBAImage {
         unimplemented!()
     }
@@ -15,12 +15,6 @@ impl Image for JpegImage {
     }
 
     async fn from_path(_path: &Path) -> Result<Box<Self>, String> {
-        unimplemented!()
-    }
-}
-
-impl ImageEncode for JpegImage {
-    fn encode(&self) -> Result<Vec<u8>, EncodeError> {
         unimplemented!()
     }
 }
