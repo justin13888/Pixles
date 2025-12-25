@@ -74,13 +74,13 @@ impl Claims {
     }
 
     /// Returns new access token claims
-    pub fn new_access_token(user_id: String, scopes: Vec<Scope>) -> Self {
+    pub fn new_access_token(user_id: String, scopes: Vec<Scope>, sid: Option<String>) -> Self {
         Self::new(
             user_id,
             UserRole::User,
             Duration::from_secs(ACCESS_TOKEN_EXPIRY),
             scopes,
-            None,
+            sid,
         )
     }
 

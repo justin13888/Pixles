@@ -34,7 +34,7 @@ impl From<password_hash::errors::Error> for InternalServerError {
 }
 
 /// Proxy struct to generate the correct API schema for InternalServerError
-#[derive(ToSchema, ToResponse)]
+#[derive(ToSchema, ToResponse, Serialize, Deserialize, Debug)]
 #[schema(as = InternalServerError, description = "Internal server error")]
 #[response(description = "Internal server error")]
 pub struct InternalServerErrorSchema {
@@ -58,8 +58,6 @@ impl ToSchema for InternalServerError {
     }
 }
 
-// TODO: Somehow automatically track errors in logs ^^
-
 impl IntoResponse for InternalServerError {
     fn into_response(self) -> Response {
         tracing::error!(?self, "Internal server error");
@@ -77,7 +75,6 @@ impl IntoResponse for InternalServerError {
 pub struct ApiError {
     pub error: String,
 }
-// TODO: Remove this ^^
 
 impl ApiError {
     pub fn new(error: impl Into<String>) -> Self {

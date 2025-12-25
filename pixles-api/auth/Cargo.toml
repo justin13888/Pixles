@@ -50,3 +50,19 @@ tonic-prost-build = { workspace = true }
 [features]
 default = ["server"]
 server = ["pixles-api-docs"]
+
+[dev-dependencies]
+environment = { path = "../environment", package = "pixles-api-environment" }
+migration = { path = "../migration", package = "pixles-api-migration" }
+service = { path = "../service", package = "pixles-api-service" }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls",
+] }
+mime = "0.3"
+tracing-subscriber = { workspace = true }
+tower = { version = "0.5.2" }
+base64 = "0.22.1"
+sea-orm-migration = { workspace = true }

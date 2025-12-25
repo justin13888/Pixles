@@ -5,7 +5,7 @@ pub mod responses;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Serializer;
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{ToResponse, ToSchema};
 
 pub fn serialize_secret<S>(secret: &SecretString, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -40,7 +40,7 @@ pub struct ResetPasswordPayload {
     pub new_password: String,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, ToResponse, Debug)]
 pub struct UserProfile {
     pub user_id: String,
     pub username: String,

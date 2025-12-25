@@ -8,9 +8,10 @@ impl TokenService {
     pub fn create_access_token(
         user_id: &str,
         scopes: Vec<Scope>,
+        sid: Option<String>,
         encoding_key: &EncodingKey,
     ) -> Result<(String, u64), AuthError> {
-        let claims = Claims::new_access_token(user_id.to_string(), scopes);
+        let claims = Claims::new_access_token(user_id.to_string(), scopes, sid);
         let token = claims
             .encode(encoding_key)
             .map_err(|e| AuthError::InternalServerError(e.into()))?;
@@ -56,7 +57,8 @@ mod tests {
         let scopes = vec![Scope::ReadUser];
 
         let (token, exp) =
-            TokenService::create_access_token(user_id, scopes.clone(), &encoding_key).unwrap();
+            TokenService::create_access_token(user_id, scopes.clone(), None, &encoding_key)
+                .unwrap();
 
         let decoded = Claims::decode(&token, &decoding_key).unwrap();
         assert_eq!(decoded.claims.sub, user_id);

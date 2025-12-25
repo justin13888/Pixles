@@ -131,6 +131,7 @@ impl AuthService {
         let (access_token, expires_by) = TokenService::create_access_token(
             user_id,
             vec![Scope::ReadUser, Scope::WriteUser],
+            Some(sid.clone()),
             &self.config.jwt_eddsa_encoding_key,
         )?;
 
@@ -184,7 +185,7 @@ mod tests {
     #[test]
     fn test_validate_claims_valid() {
         let service = get_test_service();
-        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser]);
+        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser], None);
 
         assert!(service.validate_claims(&claims, &[Scope::ReadUser]).is_ok());
     }
@@ -192,7 +193,7 @@ mod tests {
     #[test]
     fn test_validate_claims_invalid_scope() {
         let service = get_test_service();
-        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser]);
+        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser], None);
 
         let result = service.validate_claims(&claims, &[Scope::WriteUser]);
         assert!(matches!(result, Err(ClaimValidationError::InvalidScopes)));

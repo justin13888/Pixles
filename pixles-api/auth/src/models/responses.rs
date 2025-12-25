@@ -108,7 +108,7 @@ impl axum::response::IntoResponse for LoginResponses {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema, ToResponse)]
+#[derive(Serialize, Deserialize, ToSchema, ToResponse, Debug)]
 pub enum ValidateTokenResponse {
     Valid(String),
     Invalid,
