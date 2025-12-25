@@ -6,12 +6,12 @@ use std::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::image::{metadata::ImageMetadata, rgba::RGBAImage};
+use crate::image::{buffer::ImageBuffer, metadata::ImageMetadata};
 
+pub mod buffer;
 pub mod formats;
 pub mod lqip;
 pub mod metadata;
-pub mod rgba;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImageFile {
@@ -20,16 +20,24 @@ pub struct ImageFile {
 }
 
 pub trait Image: std::fmt::Debug + Send + Sync {
-    /// Returns the raw RGBA pixel data of the image.
+    /// Returns the raw pixel buffer of the image.
     ///
-    /// This method allows access to the underlying pixel buffer in a standardized format (RGBA),
-    /// facilitating operations that require pixel manipulation or analysis.
-    fn get_rgba(&self) -> RGBAImage;
+    /// This method allows access to the underlying pixel buffer. The format and characteristics
+    /// of the buffer can be inspected via the `ImageBuffer` fields.
+    fn get_buffer(&self) -> ImageBuffer;
 
     /// Retrieves metadata associated with the image.
     ///
     /// This includes information such as dimensions, color space, and file format specifics.
     fn get_metadata(&self) -> ImageMetadata;
+
+    /// Creates a new image from a raw pixel buffer and metadata.
+    ///
+    /// This allows initializing an image directly from its components (pixel data and metadata),
+    /// useful for format conversion or generating images programmatically.
+    fn from_raw_parts(buffer: ImageBuffer, metadata: ImageMetadata) -> Result<Self, ImageError>
+    where
+        Self: Sized;
 }
 
 #[derive(Error, Debug)]
@@ -40,6 +48,8 @@ pub enum ImageError {
     Decode(String),
     #[error("Encoding error: {0}")]
     Encode(String),
+    #[error("Image buffer error: {0}")]
+    ImageBuffer(#[from] crate::image::buffer::ImageBufferError),
 }
 
 pub trait ImageDecode: Sized + Image {

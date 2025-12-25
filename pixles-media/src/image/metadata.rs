@@ -3,14 +3,21 @@ use std::collections::HashMap;
 
 use crate::metadata::{ColorSpace, DeviceMetadata, geo::GpsLocation};
 
+// TODO: Finish fleshing this out vv into a super struct
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ImageMetadata {
     // Basic File Information
-    pub format: String, // e.g., "JPEG", "JPEG XL", "DNG"
+    /// Image format, e.g., "JPEG", "JPEG XL", "DNG"
+    pub format: String, // TODO: is this necessary? at least make it an enum
+    /// File size in bytes
     pub file_size_bytes: u64,
+    /// Image width in pixels
     pub width: u32,
+    /// Image height in pixels
     pub height: u32,
+    /// Image bit depth
     pub bit_depth: u8, // 8, 10, 12, 14, 16
+    /// Image color space
     pub color_space: ColorSpace,
 
     // Capture Device Information (EXIF)

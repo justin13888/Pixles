@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod geo;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum ColorSpace {
     #[default]
     Srgb,
@@ -10,7 +10,6 @@ pub enum ColorSpace {
     DisplayP3,
     ProPhoto,
     Linear,
-    Other(String),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

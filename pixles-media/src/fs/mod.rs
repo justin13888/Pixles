@@ -6,7 +6,7 @@ use tokio::fs;
 
 use crate::{
     core::types::{ImageMediaType, MediaType, VideoMediaType},
-    image::{Image, ImageDecode, ImageFile, formats::jpeg::JpegImage, rgba::RGBAImage},
+    image::{Image, ImageDecode, ImageFile, formats::jpeg::JpegImage},
     video::VideoFile,
 };
 
@@ -37,11 +37,11 @@ pub async fn read(file_path: &Path) -> Result<MediaFile, ReadMediaError> {
     Ok(mf)
 }
 
-async fn read_image(file_path: &Path, t: ImageMediaType) -> Result<ImageFile, ReadMediaError> {
+async fn read_image(_file_path: &Path, _t: ImageMediaType) -> Result<ImageFile, ReadMediaError> {
     unimplemented!()
 }
 
-async fn read_video(file_path: &Path, t: VideoMediaType) -> Result<VideoFile, ReadMediaError> {
+async fn read_video(_file_path: &Path, _t: VideoMediaType) -> Result<VideoFile, ReadMediaError> {
     unimplemented!()
 }
 
@@ -124,16 +124,8 @@ pub async fn load_image(path: &Path) -> Result<Box<dyn Image>, ImageParseError> 
         ImageMediaType::WebP => unimplemented!(),
         ImageMediaType::Gif => unimplemented!(),
         ImageMediaType::Bmp => unimplemented!(),
-        ImageMediaType::Raw(t) => unimplemented!(),
+        ImageMediaType::Raw(_t) => unimplemented!(),
     };
 
     Ok(image)
-}
-
-/// Load an image into memory as an RGBA image
-pub async fn load_image_as_rgba(path: &Path) -> Result<RGBAImage, ImageParseError> {
-    let image = load_image(path).await?;
-    let rgba = image.get_rgba();
-
-    Ok(rgba)
 }

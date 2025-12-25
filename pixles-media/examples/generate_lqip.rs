@@ -11,8 +11,10 @@ pub async fn main() {
             .await
             .expect("Failed to load image"),
     );
-    let rgba = image.get_rgba();
-    let lqip = LQIP::from_rgba_image(&rgba).await;
+    let buffer = image.get_buffer();
+    let lqip = LQIP::from_image_buffer(&buffer)
+        .await
+        .expect("Failed to generate LQIP");
     let lqip_as_hex: String = lqip
         .as_bytes()
         .iter()

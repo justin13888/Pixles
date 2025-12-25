@@ -1,6 +1,12 @@
 use thiserror::Error;
 
-use crate::image::{resize_to_max_dimension, rgba::RGBAImage};
+use crate::{
+    image::{
+        buffer::{ComponentType, ImageBuffer, PixelFormat},
+        resize_to_max_dimension,
+    },
+    metadata::ColorSpace,
+};
 
 /// LQIP (thumbhash) struct
 pub struct LQIP(Vec<u8>);
@@ -10,29 +16,39 @@ impl LQIP {
         LQIP(bytes)
     }
 
-    /// Generate a LQIP (thumbhash) from RGBA image
+    /// Generate a LQIP (thumbhash) from an ImageBuffer
     ///
+    /// The buffer MUST be RGBA.
     /// You do not need to resize as it will be done to input internally.
     /// Returns a byte sequence
-    pub async fn from_rgba_image<T>(rgba: T) -> LQIP
+    pub async fn from_image_buffer<T>(buffer: T) -> Result<LQIP, String> // TODO: Make error type explicit
     where
-        T: AsRef<RGBAImage>,
+        T: AsRef<ImageBuffer>,
     {
-        let original_rgba = rgba.as_ref();
-        let mut rgba_view = std::borrow::Cow::Borrowed(original_rgba);
+        let buffer = buffer.as_ref();
+        if buffer.format != PixelFormat::Rgba || buffer.component_type != ComponentType::U8 {
+            return Err("LQIP currently requires U8 RGBA buffers".to_string());
+        }
 
         // Downsize if any dimension is larger than MAX_SIZE
         const MAX_SIZE: usize = 100;
-        if original_rgba.width > MAX_SIZE || original_rgba.height > MAX_SIZE {
+
+        // Use a Cow-like approach using a variable for ownership
+        let resized_buffer;
+        let work_buffer = if buffer.width > MAX_SIZE || buffer.height > MAX_SIZE {
             let (new_width, new_height) =
-                resize_to_max_dimension(original_rgba.width, original_rgba.height, MAX_SIZE);
-            let new_rgba = original_rgba.resize(new_width, new_height);
-            rgba_view = std::borrow::Cow::Owned(new_rgba);
-        }
+                resize_to_max_dimension(buffer.width, buffer.height, MAX_SIZE);
+            resized_buffer = buffer
+                .resize(new_width, new_height)
+                .map_err(|e| e.to_string())?;
+            &resized_buffer
+        } else {
+            buffer
+        };
 
         let bytes =
-            thumbhash::rgba_to_thumb_hash(rgba_view.width, rgba_view.height, rgba_view.as_bytes());
-        LQIP::from_bytes(bytes)
+            thumbhash::rgba_to_thumb_hash(work_buffer.width, work_buffer.height, &work_buffer.data);
+        Ok(LQIP(bytes))
     }
 
     /// Extracts the approximate aspect ratio of the original image
@@ -48,13 +64,20 @@ impl LQIP {
         Ok([r, g, b, a])
     }
 
-    /// Decodes a ThumbHash to an RGBA image.
-    pub fn thumb_hash_to_rgba(&self) -> Result<RGBAImage, LQIPParseError> {
+    /// Decodes a ThumbHash to an RGBA image buffer.
+    pub fn thumb_hash_to_rgba(&self) -> Result<ImageBuffer, LQIPParseError> {
         let (width, height, rgba) =
             thumbhash::thumb_hash_to_rgba(&self.0).map_err(|_| LQIPParseError::InvalidHash)?;
-        let rgba = RGBAImage::from_bytes(rgba, width, height)
-            .map_err(|_| LQIPParseError::UnhandledState)?;
-        Ok(rgba)
+
+        ImageBuffer::new(
+            rgba,
+            width,
+            height,
+            PixelFormat::Rgba,
+            ComponentType::U8,
+            ColorSpace::Srgb,
+        )
+        .map_err(|_| LQIPParseError::UnhandledState)
     }
 
     pub fn as_bytes(&self) -> &[u8] {
@@ -74,18 +97,26 @@ pub enum LQIPParseError {
 mod tests {
     use super::*;
 
-    fn create_solid_rgba(width: usize, height: usize, r: u8, g: u8, b: u8, a: u8) -> RGBAImage {
+    fn create_solid_rgba(width: usize, height: usize, r: u8, g: u8, b: u8, a: u8) -> ImageBuffer {
         let mut data = Vec::with_capacity(width * height * 4);
         for _ in 0..(width * height) {
             data.extend_from_slice(&[r, g, b, a]);
         }
-        RGBAImage::from_bytes(data, width, height).unwrap()
+        ImageBuffer::new(
+            data,
+            width,
+            height,
+            PixelFormat::Rgba,
+            ComponentType::U8,
+            ColorSpace::Srgb,
+        )
+        .unwrap()
     }
 
     #[tokio::test]
     async fn test_approx_aspect_ratio_square() {
         let rgba = create_solid_rgba(50, 50, 255, 0, 0, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let ar = lqip.approx_aspect_ratio().unwrap();
         // Square image should have aspect ratio close to 1.0
         assert!(
@@ -98,7 +129,7 @@ mod tests {
     #[tokio::test]
     async fn test_approx_aspect_ratio_landscape() {
         let rgba = create_solid_rgba(100, 50, 0, 255, 0, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let ar = lqip.approx_aspect_ratio().unwrap();
         // 2:1 landscape image
         assert!(
@@ -111,7 +142,7 @@ mod tests {
     #[tokio::test]
     async fn test_approx_aspect_ratio_portrait() {
         let rgba = create_solid_rgba(50, 100, 0, 0, 255, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let ar = lqip.approx_aspect_ratio().unwrap();
         // 1:2 portrait image
         assert!(
@@ -124,7 +155,7 @@ mod tests {
     #[tokio::test]
     async fn test_average_rgba_red() {
         let rgba = create_solid_rgba(80, 80, 255, 0, 0, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let avg = lqip.average_rgba().unwrap();
         // Red component should be high, others low
         assert!(avg[0] > 0.8, "Red component {} too low", avg[0]);
@@ -136,7 +167,7 @@ mod tests {
     #[tokio::test]
     async fn test_average_rgba_semi_transparent() {
         let rgba = create_solid_rgba(80, 80, 0, 255, 0, 128);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let avg = lqip.average_rgba().unwrap();
         // Alpha should be around 0.5
         assert!(
@@ -149,14 +180,15 @@ mod tests {
     #[tokio::test]
     async fn test_round_trip_reconstruction() {
         let rgba = create_solid_rgba(64, 64, 100, 150, 200, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let decoded = lqip
             .thumb_hash_to_rgba()
             .expect("Should decode back to RGBA");
+        assert_eq!(decoded.format, PixelFormat::Rgba);
 
         // Detailed equality is hard with ThumbHash lossy compression,
         // but we can check if average color remains similar.
-        let lqip2 = LQIP::from_rgba_image(&decoded).await;
+        let lqip2 = LQIP::from_image_buffer(&decoded).await.unwrap();
         let avg1 = lqip.average_rgba().unwrap();
         let avg2 = lqip2.average_rgba().unwrap();
 
@@ -180,7 +212,7 @@ mod tests {
     #[tokio::test]
     async fn test_minimal_image() {
         let rgba = create_solid_rgba(1, 1, 255, 255, 255, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         assert!(lqip.approx_aspect_ratio().is_ok());
     }
 
@@ -188,7 +220,7 @@ mod tests {
     async fn test_dimensions_preserved() {
         // Test that landscape aspect ratio is preserved in reconstructed image dimensions
         let rgba = create_solid_rgba(60, 30, 255, 255, 255, 255);
-        let lqip = LQIP::from_rgba_image(&rgba).await;
+        let lqip = LQIP::from_image_buffer(&rgba).await.unwrap();
         let decoded = lqip.thumb_hash_to_rgba().unwrap();
 
         // ThumbHash might not return EXACTLY 60x30, but it should be a landscape

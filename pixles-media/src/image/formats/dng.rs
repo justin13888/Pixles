@@ -1,17 +1,23 @@
 use std::io::{BufRead, Write};
 use std::path::Path;
 
-use crate::image::{Image, ImageDecode, ImageEncode, ImageError, ImageMetadata, RGBAImage};
+use crate::image::{
+    Image, ImageDecode, ImageEncode, ImageError, ImageMetadata, buffer::ImageBuffer,
+};
 
 #[derive(Debug, Clone)]
 pub struct DngImage {}
 
 impl Image for DngImage {
-    fn get_rgba(&self) -> RGBAImage {
+    fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }
 
     fn get_metadata(&self) -> ImageMetadata {
+        unimplemented!()
+    }
+
+    fn from_raw_parts(_buffer: ImageBuffer, _metadata: ImageMetadata) -> Result<Self, ImageError> {
         unimplemented!()
     }
 }
