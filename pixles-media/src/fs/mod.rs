@@ -6,7 +6,7 @@ use tokio::fs;
 
 use crate::{
     core::types::{ImageMediaType, MediaType, VideoMediaType},
-    image::{Image, ImageFile, formats::jpeg::JpegImage, rgba::RGBAImage},
+    image::{Image, ImageDecode, ImageFile, formats::jpeg::JpegImage, rgba::RGBAImage},
     video::VideoFile,
 };
 
@@ -96,6 +96,8 @@ pub enum ReadImageError {
 pub enum ImageParseError {
     #[error("Read image error: {0}")]
     ReadImageError(#[from] ReadImageError),
+    #[error("Image error: {0}")]
+    ImageError(#[from] crate::image::ImageError),
     #[error("Image data error: {0}")]
     DataError(String),
 }
@@ -113,7 +115,7 @@ pub async fn load_image(path: &Path) -> Result<Box<dyn Image>, ImageParseError> 
 
     // Parse the image bytes
     let image: Box<dyn Image> = match image_type {
-        ImageMediaType::Jpeg => JpegImage::from_path(path).await?,
+        ImageMediaType::Jpeg => Box::new(JpegImage::from_path(path).await?),
         ImageMediaType::Jxl => unimplemented!(),
         ImageMediaType::Heic => unimplemented!(),
         ImageMediaType::Png => unimplemented!(),

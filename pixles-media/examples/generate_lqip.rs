@@ -1,14 +1,16 @@
 use std::path::PathBuf;
 
-use pixles_media::image::{Image, formats::jpeg::JpegImage, lqip::LQIP};
+use pixles_media::image::{Image, ImageDecode, formats::jpeg::JpegImage, lqip::LQIP};
 
 #[tokio::main]
 pub async fn main() {
     let image_path = PathBuf::from("./data/test.jpg");
     println!("Image path: {}", image_path.display());
-    let image: Box<dyn Image> = JpegImage::from_path(&image_path)
-        .await
-        .expect("Failed to load image");
+    let image: Box<dyn Image> = Box::new(
+        JpegImage::from_path(&image_path)
+            .await
+            .expect("Failed to load image"),
+    );
     let rgba = image.get_rgba();
     let lqip = LQIP::from_rgba_image(&rgba).await;
     let lqip_as_hex: String = lqip
