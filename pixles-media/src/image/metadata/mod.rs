@@ -12,7 +12,8 @@ use crate::{
         },
     },
     metadata::{
-        ColorSpace, DeviceMetadata, exif::ExifData, geo::GpsLocation, icc::IccProfile, xmp::XmpData,
+        ColorSpace, DeviceMetadata, c2pa::C2PAManifest, exif::ExifData, geo::GpsLocation,
+        icc::IccProfile, xmp::XmpData,
     },
 };
 
@@ -45,7 +46,7 @@ pub trait ImageMetadataExtractor {
     // Modern / Computational
     fn motion_metadata(&self) -> Option<MotionPhotoInfo>;
     fn auxiliary_images(&self) -> Vec<AuxiliaryImage>;
-    fn c2pa_manifest(&self) -> Option<Vec<u8>>;
+    fn c2pa_manifest(&self) -> Option<C2PAManifest>;
 }
 
 pub trait ImageMetadataProvider {
@@ -113,7 +114,7 @@ pub struct ImageMetadata {
     pub motion_metadata: Option<MotionPhotoInfo>,
     pub auxiliary_images: Vec<AuxiliaryImage>,
     /// C2PA Block
-    pub c2pa_manifest: Option<Vec<u8>>,
+    pub c2pa_manifest: Option<C2PAManifest>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

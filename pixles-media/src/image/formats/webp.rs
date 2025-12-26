@@ -1,18 +1,21 @@
 use std::io::Write;
 use std::path::Path;
 
-use crate::image::metadata::{
-    ContentMetadata, ImageMetadataExtractor,
-    exposure::CaptureSettings,
-    iptc::IptcData,
-    motion::{AuxiliaryImage, MotionPhotoInfo},
-    raw::RawSensorInfo,
-};
 use crate::image::{
     Image, ImageDecode, ImageEncode, ImageError, ImageMetadata, buffer::ImageBuffer,
 };
 use crate::metadata::{
     ColorSpace, DeviceMetadata, exif::ExifData, geo::GpsLocation, icc::IccProfile, xmp::XmpData,
+};
+use crate::{
+    image::metadata::{
+        ContentMetadata, ImageMetadataExtractor,
+        exposure::CaptureSettings,
+        iptc::IptcData,
+        motion::{AuxiliaryImage, MotionPhotoInfo},
+        raw::RawSensorInfo,
+    },
+    metadata::c2pa::C2PAManifest,
 };
 
 #[derive(Debug, Clone)]
@@ -64,7 +67,7 @@ impl ImageMetadataExtractor for WebpImage {
     fn auxiliary_images(&self) -> Vec<AuxiliaryImage> {
         unimplemented!()
     }
-    fn c2pa_manifest(&self) -> Option<Vec<u8>> {
+    fn c2pa_manifest(&self) -> Option<C2PAManifest> {
         unimplemented!()
     }
 }

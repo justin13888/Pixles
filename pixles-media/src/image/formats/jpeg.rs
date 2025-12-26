@@ -18,7 +18,8 @@ use crate::image::{
 };
 use crate::metadata::ColorSpace;
 use crate::metadata::{
-    DeviceMetadata, exif::ExifData, geo::GpsLocation, icc::IccProfile, xmp::XmpData,
+    DeviceMetadata, c2pa::C2PAManifest, exif::ExifData, geo::GpsLocation, icc::IccProfile,
+    xmp::XmpData,
 };
 
 #[derive(Debug, Clone)]
@@ -77,7 +78,7 @@ impl ImageMetadataExtractor for JpegImage {
     fn auxiliary_images(&self) -> Vec<AuxiliaryImage> {
         unimplemented!()
     }
-    fn c2pa_manifest(&self) -> Option<Vec<u8>> {
+    fn c2pa_manifest(&self) -> Option<C2PAManifest> {
         unimplemented!()
     }
 }

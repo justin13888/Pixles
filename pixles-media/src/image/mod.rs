@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use crate::image::{
     buffer::ImageBuffer,
-    metadata::{ImageMetadata, ImageMetadataExtractor, ImageMetadataProvider},
+    metadata::{ImageMetadata, ImageMetadataProvider},
     types::ImageFormat,
 };
 

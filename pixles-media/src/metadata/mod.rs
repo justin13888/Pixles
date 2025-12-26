@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+pub mod c2pa;
 pub mod exif;
 pub mod geo;
 pub mod icc;

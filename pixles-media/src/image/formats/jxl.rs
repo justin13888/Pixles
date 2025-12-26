@@ -12,7 +12,8 @@ use crate::image::{
     Image, ImageDecode, ImageEncode, ImageError, ImageMetadata, buffer::ImageBuffer,
 };
 use crate::metadata::{
-    ColorSpace, DeviceMetadata, exif::ExifData, geo::GpsLocation, icc::IccProfile, xmp::XmpData,
+    ColorSpace, DeviceMetadata, c2pa::C2PAManifest, exif::ExifData, geo::GpsLocation,
+    icc::IccProfile, xmp::XmpData,
 };
 
 #[derive(Debug, Clone)]
@@ -64,7 +65,7 @@ impl ImageMetadataExtractor for JxlImage {
     fn auxiliary_images(&self) -> Vec<AuxiliaryImage> {
         unimplemented!()
     }
-    fn c2pa_manifest(&self) -> Option<Vec<u8>> {
+    fn c2pa_manifest(&self) -> Option<C2PAManifest> {
         unimplemented!()
     }
 }
