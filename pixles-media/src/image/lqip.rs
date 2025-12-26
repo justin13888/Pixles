@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::{
     image::{
-        buffer::{ComponentType, ImageBuffer, PixelFormat},
+        buffer::{ComponentType, ImageBuffer, ImageBufferError, PixelFormat},
         resize_to_max_dimension,
     },
     metadata::ColorSpace,
@@ -21,14 +21,13 @@ impl LQIP {
     /// The buffer MUST be RGBA.
     /// You do not need to resize as it will be done to input internally.
     /// Returns a byte sequence
-    pub async fn from_image_buffer<T>(buffer: T) -> Result<LQIP, String>
-    // TODO: Make error type explicit
+    pub async fn from_image_buffer<T>(buffer: T) -> Result<LQIP, LQIPError>
     where
         T: AsRef<ImageBuffer>,
     {
         let buffer = buffer.as_ref();
         if buffer.format != PixelFormat::Rgba || buffer.component_type != ComponentType::U8 {
-            return Err("LQIP currently requires U8 RGBA buffers".to_string());
+            return Err(LQIPError::UnsupportedFormat);
         }
 
         // Downsize if any dimension is larger than MAX_SIZE
@@ -39,9 +38,7 @@ impl LQIP {
         let work_buffer = if buffer.width > MAX_SIZE || buffer.height > MAX_SIZE {
             let (new_width, new_height) =
                 resize_to_max_dimension(buffer.width, buffer.height, MAX_SIZE);
-            resized_buffer = buffer
-                .resize(new_width, new_height)
-                .map_err(|e| e.to_string())?;
+            resized_buffer = buffer.resize(new_width, new_height)?;
             &resized_buffer
         } else {
             buffer
@@ -53,22 +50,22 @@ impl LQIP {
     }
 
     /// Extracts the approximate aspect ratio of the original image
-    pub fn approx_aspect_ratio(&self) -> Result<f32, LQIPParseError> {
+    pub fn approx_aspect_ratio(&self) -> Result<f32, LQIPError> {
         thumbhash::thumb_hash_to_approximate_aspect_ratio(&self.0)
-            .map_err(|_| LQIPParseError::InvalidHash)
+            .map_err(|_| LQIPError::InvalidHash)
     }
 
     /// Extracts the average color (r,g,b,a) from a ThumbHash
-    pub fn average_rgba(&self) -> Result<[f32; 4], LQIPParseError> {
-        let (r, g, b, a) = thumbhash::thumb_hash_to_average_rgba(&self.0)
-            .map_err(|_| LQIPParseError::InvalidHash)?;
+    pub fn average_rgba(&self) -> Result<[f32; 4], LQIPError> {
+        let (r, g, b, a) =
+            thumbhash::thumb_hash_to_average_rgba(&self.0).map_err(|_| LQIPError::InvalidHash)?;
         Ok([r, g, b, a])
     }
 
     /// Decodes a ThumbHash to an RGBA image buffer.
-    pub fn thumb_hash_to_rgba(&self) -> Result<ImageBuffer, LQIPParseError> {
+    pub fn thumb_hash_to_rgba(&self) -> Result<ImageBuffer, LQIPError> {
         let (width, height, rgba) =
-            thumbhash::thumb_hash_to_rgba(&self.0).map_err(|_| LQIPParseError::InvalidHash)?;
+            thumbhash::thumb_hash_to_rgba(&self.0).map_err(|_| LQIPError::InvalidHash)?;
 
         ImageBuffer::new(
             rgba,
@@ -78,7 +75,7 @@ impl LQIP {
             ComponentType::U8,
             ColorSpace::Srgb,
         )
-        .map_err(|_| LQIPParseError::UnhandledState)
+        .map_err(|_| LQIPError::UnhandledState)
     }
 
     pub fn as_bytes(&self) -> &[u8] {
@@ -87,11 +84,15 @@ impl LQIP {
 }
 
 #[derive(Error, Debug)]
-pub enum LQIPParseError {
+pub enum LQIPError {
     #[error("Invalid hash")]
     InvalidHash,
     #[error("Unhandled state")]
     UnhandledState,
+    #[error("LQIP currently requires U8 RGBA buffers")]
+    UnsupportedFormat,
+    #[error("Resize error: {0}")]
+    ResizeError(#[from] ImageBufferError),
 }
 
 #[cfg(test)]
