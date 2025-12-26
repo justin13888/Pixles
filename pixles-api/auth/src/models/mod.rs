@@ -2,7 +2,7 @@ pub mod errors;
 pub mod requests;
 pub mod responses;
 
-use schemars::JsonSchema;
+use salvo::oapi::ToSchema;
 use secrecy::{ExposeSecret, SecretString};
 use serde::Serializer;
 use serde::{Deserialize, Serialize};
@@ -28,25 +28,19 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
-#[schemars(example = example_reset_password_request())]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[salvo(schema(example = json!({"email": "johndoe@email.com"})))]
 pub struct ResetPasswordRequestPayload {
     pub email: String,
 }
 
-fn example_reset_password_request() -> ResetPasswordRequestPayload {
-    ResetPasswordRequestPayload {
-        email: "johndoe@email.com".to_string(),
-    }
-}
-
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct ResetPasswordPayload {
     pub token: String,
     pub new_password: String,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UserProfile {
     pub user_id: String,
     pub username: String,

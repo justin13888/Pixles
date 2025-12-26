@@ -1,9 +1,9 @@
-use axum::Router;
 use environment::Environment;
 use eyre::{Result, eyre};
 use listenfd::ListenFd;
 use migration::{Migrator, MigratorTrait};
-use pixles_api::create_app;
+use pixles_api::create_router;
+use salvo::{conn::tcp::TcpAcceptor, prelude::*};
 use sea_orm::Database;
 use std::net::{Ipv4Addr, SocketAddrV4};
 use tokio::net::TcpListener;
@@ -53,9 +53,9 @@ async fn main() -> Result<()> {
     }
 
     // Build app
-    let (router, _api) = create_app(conn, &env).await?;
+    let router = create_router(conn, &env).await?;
 
-    let app = router.into_make_service();
+    let addr = SocketAddrV4::new(env.server.host.parse::<Ipv4Addr>()?, env.server.port);
 
     // Start server
     info!(
@@ -72,19 +72,13 @@ async fn main() -> Result<()> {
             TcpListener::from_std(listener).unwrap()
         }
         // otherwise fall back to local listening
-        None => TcpListener::bind(SocketAddrV4::new(
-            env.server.host.parse::<Ipv4Addr>()?,
-            env.server.port,
-        ))
-        .await
-        .unwrap(),
+        None => TcpListener::bind(addr).await?,
     };
+    let acceptor = TcpAcceptor::try_from(listener)?;
 
     // Serve
-    info!("Server listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app)
-        .await
-        .map_err(|e| eyre!("Axum server error: {:?}", e))?;
+    info!("Server listening on {}", addr);
+    Server::new(acceptor).serve(router).await;
 
     Ok(())
 }

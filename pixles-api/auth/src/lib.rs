@@ -1,9 +1,10 @@
-use aide::axum::ApiRouter;
 use config::AuthConfig;
 use eyre::Result;
+use salvo::cors::Cors;
+use salvo::http::Method;
+use salvo::prelude::*;
 use sea_orm::DatabaseConnection;
 use state::AppState;
-use tower_http::cors::{Any, CorsLayer};
 
 pub mod claims;
 pub mod config;
@@ -28,7 +29,7 @@ pub mod validation;
 pub async fn get_router<C: Into<AuthConfig>>(
     conn: DatabaseConnection,
     config: C,
-) -> Result<ApiRouter> {
+) -> Result<Router> {
     let config = config.into();
 
     let session_manager = session::SessionManager::new(
@@ -40,13 +41,25 @@ pub async fn get_router<C: Into<AuthConfig>>(
     // Initialize Email Service
     let email_service = service::EmailService::new();
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any); // TODO: Restrict later
+    // CORS configuration - TODO: Restrict later
+    let cors = Cors::new()
+        .allow_origin("*")
+        .allow_methods(vec![
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers("*")
+        .into_handler();
+
     let state = AppState::new(conn, config, session_manager, email_service);
 
-    Ok(ApiRouter::new()
-        .merge(routes::get_router(state))
-        .layer(cors))
+    let router = routes::get_router(state);
+
+    // Wrap with CORS
+    let router = Router::new().hoop(cors).push(router);
+
+    Ok(router)
 }

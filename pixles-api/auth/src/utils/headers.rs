@@ -1,4 +1,4 @@
-use axum::http::HeaderMap;
+use salvo::http::{HeaderMap, HeaderValue};
 use secrecy::SecretString;
 
 use crate::errors::ClaimValidationError;
@@ -23,7 +23,6 @@ pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, Claim
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::http::HeaderValue;
     use secrecy::ExposeSecret;
 
     #[test]

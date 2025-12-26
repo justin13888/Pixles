@@ -8,7 +8,7 @@ There are multiple servable components (built together for development but separ
 - [`graphql`](graphql/README.md): GraphQL API
 - [`upload`](upload/README.md): High-performance, asynchronous upload/ingress server
 - [`metadata`](metadata/README.md): gRPC-based API for high-volume metadata fetching
-- [`openapi`](openapi/README.md): OpenAPI specification and docs for RESTful parts of the API
+- **OpenAPI**: Integrated OpenAPI spec and docs (Scalar UI, Swagger UI) - enable with `openapi` feature flag
 
 They can be packaged together or separately (recommended for production).
 
@@ -68,7 +68,8 @@ Most tests are written to require minimal system dependencies. However, some are
   - Upload: <http://localhost:3000/v1/upload>
   - Metadata: <http://localhost:3000/v1/metadata>
 
-  - OpenAPI Docs: <http://localhost:3000/openapi>
+  - OpenAPI Docs (Scalar): <http://localhost:3000/openapi>
+  - OpenAPI Docs (Swagger UI): <http://localhost:3000/swagger-ui>
   - OpenAPI JSON: <http://localhost:3000/openapi.json>
 
 ### Building with Podman

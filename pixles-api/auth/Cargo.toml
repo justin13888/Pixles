@@ -9,12 +9,11 @@ name = "auth"
 path = "src/lib.rs"
 
 [dependencies]
-pixles-api-docs = { path = "../docs", optional = true }
 pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment", features = ["auth"] }
 pixles-api-model = { path = "../model" }
 pixles-api-service = { path = "../service" }
-axum = { workspace = true }
+salvo = { workspace = true }
 argon2 = { workspace = true }
 chrono = { workspace = true }
 eyre = { workspace = true }
@@ -31,26 +30,22 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
-tower-http = { workspace = true }
 uuid = { workspace = true }
 ring = { workspace = true }
 base64 = { workspace = true }
-aide = { workspace = true }
-schemars = { workspace = true }
 strum = { version = "0.27.1", features = ["derive"] }
 strum_macros = "0.27.1"
 redis = { version = "1.0.1", features = ["tokio-comp", "connection-manager"] }
 bb8-redis = "0.26.0"
 bb8 = "0.9.1"
 async-trait = "0.1.89"
-indexmap = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }
 
 [features]
 default = ["server"]
-server = ["pixles-api-docs"]
+server = []
 
 [dev-dependencies]
 environment = { path = "../environment", package = "pixles-api-environment" }
@@ -64,6 +59,6 @@ reqwest = { version = "0.12", default-features = false, features = [
 ] }
 mime = "0.3"
 tracing-subscriber = { workspace = true }
-tower = { version = "0.5.2" }
 base64 = "0.22.1"
 sea-orm-migration = { workspace = true }
+salvo = { workspace = true, features = ["test"] }

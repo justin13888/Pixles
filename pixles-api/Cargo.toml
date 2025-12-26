@@ -7,13 +7,15 @@ default-run = "pixles-api"
 
 [dependencies]
 pixles-api-auth = { path = "./auth", optional = true }
-pixles-api-docs = { path = "./docs", optional = true }
-pixles-api-graphql = { path = "./graphql", optional = true }
-pixles-api-upload = { path = "./upload", optional = true }
+# TODO: Re-enable when graphql is production-ready
+# pixles-api-graphql = { path = "./graphql", optional = true }
+# TODO: Re-enable when upload is production-ready
+# pixles-api-upload = { path = "./upload", optional = true }
 pixles-api-environment = { path = "./environment" }
-pixles-api-metadata = { path = "./metadata", optional = true }
+# TODO: Re-enable when metadata is production-ready
+# pixles-api-metadata = { path = "./metadata", optional = true }
 pixles-api-migration = { path = "./migration" }
-axum = { workspace = true }
+salvo = { workspace = true }
 color-eyre = "0.6.3"
 eyre = { workspace = true }
 listenfd = "1.0.1"
@@ -23,24 +25,21 @@ sea-orm = { workspace = true, features = [
     "debug-print",
 ] }
 tokio = { workspace = true }
-tower-http = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
-futures-util = "0.3.31"
-async-stream = "0.3.6"
 serde = { workspace = true }
-aide = { workspace = true }
-schemars = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["auth", "graphql", "upload", "metadata", "openapi"]
+default = ["auth", "openapi"]
 auth = ["pixles-api-auth", "pixles-api-environment/auth"]
-graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
-metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]
-upload = [
-    "pixles-api-upload",
-    "pixles-api-docs/upload",
-    "pixles-api-environment/upload",
-]
-openapi = ["pixles-api-docs/openapi"]
+# TODO: Re-enable when graphql is production-ready
+# graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
+# TODO: Re-enable when metadata is production-ready
+# metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]
+# TODO: Re-enable when upload is production-ready
+# upload = [
+#     "pixles-api-upload",
+#     "pixles-api-environment/upload",
+# ]
+openapi = []

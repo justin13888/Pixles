@@ -1,7 +1,7 @@
 //! Public error types for auth library
 
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
+use salvo::http::StatusCode;
+use salvo::prelude::*;
 use thiserror::Error;
 
 use crate::models::errors::BadRegisterUserRequestError;
@@ -20,11 +20,12 @@ pub enum AuthError {
     #[error("Invalid token")]
     InvalidToken(#[from] ClaimValidationError),
     #[error("Internal server error")]
-    InternalServerError(#[from] eyre::Report), // Using eyre::Report or Box<dyn StdError> or similar
+    InternalServerError(#[from] eyre::Report),
 }
 
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response {
+#[async_trait]
+impl Writer for AuthError {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         let (status, error_message) = match self {
             AuthError::InvalidCredentials => (StatusCode::NOT_FOUND, "User not found".to_string()),
             AuthError::UserAlreadyExists => {
@@ -36,10 +37,11 @@ impl IntoResponse for AuthError {
             AuthError::InternalServerError(_e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal server error".to_string(),
-            ), // Don't expose internal error details
+            ),
         };
 
-        (status, error_message).into_response()
+        res.status_code(status);
+        res.render(Text::Plain(error_message));
     }
 }
 
@@ -70,8 +72,9 @@ impl From<jsonwebtoken::errors::Error> for ClaimValidationError {
     }
 }
 
-impl IntoResponse for ClaimValidationError {
-    fn into_response(self) -> Response {
+#[async_trait]
+impl Writer for ClaimValidationError {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         let (status, error_message) = match self {
             ClaimValidationError::TokenMissing => (StatusCode::UNAUTHORIZED, "Token missing"),
             ClaimValidationError::TokenInvalid(_) => (StatusCode::UNAUTHORIZED, "Invalid token"),
@@ -83,6 +86,7 @@ impl IntoResponse for ClaimValidationError {
             ClaimValidationError::InvalidScopes => (StatusCode::FORBIDDEN, "Invalid scopes"),
         };
 
-        (status, error_message).into_response()
+        res.status_code(status);
+        res.render(Text::Plain(error_message));
     }
 }

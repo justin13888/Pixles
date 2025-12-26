@@ -1,16 +1,16 @@
-use aide::axum::IntoApiResponse;
-use axum::Json;
-use schemars::JsonSchema;
+use salvo::oapi::ToSchema;
+use salvo::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct VersionResponse {
     pub name: String,
     pub version: String,
 }
 
 /// Get API version info
-pub async fn get_version() -> impl IntoApiResponse {
+#[endpoint(operation_id = "get_version", tags("api"))]
+pub async fn get_version() -> Json<VersionResponse> {
     let name = env!("CARGO_PKG_NAME");
     let version = env!("CARGO_PKG_VERSION");
 

@@ -1,6 +1,5 @@
-use axum::Json;
-use axum::extract::State;
-use axum::http::HeaderMap;
+use salvo::oapi::extract::JsonBody;
+use salvo::prelude::*;
 use secrecy::ExposeSecret;
 
 use crate::claims::Claims;
@@ -14,10 +13,14 @@ use crate::state::AppState;
 use crate::utils::headers::get_token_from_headers;
 
 /// Register a new user
+#[endpoint(operation_id = "register_user", tags("auth"))]
 pub async fn register_user(
-    State(state): State<AppState>,
-    Json(request): Json<RegisterRequest>,
+    depot: &mut Depot,
+    body: JsonBody<RegisterRequest>,
 ) -> RegisterUserResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let request = body.into_inner();
+
     state
         .auth_service
         .register_user(&state.conn, &state.session_manager, request)
@@ -26,11 +29,10 @@ pub async fn register_user(
 }
 
 /// Login a user
-pub async fn login_user(
-    State(state): State<AppState>,
-    Json(request): Json<LoginRequest>,
-) -> LoginResponses {
-    let LoginRequest { email, password } = request;
+#[endpoint(operation_id = "login_user", tags("auth"))]
+pub async fn login_user(depot: &mut Depot, body: JsonBody<LoginRequest>) -> LoginResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let LoginRequest { email, password } = body.into_inner();
 
     state
         .auth_service
@@ -40,10 +42,14 @@ pub async fn login_user(
 }
 
 /// Refresh an access token using a refresh token
+#[endpoint(operation_id = "refresh_token", tags("auth"))]
 pub async fn refresh_token(
-    State(state): State<AppState>,
-    Json(payload): Json<RefreshTokenRequest>,
+    depot: &mut Depot,
+    body: JsonBody<RefreshTokenRequest>,
 ) -> RefreshTokenResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let payload = body.into_inner();
+
     let token = match Claims::decode(
         payload.refresh_token.expose_secret(),
         &state.config.jwt_eddsa_decoding_key,
@@ -98,12 +104,13 @@ pub async fn refresh_token(
 }
 
 /// Validate an access token
-pub async fn validate_token(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> ValidateTokenResponses {
+#[endpoint(operation_id = "validate_token", tags("auth"))]
+pub async fn validate_token(req: &mut Request, depot: &mut Depot) -> ValidateTokenResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let headers = req.headers();
+
     // Get token string
-    let token_string = match get_token_from_headers(&headers) {
+    let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
         Err(e) => return ValidateTokenResponses::Invalid(e.into()),
     };
@@ -116,9 +123,13 @@ pub async fn validate_token(
 }
 
 /// Logout user and invalidate tokens
-pub async fn logout(State(state): State<AppState>, headers: HeaderMap) -> LogoutResponses {
+#[endpoint(operation_id = "logout", tags("auth"))]
+pub async fn logout(req: &mut Request, depot: &mut Depot) -> LogoutResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let headers = req.headers();
+
     // Authorize user
-    let token_string = match get_token_from_headers(&headers) {
+    let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
         Err(e) => return LogoutResponses::Unauthorized(e.into()),
     };

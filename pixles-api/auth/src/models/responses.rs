@@ -2,20 +2,18 @@ use super::UserProfile;
 use super::errors::*;
 use crate::claims::Claims;
 use crate::errors::{AuthError, ClaimValidationError};
-use aide::OperationOutput;
-use aide::openapi::{Operation, Response, StatusCode};
-use axum::Json;
-use axum::http::StatusCode as HttpStatusCode;
-use schemars::JsonSchema;
+use salvo::http::StatusCode;
+use salvo::oapi::{EndpointOutRegister, ToSchema};
+use salvo::prelude::*;
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct TokenResponse {
-    #[schemars(with = "String")]
+    #[salvo(schema(value_type = String))]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub access_token: SecretString,
-    #[schemars(with = "String")]
+    #[salvo(schema(value_type = String))]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub refresh_token: SecretString,
     /// E.g. "Bearer"
@@ -42,78 +40,63 @@ impl From<Result<TokenResponse, AuthError>> for RegisterUserResponses {
     }
 }
 
-impl axum::response::IntoResponse for RegisterUserResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for RegisterUserResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(token_response) => {
-                let status = HttpStatusCode::CREATED;
-                let body = Json(token_response);
-                (status, body).into_response()
+                res.status_code(StatusCode::CREATED);
+                res.render(Json(token_response));
             }
             Self::BadRequest(e) => {
-                let status = HttpStatusCode::BAD_REQUEST;
-                let body = Json(e);
-                (status, body).into_response()
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(e));
             }
             Self::UserAlreadyExists => {
-                let status = HttpStatusCode::CONFLICT;
-                let body = Json(ApiError::new("User already exists"));
-                (status, body).into_response()
+                res.status_code(StatusCode::CONFLICT);
+                res.render(Json(ApiError::new("User already exists")));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for RegisterUserResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        ctx: &mut aide::generate::GenContext,
-        operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        let mut responses = Vec::new();
-
-        // 201 Created - Success with TokenResponse
-        if let Some(resp) =
-            <Json<TokenResponse> as OperationOutput>::operation_response(ctx, operation)
-        {
-            responses.push((Some(201), resp));
-        }
-
-        // 400 Bad Request
-        responses.push((
-            Some(400),
-            Response {
-                description: "Bad request - invalid registration data".into(),
-                ..Default::default()
-            },
-        ));
-
-        // 409 Conflict
-        responses.push((
-            Some(409),
-            Response {
-                description: "User already exists".into(),
-                ..Default::default()
-            },
-        ));
-
-        // 500 Internal Server Error
-        responses.push((
-            Some(500),
-            Response {
-                description: "Internal server error".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses
+impl EndpointOutRegister for RegisterUserResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("201"),
+            salvo::oapi::Response::new("Success - user registered and tokens returned")
+                .add_content(
+                    "application/json",
+                    salvo::oapi::Content::new(TokenResponse::to_schema(components)),
+                ),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Bad request - invalid registration data"),
+        );
+        operation.responses.insert(
+            String::from("409"),
+            salvo::oapi::Response::new("User already exists"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
 pub enum LoginResponses {
     Success(TokenResponse),
+    BadRequest,
     InvalidCredentials,
     InternalServerError(InternalServerError),
 }
@@ -128,56 +111,56 @@ impl From<Result<TokenResponse, AuthError>> for LoginResponses {
     }
 }
 
-impl axum::response::IntoResponse for LoginResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for LoginResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(token_response) => {
-                let status = HttpStatusCode::OK;
-                let body = Json(token_response);
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(token_response));
+            }
+            Self::BadRequest => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid request")));
             }
             Self::InvalidCredentials => {
-                let status = HttpStatusCode::UNAUTHORIZED;
-                let body = Json(ApiError::new("Invalid credentials"));
-                (status, body).into_response()
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new("Invalid credentials")));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for LoginResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        ctx: &mut aide::generate::GenContext,
-        operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        let mut responses = Vec::new();
-
-        if let Some(resp) =
-            <Json<TokenResponse> as OperationOutput>::operation_response(ctx, operation)
-        {
-            responses.push((Some(200), resp));
-        }
-
-        responses.push((
-            Some(401),
-            Response {
-                description: "Invalid credentials".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(500),
-            Response {
-                description: "Internal server error".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses
+impl EndpointOutRegister for LoginResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - login successful").add_content(
+                "application/json",
+                salvo::oapi::Content::new(TokenResponse::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Bad request"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Invalid credentials"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
@@ -196,56 +179,48 @@ impl From<Result<TokenResponse, AuthError>> for RefreshTokenResponses {
     }
 }
 
-impl axum::response::IntoResponse for RefreshTokenResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for RefreshTokenResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(token_response) => {
-                let status = HttpStatusCode::OK;
-                let body = Json(token_response);
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(token_response));
             }
             Self::InvalidRefreshToken(e) => {
-                let status = HttpStatusCode::UNAUTHORIZED;
-                let body = Json(ApiError::new(e.to_string()));
-                (status, body).into_response()
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for RefreshTokenResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        ctx: &mut aide::generate::GenContext,
-        operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        let mut responses = Vec::new();
-
-        if let Some(resp) =
-            <Json<TokenResponse> as OperationOutput>::operation_response(ctx, operation)
-        {
-            responses.push((Some(200), resp));
-        }
-
-        responses.push((
-            Some(401),
-            Response {
-                description: "Invalid or expired refresh token".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(500),
-            Response {
-                description: "Internal server error".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses
+impl EndpointOutRegister for RefreshTokenResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - tokens refreshed").add_content(
+                "application/json",
+                salvo::oapi::Content::new(TokenResponse::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Invalid or expired refresh token"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
@@ -263,90 +238,80 @@ impl From<Result<Claims, ClaimValidationError>> for ValidateTokenResponses {
     }
 }
 
-impl axum::response::IntoResponse for ValidateTokenResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for ValidateTokenResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
-            Self::Valid(token_response) => {
-                let status = HttpStatusCode::OK;
-                let body = Json(token_response);
-                (status, body).into_response()
+            Self::Valid(user_id) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(user_id));
             }
             Self::Invalid(e) => {
-                let status = HttpStatusCode::UNAUTHORIZED;
-                let body = Json(ApiError::new(e.to_string()));
-                (status, body).into_response()
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
             }
         }
     }
 }
 
-impl OperationOutput for ValidateTokenResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        _ctx: &mut aide::generate::GenContext,
-        _operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        vec![
-            (
-                Some(200),
-                Response {
-                    description: "Token is valid - returns user ID".into(),
-                    ..Default::default()
-                },
-            ),
-            (
-                Some(401),
-                Response {
-                    description: "Invalid or expired token".into(),
-                    ..Default::default()
-                },
-            ),
-        ]
+impl EndpointOutRegister for ValidateTokenResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Token is valid - returns user ID"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Invalid or expired token"),
+        );
     }
 }
 
 pub enum ResetPasswordRequestResponses {
     Success,
+    BadRequest,
     InternalServerError(InternalServerError),
 }
 
-impl axum::response::IntoResponse for ResetPasswordRequestResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for ResetPasswordRequestResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
-                let status = HttpStatusCode::OK;
-                let body = Json(ApiError::new("Password reset request sent"));
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("Password reset request sent")));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::BadRequest => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid request")));
+            }
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for ResetPasswordRequestResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        _ctx: &mut aide::generate::GenContext,
-        _operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        vec![
-            (
-                Some(200),
-                Response {
-                    description: "Password reset email sent (if user exists)".into(),
-                    ..Default::default()
-                },
-            ),
-            (
-                Some(500),
-                Response {
-                    description: "Internal server error".into(),
-                    ..Default::default()
-                },
-            ),
-        ]
+impl EndpointOutRegister for ResetPasswordRequestResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Password reset email sent (if user exists)"),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Bad request"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
@@ -357,59 +322,49 @@ pub enum PasswordResetResponses {
     InternalServerError(InternalServerError),
 }
 
-impl axum::response::IntoResponse for PasswordResetResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for PasswordResetResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
-                let status = HttpStatusCode::OK;
-                let body = Json(ApiError::new("Password reset successful"));
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("Password reset successful")));
             }
             Self::InvalidToken => {
-                let status = HttpStatusCode::BAD_REQUEST;
-                let body = Json(ApiError::new("Invalid or expired token"));
-                (status, body).into_response()
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid or expired token")));
             }
             Self::InvalidNewPassword => {
-                let status = HttpStatusCode::BAD_REQUEST;
-                let body = Json(ApiError::new("Invalid new password"));
-                (status, body).into_response()
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid new password")));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for PasswordResetResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        _ctx: &mut aide::generate::GenContext,
-        _operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        vec![
-            (
-                Some(200),
-                Response {
-                    description: "Password reset successful".into(),
-                    ..Default::default()
-                },
-            ),
-            (
-                Some(400),
-                Response {
-                    description: "Invalid or expired token, or invalid new password".into(),
-                    ..Default::default()
-                },
-            ),
-            (
-                Some(500),
-                Response {
-                    description: "Internal server error".into(),
-                    ..Default::default()
-                },
-            ),
-        ]
+impl EndpointOutRegister for PasswordResetResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Password reset successful"),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Invalid or expired token, or invalid new password"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
@@ -420,156 +375,130 @@ pub enum UserProfileResponses {
     InternalServerError(InternalServerError),
 }
 
-impl axum::response::IntoResponse for UserProfileResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for UserProfileResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(user_profile) => {
-                let status = HttpStatusCode::OK;
-                let body = Json(user_profile);
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(user_profile));
             }
             Self::Unauthorized(e) => {
-                let status = HttpStatusCode::UNAUTHORIZED;
-                let body = Json(ApiError::new(e.to_string()));
-                (status, body).into_response()
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
             }
             Self::UserNotFound => {
-                let status = HttpStatusCode::NOT_FOUND;
-                let body = Json(ApiError::new("User not found"));
-                (status, body).into_response()
+                res.status_code(StatusCode::NOT_FOUND);
+                res.render(Json(ApiError::new("User not found")));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for UserProfileResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        ctx: &mut aide::generate::GenContext,
-        operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        let mut responses = Vec::new();
-
-        if let Some(resp) =
-            <Json<UserProfile> as OperationOutput>::operation_response(ctx, operation)
-        {
-            responses.push((Some(200), resp));
-        }
-
-        responses.push((
-            Some(401),
-            Response {
-                description: "Unauthorized - invalid or missing token".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(404),
-            Response {
-                description: "User not found".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(500),
-            Response {
-                description: "Internal server error".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses
+impl EndpointOutRegister for UserProfileResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - returns user profile").add_content(
+                "application/json",
+                salvo::oapi::Content::new(UserProfile::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized - invalid or missing token"),
+        );
+        operation.responses.insert(
+            String::from("404"),
+            salvo::oapi::Response::new("User not found"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
 pub enum UpdateUserProfileResponses {
     Success(UserProfile),
+    BadRequest,
     Unauthorized(AuthError),
     InvalidPassword,
     UserNotFound,
     InternalServerError(InternalServerError),
 }
 
-impl axum::response::IntoResponse for UpdateUserProfileResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for UpdateUserProfileResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(profile) => {
-                let status = HttpStatusCode::OK;
-                let body = Json(profile);
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(profile));
+            }
+            Self::BadRequest => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid request")));
             }
             Self::Unauthorized(e) => {
-                let status = HttpStatusCode::UNAUTHORIZED;
-                let body = Json(ApiError::new(e.to_string()));
-                (status, body).into_response()
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
             }
             Self::InvalidPassword => {
-                let status = HttpStatusCode::BAD_REQUEST;
-                let body = Json(ApiError::new("Invalid password"));
-                (status, body).into_response()
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid password")));
             }
             Self::UserNotFound => {
-                let status = HttpStatusCode::NOT_FOUND;
-                let body = Json(ApiError::new("User not found"));
-                (status, body).into_response()
+                res.status_code(StatusCode::NOT_FOUND);
+                res.render(Json(ApiError::new("User not found")));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for UpdateUserProfileResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        ctx: &mut aide::generate::GenContext,
-        operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        let mut responses = Vec::new();
-
-        if let Some(resp) =
-            <Json<UserProfile> as OperationOutput>::operation_response(ctx, operation)
-        {
-            responses.push((Some(200), resp));
-        }
-
-        responses.push((
-            Some(400),
-            Response {
-                description: "Invalid password".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(401),
-            Response {
-                description: "Unauthorized - invalid or missing token".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(404),
-            Response {
-                description: "User not found".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses.push((
-            Some(500),
-            Response {
-                description: "Internal server error".into(),
-                ..Default::default()
-            },
-        ));
-
-        responses
+impl EndpointOutRegister for UpdateUserProfileResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - returns updated user profile").add_content(
+                "application/json",
+                salvo::oapi::Content::new(UserProfile::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Invalid request or password"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized - invalid or missing token"),
+        );
+        operation.responses.insert(
+            String::from("404"),
+            salvo::oapi::Response::new("User not found"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }
 
@@ -579,53 +508,44 @@ pub enum LogoutResponses {
     InternalServerError(InternalServerError),
 }
 
-impl axum::response::IntoResponse for LogoutResponses {
-    fn into_response(self) -> axum::response::Response {
+#[async_trait]
+impl Writer for LogoutResponses {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
-                let status = HttpStatusCode::OK;
-                let body = Json(ApiError::new("Logout successful"));
-                (status, body).into_response()
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("Logout successful")));
             }
             Self::Unauthorized(e) => {
-                let status = HttpStatusCode::UNAUTHORIZED;
-                let body = Json(ApiError::new(e.to_string()));
-                (status, body).into_response()
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
             }
-            Self::InternalServerError(e) => e.into_response(),
+            Self::InternalServerError(e) => {
+                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+                let msg = if cfg!(debug_assertions) {
+                    e.to_string()
+                } else {
+                    "Internal server error".to_string()
+                };
+                res.render(Text::Plain(msg));
+            }
         }
     }
 }
 
-impl OperationOutput for LogoutResponses {
-    type Inner = Self;
-
-    fn inferred_responses(
-        _ctx: &mut aide::generate::GenContext,
-        _operation: &mut Operation,
-    ) -> Vec<(Option<u16>, Response)> {
-        vec![
-            (
-                Some(200),
-                Response {
-                    description: "Logout successful".into(),
-                    ..Default::default()
-                },
-            ),
-            (
-                Some(401),
-                Response {
-                    description: "Unauthorized - invalid or missing token".into(),
-                    ..Default::default()
-                },
-            ),
-            (
-                Some(500),
-                Response {
-                    description: "Internal server error".into(),
-                    ..Default::default()
-                },
-            ),
-        ]
+impl EndpointOutRegister for LogoutResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Logout successful"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized - invalid or missing token"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
     }
 }

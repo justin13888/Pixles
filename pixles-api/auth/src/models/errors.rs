@@ -1,7 +1,7 @@
 use argon2::password_hash;
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-use schemars::JsonSchema;
+use salvo::http::StatusCode;
+use salvo::oapi::ToSchema;
+use salvo::prelude::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -33,26 +33,28 @@ impl From<password_hash::errors::Error> for InternalServerError {
 }
 
 /// Proxy struct to generate the correct API schema for InternalServerError
-#[derive(JsonSchema, Serialize, Deserialize)]
-#[schemars(description = "Internal server error")]
+#[derive(ToSchema, Serialize, Deserialize)]
+#[salvo(schema(description = "Internal server error"))]
 pub struct InternalServerErrorSchema {
     pub _error: String,
 }
 
-impl IntoResponse for InternalServerError {
-    fn into_response(self) -> Response {
+#[async_trait]
+impl Writer for InternalServerError {
+    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
         tracing::error!(?self, "Internal server error");
         let response = if cfg!(debug_assertions) {
             self.to_string()
         } else {
             "Unknown internal server error".to_string()
         };
-        (StatusCode::INTERNAL_SERVER_ERROR, response).into_response()
+        res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+        res.render(Text::Plain(response));
     }
 }
 
 /// A generic API error response
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct ApiError {
     pub error: String,
 }
@@ -64,7 +66,7 @@ impl ApiError {
     }
 }
 
-#[derive(Serialize, Deserialize, Error, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Error, ToSchema, Debug)]
 pub enum BadRegisterUserRequestError {
     #[error("Invalid email")]
     Email,
@@ -72,4 +74,6 @@ pub enum BadRegisterUserRequestError {
     Username,
     #[error("Invalid password")]
     Password,
+    #[error("Invalid request")]
+    InvalidRequest,
 }

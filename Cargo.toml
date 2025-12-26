@@ -9,7 +9,7 @@ members = [
     "pixles-api/migration",
     "pixles-api/model",
     "pixles-api/testing",
-    "pixles-api/upload",
+    # "pixles-api/upload", # TODO: Refactor to Salvo
     "pixles-cli",
     "pixles-cli/migration",
     "pixles-core-rust",
@@ -18,9 +18,15 @@ members = [
 resolver = "3"
 
 [workspace.dependencies]
-aide = "0.15.1"
 argon2 = "0.5.3"
 axum = { version = "0.8.7", features = ["http2", "macros"] }
+salvo = { version = "0.77", features = [
+    "oapi",
+    "cors",
+    "server",
+    "test",
+    "affix-state",
+] }
 base64 = "0.22.1"
 chrono = { version = "0.4.42", features = ["serde"] }
 eyre = "0.6.12"
@@ -52,19 +58,11 @@ tonic-health = "0.14.2"
 tonic-types = "0.14.2"
 tonic-prost = "0.14.2"
 tonic-prost-build = { version = "0.14.2" }
-utoipa = { version = "5.4.0", features = [
-    "axum_extras",
-    "chrono",
-    "debug",
-    "url",
-    "uuid",
-    "macros",
-] }
-schemars = { version = "0.9.0", features = ["chrono04", "uuid1", "indexmap2"] }
 uuid = { version = "1.19.0", features = [
     "v4",
 ] } # TODO: Remove v4, and only use v7
 tower-http = { version = "0.6.8", features = ["cors"] }
+schemars = { version = "0.8", features = ["chrono", "uuid1"] }
 tracing = "0.1.43"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 

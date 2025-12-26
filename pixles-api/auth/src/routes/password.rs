@@ -1,5 +1,5 @@
-use axum::Json;
-use axum::extract::State;
+use salvo::oapi::extract::JsonBody;
+use salvo::prelude::*;
 use service::user as UserService;
 use tracing::trace;
 
@@ -9,11 +9,13 @@ use crate::state::AppState;
 use crate::utils::hash::hash_password;
 
 /// Request password reset
+#[endpoint(operation_id = "reset_password_request", tags("auth"))]
 pub async fn reset_password_request(
-    State(state): State<AppState>,
-    Json(payload): Json<ResetPasswordRequestPayload>,
+    depot: &mut Depot,
+    body: JsonBody<ResetPasswordRequestPayload>,
 ) -> ResetPasswordRequestResponses {
-    let email = payload.email;
+    let state = depot.obtain::<AppState>().unwrap();
+    let email = body.into_inner().email;
 
     if let Err(e) = state
         .password_service
@@ -27,14 +29,17 @@ pub async fn reset_password_request(
 }
 
 /// Reset password with token
+#[endpoint(operation_id = "reset_password", tags("auth"))]
 pub async fn reset_password(
-    State(state): State<AppState>,
-    Json(payload): Json<ResetPasswordPayload>,
+    depot: &mut Depot,
+    body: JsonBody<ResetPasswordPayload>,
 ) -> PasswordResetResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+
     let ResetPasswordPayload {
         token,
         new_password,
-    } = payload;
+    } = body.into_inner();
 
     // Find user by token
     let user = match UserService::Query::find_user_by_reset_token(&state.conn, &token).await {

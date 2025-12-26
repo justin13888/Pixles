@@ -1,7 +1,6 @@
-use axum::Json;
-use axum::extract::State;
-use axum::http::HeaderMap;
 use model::user::UpdateUser;
+use salvo::oapi::extract::JsonBody;
+use salvo::prelude::*;
 use secrecy::ExposeSecret;
 use service::user as UserService;
 
@@ -15,12 +14,13 @@ use crate::utils::hash::{hash_password, verify_password};
 use crate::utils::headers::get_token_from_headers;
 
 /// Get user profile
-pub async fn get_user_profile(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> UserProfileResponses {
+#[endpoint(operation_id = "get_user_profile", tags("auth"))]
+pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfileResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let headers = req.headers();
+
     // Authorize user
-    let token_string = match get_token_from_headers(&headers) {
+    let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
         Err(e) => return UserProfileResponses::Unauthorized(e.into()),
     };
@@ -52,13 +52,17 @@ pub async fn get_user_profile(
 }
 
 /// Update user profile
+#[endpoint(operation_id = "update_user_profile", tags("auth"))]
 pub async fn update_user_profile(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Json(payload): Json<UpdateProfileRequest>,
+    req: &mut Request,
+    depot: &mut Depot,
+    body: JsonBody<UpdateProfileRequest>,
 ) -> UpdateUserProfileResponses {
+    let state = depot.obtain::<AppState>().unwrap();
+    let headers = req.headers();
+
     // Authorize user
-    let token_string = match get_token_from_headers(&headers) {
+    let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
         Err(e) => return UpdateUserProfileResponses::Unauthorized(e.into()),
     };
@@ -72,6 +76,9 @@ pub async fn update_user_profile(
         }
     };
     let user_id = token.claims.sub;
+
+    // Parse request body
+    let payload = body.into_inner();
 
     // Fetch current user to check password if needed
     let current_user = match UserService::Query::find_user_by_id(&state.conn, user_id.clone()).await

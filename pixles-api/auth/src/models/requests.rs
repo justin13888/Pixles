@@ -1,58 +1,54 @@
-use schemars::JsonSchema;
-use secrecy::{SecretBox, SecretString};
+use salvo::oapi::ToSchema;
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, JsonSchema)]
-#[schemars(example = example_register_request())]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[salvo(schema(
+    example = json!({
+        "username": "johndoe",
+        "name": "John Doe",
+        "email": "johndoe@email.com",
+        "password": "password"
+    })
+))]
 pub struct RegisterRequest {
     pub username: String,
     pub name: String,
     pub email: String,
-    #[schemars(with = "String")]
+    #[salvo(schema(value_type = String))]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub password: SecretString,
 }
 
-fn example_register_request() -> RegisterRequest {
-    RegisterRequest {
-        username: "johndoe".to_string(),
-        name: "John Doe".to_string(),
-        email: "johndoe@email.com".to_string(),
-        password: SecretString::from("password"),
-    }
-}
-
-#[derive(Serialize, Deserialize, JsonSchema)]
-#[schemars(example = example_login_request())]
+#[derive(Serialize, Deserialize, ToSchema)]
+#[salvo(schema(
+    example = json!({
+        "email": "johndoe@email.com",
+        "password": "password"
+    })
+))]
 pub struct LoginRequest {
     pub email: String,
-    #[schemars(with = "String")]
+    #[salvo(schema(value_type = String))]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub password: SecretString,
 }
 
-fn example_login_request() -> LoginRequest {
-    LoginRequest {
-        email: "johndoe@email.com".to_string(),
-        password: SecretString::from("password"),
-    }
-}
-
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct RefreshTokenRequest {
-    #[schemars(with = "String")]
+    #[salvo(schema(value_type = String))]
     #[serde(serialize_with = "crate::models::serialize_secret")]
     pub refresh_token: SecretString,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UpdateProfileRequest {
     pub username: Option<String>,
     pub email: Option<String>,
-    #[schemars(with = "Option<String>")]
+    #[salvo(schema(value_type = Option<String>))]
     #[serde(serialize_with = "crate::models::serialize_secret_option")]
     pub current_password: Option<SecretString>,
-    #[schemars(with = "Option<String>")]
+    #[salvo(schema(value_type = Option<String>))]
     #[serde(serialize_with = "crate::models::serialize_secret_option")]
     pub new_password: Option<SecretString>,
 }
