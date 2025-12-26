@@ -6,7 +6,7 @@ use tokio::fs;
 use crate::{
     core::types::MediaType,
     image::{
-        Image, ImageFile, ImageReader,
+        ImageFile, ImageReader, ImageWithMetadata,
         formats::{
             avif::AvifImage, bmp::BmpImage, gif::GifImage, heif::HeifImage, jpeg::JpegImage,
             jxl::JxlImage, png::PngImage, raw::RawImage, tiff::TiffImage,
@@ -46,7 +46,7 @@ pub async fn read(file_path: &Path) -> Result<MediaFile, ReadMediaError> {
 
 /// Reads an image file from the given path and returns an ImageFile enum.
 async fn read_image(file_path: &Path, t: ImageFormat) -> Result<ImageFile, ReadMediaError> {
-    let image: Box<dyn Image> = match t {
+    let image: Box<dyn ImageWithMetadata> = match t {
         ImageFormat::Jpeg => Box::new(JpegImage::from_path(file_path).await?),
         ImageFormat::Jxl => Box::new(JxlImage::from_path(file_path).await?),
         ImageFormat::Heic => Box::new(HeifImage::from_path(file_path).await?),
@@ -138,22 +138,22 @@ impl From<String> for ImageParseError {
 }
 
 /// Load an image into memory
-pub async fn load_image(path: &Path) -> Result<Box<dyn Image>, ImageParseError> {
+pub async fn load_image(path: &Path) -> Result<Box<dyn ImageWithMetadata>, ImageParseError> {
     // Identify the image type
     let image_type = detect_image_type(path).await?;
 
     // Parse the image bytes
-    let image: Box<dyn Image> = match image_type {
+    let image: Box<dyn ImageWithMetadata> = match image_type {
         ImageFormat::Jpeg => Box::new(JpegImage::from_path(path).await?),
-        ImageFormat::Jxl => unimplemented!(),
-        ImageFormat::Heic => unimplemented!(),
-        ImageFormat::Png => unimplemented!(),
-        ImageFormat::Tiff => unimplemented!(),
-        ImageFormat::Avif => unimplemented!(),
-        ImageFormat::WebP => unimplemented!(),
-        ImageFormat::Gif => unimplemented!(),
-        ImageFormat::Bmp => unimplemented!(),
-        ImageFormat::Raw(_t) => unimplemented!(),
+        ImageFormat::Jxl => Box::new(JxlImage::from_path(path).await?),
+        ImageFormat::Heic => Box::new(HeifImage::from_path(path).await?),
+        ImageFormat::Png => Box::new(PngImage::from_path(path).await?),
+        ImageFormat::Tiff => Box::new(TiffImage::from_path(path).await?),
+        ImageFormat::Avif => Box::new(AvifImage::from_path(path).await?),
+        ImageFormat::WebP => Box::new(WebPImage::from_path(path).await?),
+        ImageFormat::Gif => Box::new(GifImage::from_path(path).await?),
+        ImageFormat::Bmp => Box::new(BmpImage::from_path(path).await?),
+        ImageFormat::Raw(t) => Box::new(RawImage::from_path(path, t).await?),
     };
 
     Ok(image)

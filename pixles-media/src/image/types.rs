@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+/// Image Format
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ImageFormat {
     Jpeg,
@@ -14,6 +15,7 @@ pub enum ImageFormat {
     Raw(RawImageFormat),
 }
 
+/// RAW Image Format
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum RawImageFormat {
     /// Adobe Digital Negative

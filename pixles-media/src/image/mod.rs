@@ -5,7 +5,11 @@ use std::{
 
 use thiserror::Error;
 
-use crate::image::{buffer::ImageBuffer, metadata::ImageMetadata, types::ImageFormat};
+use crate::image::{
+    buffer::ImageBuffer,
+    metadata::{ImageMetadata, ImageMetadataExtractor, ImageMetadataProvider},
+    types::ImageFormat,
+};
 
 pub mod buffer;
 pub mod formats;
@@ -17,7 +21,7 @@ pub mod types;
 #[derive(Debug)]
 pub struct ImageFile {
     pub source_path: PathBuf,
-    pub image: Box<dyn Image>,
+    pub image: Box<dyn ImageWithMetadata>,
 }
 
 pub trait Image: std::fmt::Debug + Send + Sync {
@@ -30,11 +34,6 @@ pub trait Image: std::fmt::Debug + Send + Sync {
     /// of the buffer can be inspected via the `ImageBuffer` fields.
     fn get_buffer(&self) -> ImageBuffer;
 
-    /// Retrieves metadata associated with the image.
-    ///
-    /// This includes information such as dimensions, color space, and file format specifics.
-    fn get_metadata(&self) -> ImageMetadata;
-
     /// Creates a new image from a raw pixel buffer and metadata.
     ///
     /// This allows initializing an image directly from its components (pixel data and metadata),
@@ -44,13 +43,16 @@ pub trait Image: std::fmt::Debug + Send + Sync {
         Self: Sized;
 }
 
+pub trait ImageWithMetadata: Image + ImageMetadataProvider {}
+impl<T: Image + ImageMetadataProvider> ImageWithMetadata for T {}
+
 /// Trait for converting between different Image types.
 ///
 /// This trait provides methods to convert from one Image type to another by extracting
 /// the buffer and metadata from the source image and reconstructing the target image.
 ///
 /// All types implementing `Image` automatically get this trait.
-pub trait ConvertImage: Image {
+pub trait ConvertImage: ImageWithMetadata {
     /// Convert this image into another image type.
     ///
     /// # Example
@@ -76,7 +78,7 @@ pub trait ConvertImage: Image {
     /// let jpeg_image: &JpegImage = /* ... */;
     /// let png_image: PngImage = jpeg_image.convert_to_ref()?;
     /// ```
-    fn convert_to_ref<U: Image>(&self) -> Result<U, ImageError> {
+    fn convert_to_ref<U: Image + ImageMetadataProvider>(&self) -> Result<U, ImageError> {
         let buffer = self.get_buffer();
         let metadata = self.get_metadata();
         U::from_raw_parts(buffer, metadata)
@@ -90,7 +92,7 @@ pub trait ConvertImage: Image {
     /// let jpeg_image: JpegImage = /* ... */;
     /// let png_image = PngImage::convert_from(jpeg_image)?;
     /// ```
-    fn convert_from<T: Image>(source: T) -> Result<Self, ImageError>
+    fn convert_from<T: Image + ImageMetadataProvider>(source: T) -> Result<Self, ImageError>
     where
         Self: Sized,
     {
@@ -107,7 +109,7 @@ pub trait ConvertImage: Image {
     /// let jpeg_image: &JpegImage = /* ... */;
     /// let png_image = PngImage::convert_from_ref(&jpeg_image)?;
     /// ```
-    fn convert_from_ref<T: Image>(source: &T) -> Result<Self, ImageError>
+    fn convert_from_ref<T: Image + ImageMetadataProvider>(source: &T) -> Result<Self, ImageError>
     where
         Self: Sized,
     {
@@ -126,7 +128,7 @@ pub trait ConvertImage: Image {
     /// let image: Box<dyn Image> = /* ... */;
     /// let png_image = PngImage::convert_from_boxed(image)?;
     /// ```
-    fn convert_from_boxed(source: Box<dyn Image>) -> Result<Self, ImageError>
+    fn convert_from_boxed(source: Box<dyn ImageWithMetadata>) -> Result<Self, ImageError>
     where
         Self: Sized,
     {
@@ -137,7 +139,7 @@ pub trait ConvertImage: Image {
 }
 
 /// Blanket implementation of ConvertImage for all types implementing Image.
-impl<T: Image> ConvertImage for T {}
+impl<T: ImageWithMetadata> ConvertImage for T {}
 
 #[derive(Error, Debug)]
 pub enum ImageError {
@@ -325,7 +327,7 @@ mod tests {
         .unwrap();
 
         let metadata = ImageMetadata {
-            format: "JPEG".to_string(),
+            format: Some(ImageFormat::Jpeg),
             file_size_bytes: 0,
             width: width as u32,
             height: height as u32,
@@ -357,7 +359,7 @@ mod tests {
             )
             .unwrap(),
             ImageMetadata {
-                format: "JPEG".to_string(),
+                format: Some(ImageFormat::Jpeg),
                 file_size_bytes: 0,
                 width: width as u32,
                 height: height as u32,

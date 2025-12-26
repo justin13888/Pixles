@@ -5,11 +5,21 @@ use zune_core::colorspace::ColorSpace as ZuneColorSpace;
 use zune_core::options::DecoderOptions;
 use zune_jpeg::JpegDecoder;
 
+use crate::image::metadata::{
+    ContentMetadata, ImageMetadataExtractor,
+    exposure::CaptureSettings,
+    iptc::IptcData,
+    motion::{AuxiliaryImage, MotionPhotoInfo},
+    raw::RawSensorInfo,
+};
 use crate::image::{
     Image, ImageDecode, ImageEncode, ImageError, ImageMetadata,
     buffer::{ComponentType, ImageBuffer, PixelFormat},
 };
 use crate::metadata::ColorSpace;
+use crate::metadata::{
+    DeviceMetadata, exif::ExifData, geo::GpsLocation, icc::IccProfile, xmp::XmpData,
+};
 
 #[derive(Debug, Clone)]
 pub struct JpegImage {
@@ -19,6 +29,57 @@ pub struct JpegImage {
     format: PixelFormat,
     color_space: ColorSpace,
     file_size_bytes: u64,
+}
+
+impl ImageMetadataExtractor for JpegImage {
+    fn get_dimensions(&self) -> (u32, u32) {
+        unimplemented!()
+    }
+    fn get_bit_depth(&self) -> u8 {
+        unimplemented!()
+    }
+    fn get_color_space(&self) -> ColorSpace {
+        unimplemented!()
+    }
+    fn get_file_size(&self) -> u64 {
+        unimplemented!()
+    }
+    fn get_device_metadata(&self) -> Option<DeviceMetadata> {
+        unimplemented!()
+    }
+    fn get_capture_settings(&self) -> Option<CaptureSettings> {
+        unimplemented!()
+    }
+    fn get_location(&self) -> Option<GpsLocation> {
+        unimplemented!()
+    }
+    fn get_content(&self) -> Option<ContentMetadata> {
+        unimplemented!()
+    }
+    fn raw_info(&self) -> Option<RawSensorInfo> {
+        unimplemented!()
+    }
+    fn exif(&self) -> Option<ExifData> {
+        unimplemented!()
+    }
+    fn xmp(&self) -> Option<XmpData> {
+        unimplemented!()
+    }
+    fn iptc(&self) -> Option<IptcData> {
+        unimplemented!()
+    }
+    fn icc_profile(&self) -> Option<IccProfile> {
+        unimplemented!()
+    }
+    fn motion_metadata(&self) -> Option<MotionPhotoInfo> {
+        unimplemented!()
+    }
+    fn auxiliary_images(&self) -> Vec<AuxiliaryImage> {
+        unimplemented!()
+    }
+    fn c2pa_manifest(&self) -> Option<Vec<u8>> {
+        unimplemented!()
+    }
 }
 
 impl Image for JpegImage {
@@ -36,18 +97,6 @@ impl Image for JpegImage {
             self.color_space,
         )
         .expect("Failed to create ImageBuffer from internal data")
-    }
-
-    fn get_metadata(&self) -> ImageMetadata {
-        ImageMetadata {
-            format: "JPEG".to_string(),
-            file_size_bytes: self.file_size_bytes,
-            width: self.width as u32,
-            height: self.height as u32,
-            bit_depth: 8,
-            color_space: self.color_space,
-            ..Default::default() // TODO: jpeg-encoder exposes much more metadata. Finish this properly.
-        }
     }
 
     fn from_raw_parts(buffer: ImageBuffer, _metadata: ImageMetadata) -> Result<Self, ImageError> {

@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+pub mod exif;
 pub mod geo;
+pub mod icc;
+pub mod orientation;
+pub mod xmp;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum ColorSpace {

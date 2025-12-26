@@ -10,9 +10,3 @@ pub enum MediaType {
     Image(ImageFormat),
     Video(VideoFormat),
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
-pub struct Rational<T: num_traits::Unsigned + Copy> {
-    pub numerator: T,
-    pub denominator: T,
-}

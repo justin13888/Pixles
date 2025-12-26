@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+/// Generic GPS location.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GpsLocation {
     pub latitude: f64,
