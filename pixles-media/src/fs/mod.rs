@@ -6,7 +6,14 @@ use tokio::fs;
 
 use crate::{
     core::types::{ImageMediaType, MediaType, VideoMediaType},
-    image::{Image, ImageDecode, ImageFile, formats::jpeg::JpegImage},
+    image::{
+        Image, ImageFile, ImageReader,
+        formats::{
+            avif::AvifImage, bmp::BmpImage, gif::GifImage, heif::HeifImage, jpeg::JpegImage,
+            jxl::JxlImage, png::PngImage, raw::RawImage, tiff::TiffImage,
+            webp::WebpImage as WebPImage,
+        },
+    },
     video::VideoFile,
 };
 
@@ -37,8 +44,24 @@ pub async fn read(file_path: &Path) -> Result<MediaFile, ReadMediaError> {
     Ok(mf)
 }
 
-async fn read_image(_file_path: &Path, _t: ImageMediaType) -> Result<ImageFile, ReadMediaError> {
-    unimplemented!()
+async fn read_image(file_path: &Path, t: ImageMediaType) -> Result<ImageFile, ReadMediaError> {
+    let image: Box<dyn Image> = match t {
+        ImageMediaType::Jpeg => Box::new(JpegImage::from_path(file_path).await?),
+        ImageMediaType::Jxl => Box::new(JxlImage::from_path(file_path).await?),
+        ImageMediaType::Heic => Box::new(HeifImage::from_path(file_path).await?),
+        ImageMediaType::Png => Box::new(PngImage::from_path(file_path).await?),
+        ImageMediaType::Tiff => Box::new(TiffImage::from_path(file_path).await?),
+        ImageMediaType::Avif => Box::new(AvifImage::from_path(file_path).await?),
+        ImageMediaType::WebP => Box::new(WebPImage::from_path(file_path).await?),
+        ImageMediaType::Gif => Box::new(GifImage::from_path(file_path).await?),
+        ImageMediaType::Bmp => Box::new(BmpImage::from_path(file_path).await?),
+        ImageMediaType::Raw(t) => Box::new(RawImage::from_path(file_path, t).await?),
+    };
+
+    Ok(ImageFile {
+        source_path: file_path.to_path_buf(),
+        image,
+    })
 }
 
 async fn read_video(_file_path: &Path, _t: VideoMediaType) -> Result<VideoFile, ReadMediaError> {
@@ -53,9 +76,13 @@ pub enum ReadMediaError {
     UnknownFormat,
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Join error: {0}")]
+    JoinError(#[from] tokio::task::JoinError),
+    #[error("Image error: {0}")]
+    Image(#[from] crate::image::ImageError),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub enum MediaFile {
     Image(ImageFile),
     Video(VideoFile),

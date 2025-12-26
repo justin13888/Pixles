@@ -67,12 +67,9 @@ impl Image for JpegImage {
 }
 
 impl ImageDecode for JpegImage {
-    fn decode<R: std::io::BufRead>(mut reader: R) -> Result<Self, ImageError> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer).map_err(ImageError::Io)?;
-
+    fn decode_from_bytes(data: &[u8]) -> Result<Self, ImageError> {
         // Decode headers
-        let mut decoder = JpegDecoder::new(std::io::Cursor::new(&buffer));
+        let mut decoder = JpegDecoder::new(std::io::Cursor::new(data));
         decoder
             .decode_headers()
             .map_err(|e| ImageError::Decode(format!("{:?}", e)))?;
@@ -89,9 +86,10 @@ impl ImageDecode for JpegImage {
 
         // Initialize decoder with specific output options
         let options = DecoderOptions::default().jpeg_set_out_colorspace(out_colorspace);
-        let mut decoder = JpegDecoder::new_with_options(std::io::Cursor::new(&buffer), options);
+        let mut decoder =
+            JpegDecoder::new_with_options(zune_core::bytestream::ZCursor::new(data), options);
 
-        let data = decoder
+        let decoded_data = decoder
             .decode()
             .map_err(|e| ImageError::Decode(format!("{:?}", e)))?;
 
@@ -102,10 +100,10 @@ impl ImageDecode for JpegImage {
         Ok(Self {
             width: info.width,
             height: info.height,
-            data,
+            data: decoded_data,
             format: pixel_format,
             color_space: ColorSpace::Srgb, // Assuming SRGB for now
-            file_size_bytes: buffer.len() as u64,
+            file_size_bytes: data.len() as u64,
         })
     }
 }

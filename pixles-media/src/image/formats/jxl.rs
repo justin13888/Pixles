@@ -23,7 +23,7 @@ impl Image for JxlImage {
 }
 
 impl ImageDecode for JxlImage {
-    fn decode<R: BufRead>(_reader: R) -> Result<Self, ImageError> {
+    fn decode_from_bytes(_bytes: &[u8]) -> Result<Self, ImageError> {
         unimplemented!()
     }
 }

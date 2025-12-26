@@ -13,10 +13,10 @@ pub mod formats;
 pub mod lqip;
 pub mod metadata;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug)]
 pub struct ImageFile {
-    pub path: PathBuf,
-    pub metadata: ImageMetadata,
+    pub source_path: PathBuf,
+    pub image: Box<dyn Image>,
 }
 
 pub trait Image: std::fmt::Debug + Send + Sync {
@@ -52,7 +52,20 @@ pub enum ImageError {
     ImageBuffer(#[from] crate::image::buffer::ImageBufferError),
 }
 
-pub trait ImageDecode: Sized + Image {
+pub trait ImageDecode: Sized + Image + 'static {
+    /// Decodes an image directly from a byte slice.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - A byte slice containing the encoded image data.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Self, ImageError>` - The decoded image instance or an error.
+    fn decode_from_bytes(data: &[u8]) -> Result<Self, ImageError>;
+}
+
+pub trait ImageReader: ImageDecode {
     /// Decodes an image from a buffered reader.
     ///
     /// This is the core decoding method. It accepts any type implementing `BufRead` (e.g., `BufReader<File>`, `Cursor<Vec<u8>>`),
@@ -65,19 +78,11 @@ pub trait ImageDecode: Sized + Image {
     /// # Returns
     ///
     /// * `Result<Self, ImageError>` - The decoded image instance or an error.
-    fn decode<R: BufRead>(reader: R) -> Result<Self, ImageError>;
-
-    /// Decodes an image directly from a byte slice.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - A byte slice containing the encoded image data.
-    ///
-    /// # Returns
-    ///
-    /// * `Result<Self, ImageError>` - The decoded image instance or an error.
-    fn decode_from_bytes(data: &[u8]) -> Result<Self, ImageError> {
-        Self::decode(Cursor::new(data))
+    fn decode<R: BufRead>(mut reader: R) -> Result<Self, ImageError> {
+        // We need to decode the whole blob so we first read it all into memory.
+        let mut buf = Vec::new();
+        reader.read_to_end(&mut buf).map_err(ImageError::Io)?;
+        Self::decode_from_bytes(&buf)
     }
 
     /// Asynchronously decodes an image from a file path.
@@ -91,14 +96,33 @@ pub trait ImageDecode: Sized + Image {
     /// # Returns
     ///
     /// * `impl Future<Output = Result<Self, ImageError>>` - A future resolving to the decoded image or an error.
-    fn from_path(path: &Path) -> impl Future<Output = Result<Self, ImageError>> + Send {
+    fn from_path(path: impl AsRef<Path>) -> impl Future<Output = Result<Self, ImageError>> + Send {
+        let path = path.as_ref().to_owned();
         async move {
-            // TODO: Look into memory mapping intelligently
-            let data = tokio::fs::read(path).await.map_err(ImageError::Io)?;
-            Self::decode_from_bytes(&data)
+            // Use spawn_blocking to protect the executor from disk latency
+            tokio::task::spawn_blocking(move || {
+                let file = std::fs::File::open(&path).map_err(ImageError::Io)?;
+                let meta = file.metadata().map_err(ImageError::Io)?;
+
+                // Heuristic: Mmap large files, read small ones
+                if meta.len() > 16 * 1024 {
+                    // File is larger than 16KB
+                    // TODO: Validate this heuristic is optimal
+                    let mmap = unsafe { memmap2::Mmap::map(&file).map_err(ImageError::Io)? };
+                    Self::decode_from_bytes(&mmap)
+                } else {
+                    let mut buf = Vec::with_capacity(meta.len() as usize);
+                    std::io::Read::read_to_end(&mut &file, &mut buf).map_err(ImageError::Io)?;
+                    Self::decode_from_bytes(&buf)
+                }
+            })
+            .await
+            .map_err(|e| ImageError::Decode(format!("JoinError: {e:?}")))?
         }
     }
 }
+
+impl<T: ImageDecode> ImageReader for T {}
 
 pub trait ImageEncode: Image + Sync {
     /// Encodes the image to a writer.

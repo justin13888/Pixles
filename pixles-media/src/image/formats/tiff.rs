@@ -1,4 +1,4 @@
-use std::io::{BufRead, Write};
+use std::io::Write;
 use std::path::Path;
 
 use crate::image::{
@@ -6,9 +6,9 @@ use crate::image::{
 };
 
 #[derive(Debug, Clone)]
-pub struct WebpImage {}
+pub struct TiffImage {}
 
-impl Image for WebpImage {
+impl Image for TiffImage {
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }
@@ -16,18 +16,19 @@ impl Image for WebpImage {
     fn get_metadata(&self) -> ImageMetadata {
         unimplemented!()
     }
+
     fn from_raw_parts(_buffer: ImageBuffer, _metadata: ImageMetadata) -> Result<Self, ImageError> {
         unimplemented!()
     }
 }
 
-impl ImageDecode for WebpImage {
+impl ImageDecode for TiffImage {
     fn decode_from_bytes(_bytes: &[u8]) -> Result<Self, ImageError> {
         unimplemented!()
     }
 }
 
-impl ImageEncode for WebpImage {
+impl ImageEncode for TiffImage {
     fn encode<W: Write>(&self, _writer: &mut W) -> Result<(), ImageError> {
         unimplemented!()
     }

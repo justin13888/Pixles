@@ -6,9 +6,9 @@ use crate::image::{
 };
 
 #[derive(Debug, Clone)]
-pub struct WebpImage {}
+pub struct PngImage {}
 
-impl Image for WebpImage {
+impl Image for PngImage {
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }
@@ -21,13 +21,13 @@ impl Image for WebpImage {
     }
 }
 
-impl ImageDecode for WebpImage {
+impl ImageDecode for PngImage {
     fn decode_from_bytes(_bytes: &[u8]) -> Result<Self, ImageError> {
         unimplemented!()
     }
 }
 
-impl ImageEncode for WebpImage {
+impl ImageEncode for PngImage {
     fn encode<W: Write>(&self, _writer: &mut W) -> Result<(), ImageError> {
         unimplemented!()
     }

@@ -16,6 +16,7 @@ zune-core = "0.5.0"
 zune-jpeg = "0.5.8"
 jpeg-encoder = "0.6"
 tracing = { workspace = true }
+memmap2 = "0.9.9"
 
 [features]
 default = ["fs"]

@@ -22,7 +22,7 @@ impl Image for HeifImage {
 }
 
 impl ImageDecode for HeifImage {
-    fn decode<R: BufRead>(_reader: R) -> Result<Self, ImageError> {
+    fn decode_from_bytes(_bytes: &[u8]) -> Result<Self, ImageError> {
         unimplemented!()
     }
 }
