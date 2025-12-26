@@ -1,7 +1,7 @@
 [package]
 name = "pixles-cli"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 
 [[bin]]
 name = "pixles"
@@ -40,7 +40,3 @@ tracing-subscriber = { version = "0.3.10", features = [
     "fmt",
 ] }
 walkdir = "2.5.0"
-
-[profile.release]
-lto = "thin"
-codegen-units = 1

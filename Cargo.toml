@@ -17,6 +17,11 @@ members = [
 ]
 resolver = "3"
 
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
 [workspace.dependencies]
 argon2 = "0.5.3"
 axum = { version = "0.8.7", features = ["http2", "macros"] }
