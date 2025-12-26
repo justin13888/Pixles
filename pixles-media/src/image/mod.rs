@@ -3,18 +3,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{
-    core::types::ImageFormat,
-    image::{buffer::ImageBuffer, metadata::ImageMetadata},
-};
+use crate::image::{buffer::ImageBuffer, metadata::ImageMetadata, types::ImageFormat};
 
 pub mod buffer;
 pub mod formats;
 pub mod lqip;
 pub mod metadata;
+pub mod presets;
+pub mod types;
 
 #[derive(Debug)]
 pub struct ImageFile {

@@ -1,9 +1,11 @@
 use std::io::Write;
 use std::path::Path;
 
-use crate::core::types::RawImageFormat;
 use crate::image::{
-    Image, ImageDecode, ImageEncode, ImageError, ImageMetadata, buffer::ImageBuffer,
+    Image, ImageDecode, ImageEncode, ImageError,
+    buffer::ImageBuffer,
+    metadata::ImageMetadata,
+    types::{ImageFormat, RawImageFormat},
 };
 
 #[derive(Debug, Clone)]
@@ -22,8 +24,8 @@ impl RawImage {
 }
 
 impl Image for RawImage {
-    fn get_format(&self) -> crate::core::types::ImageFormat {
-        crate::core::types::ImageFormat::Raw(self.subtype.clone())
+    fn get_format(&self) -> ImageFormat {
+        ImageFormat::Raw(self.subtype.clone())
     }
 
     fn get_buffer(&self) -> ImageBuffer {

@@ -2,7 +2,9 @@ use std::path::Path;
 
 use file_format::FileFormat;
 
-use crate::core::types::{ImageFormat, MediaType, VideoFormat};
+use crate::core::types::MediaType;
+use crate::image::types::ImageFormat;
+use crate::video::types::VideoFormat;
 
 macro_rules! img {
     ($variant:ident) => {

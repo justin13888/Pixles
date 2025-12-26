@@ -4,7 +4,7 @@ use thiserror::Error;
 use tokio::fs;
 
 use crate::{
-    core::types::{ImageFormat, MediaType, VideoFormat},
+    core::types::MediaType,
     image::{
         Image, ImageFile, ImageReader,
         formats::{
@@ -12,8 +12,9 @@ use crate::{
             jxl::JxlImage, png::PngImage, raw::RawImage, tiff::TiffImage,
             webp::WebpImage as WebPImage,
         },
+        types::ImageFormat,
     },
-    video::VideoFile,
+    video::{VideoFile, types::VideoFormat},
 };
 
 pub mod ext;

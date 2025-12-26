@@ -21,7 +21,8 @@ impl LQIP {
     /// The buffer MUST be RGBA.
     /// You do not need to resize as it will be done to input internally.
     /// Returns a byte sequence
-    pub async fn from_image_buffer<T>(buffer: T) -> Result<LQIP, String> // TODO: Make error type explicit
+    pub async fn from_image_buffer<T>(buffer: T) -> Result<LQIP, String>
+    // TODO: Make error type explicit
     where
         T: AsRef<ImageBuffer>,
     {
