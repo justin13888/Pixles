@@ -15,6 +15,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "get_user_profile",
         "responses": {
           "200": {
             "description": "",
@@ -41,6 +42,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "update_user_profile",
         "requestBody": {
           "content": {
             "application/json": {
@@ -83,6 +85,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "register_user",
         "requestBody": {
           "content": {
             "application/json": {
@@ -127,6 +130,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "login_user",
         "requestBody": {
           "content": {
             "application/json": {
@@ -163,6 +167,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "refresh_token",
         "requestBody": {
           "content": {
             "application/json": {
@@ -199,6 +204,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "validate_token",
         "responses": {
           "200": {
             "description": "Token is valid - returns user ID"
@@ -215,6 +221,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "logout",
         "responses": {
           "200": {
             "description": "Logout successful"
@@ -239,6 +246,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "reset_password_request",
         "requestBody": {
           "content": {
             "application/json": {
@@ -265,6 +273,7 @@
         "tags": [
           "auth"
         ],
+        "operationId": "reset_password",
         "requestBody": {
           "content": {
             "application/json": {
@@ -294,6 +303,7 @@
         "tags": [
           "upload"
         ],
+        "operationId": "list_todos",
         "responses": {
           "200": {
             "description": "",
@@ -314,6 +324,7 @@
         "tags": [
           "upload"
         ],
+        "operationId": "create_todo",
         "requestBody": {
           "description": "Item to do.",
           "content": {
@@ -341,6 +352,7 @@
         "tags": [
           "upload"
         ],
+        "operationId": "search_todos",
         "parameters": [
           {
             "in": "query",
@@ -388,6 +400,7 @@
         "tags": [
           "upload"
         ],
+        "operationId": "mark_done",
         "responses": {
           "200": {
             "description": "Todo marked as done"
@@ -404,6 +417,7 @@
         "tags": [
           "upload"
         ],
+        "operationId": "delete_todo",
         "responses": {
           "200": {
             "description": "Todo deleted successfully"
@@ -420,6 +434,7 @@
     "/v1/version": {
       "description": "Get API version info",
       "get": {
+        "operationId": "get_version",
         "responses": {
           "200": {
             "description": "",

@@ -3,7 +3,7 @@
 use aide::OperationOutput;
 use aide::axum::{
     ApiRouter,
-    routing::{get, put},
+    routing::{get_with, put_with},
 };
 use aide::openapi::{Operation, Response};
 use axum::{
@@ -301,15 +301,25 @@ fn check_api_key(
 pub(super) fn get_router(_state: AppState) -> ApiRouter {
     let store = Arc::new(Store::default());
     ApiRouter::new()
-        .api_route_with("/", get(list_todos).post(create_todo), |op| {
-            op.tag(TAGS::UPLOAD).description("List or create todos")
-        })
-        .api_route_with("/search", get(search_todos), |op| {
-            op.tag(TAGS::UPLOAD)
-                .description("Search todos by query params")
-        })
-        .api_route_with("/{id}", put(mark_done).delete(delete_todo), |op| {
-            op.tag(TAGS::UPLOAD).description("Mark todo done or delete")
-        })
+        .api_route_with(
+            "/",
+            get_with(list_todos, |op| op.id("list_todos"))
+                .post_with(create_todo, |op| op.id("create_todo")),
+            |op| op.tag(TAGS::UPLOAD).description("List or create todos"),
+        )
+        .api_route_with(
+            "/search",
+            get_with(search_todos, |op| op.id("search_todos")),
+            |op| {
+                op.tag(TAGS::UPLOAD)
+                    .description("Search todos by query params")
+            },
+        )
+        .api_route_with(
+            "/{id}",
+            put_with(mark_done, |op| op.id("mark_done"))
+                .delete_with(delete_todo, |op| op.id("delete_todo")),
+            |op| op.tag(TAGS::UPLOAD).description("Mark todo done or delete"),
+        )
         .with_state(store)
 }

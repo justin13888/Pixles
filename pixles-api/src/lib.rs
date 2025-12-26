@@ -38,9 +38,11 @@ pub async fn create_app(conn: DatabaseConnection, env: &Environment) -> Result<(
         );
     }
 
-    api_router = api_router.api_route_with("/version", get(get_version), |op| {
-        op.description("Get API version info")
-    });
+    api_router = api_router.api_route_with(
+        "/version",
+        aide::axum::routing::get_with(get_version, |op| op.id("get_version")),
+        |op| op.description("Get API version info"),
+    );
     let (docs_router_part, api) = docs::get_router(api_router);
 
     // Merge docs_router into app router
