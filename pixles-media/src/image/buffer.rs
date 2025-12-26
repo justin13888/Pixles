@@ -112,6 +112,11 @@ impl ImageBuffer {
         new_width: usize,
         new_height: usize,
     ) -> Result<ImageBuffer, ImageBufferError> {
+        // TODO: Reimplement real implementation. Perhaps use zune-procs for this.
+        // For upscaling, give option for Bicubic and Bilinear
+        // For downscaling, give option for Lanczos3 and Mitchell-Netravali
+        // implementation could use image or zune-image
+
         if self.component_type != ComponentType::U8 {
             return Err(ImageBufferError::ResizeUnsupported(self.component_type));
         }

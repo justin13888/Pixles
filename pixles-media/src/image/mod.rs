@@ -46,6 +46,101 @@ pub trait Image: std::fmt::Debug + Send + Sync {
         Self: Sized;
 }
 
+/// Trait for converting between different Image types.
+///
+/// This trait provides methods to convert from one Image type to another by extracting
+/// the buffer and metadata from the source image and reconstructing the target image.
+///
+/// All types implementing `Image` automatically get this trait.
+pub trait ConvertImage: Image {
+    /// Convert this image into another image type.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let jpeg_image: JpegImage = /* ... */;
+    /// let png_image: PngImage = jpeg_image.convert_to()?;
+    /// ```
+    fn convert_to<U: Image>(self) -> Result<U, ImageError>
+    where
+        Self: Sized,
+    {
+        let buffer = self.get_buffer();
+        let metadata = self.get_metadata();
+        U::from_raw_parts(buffer, metadata)
+    }
+
+    /// Convert this image (by reference) into another image type.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let jpeg_image: &JpegImage = /* ... */;
+    /// let png_image: PngImage = jpeg_image.convert_to_ref()?;
+    /// ```
+    fn convert_to_ref<U: Image>(&self) -> Result<U, ImageError> {
+        let buffer = self.get_buffer();
+        let metadata = self.get_metadata();
+        U::from_raw_parts(buffer, metadata)
+    }
+
+    /// Create this image type from another image type.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let jpeg_image: JpegImage = /* ... */;
+    /// let png_image = PngImage::convert_from(jpeg_image)?;
+    /// ```
+    fn convert_from<T: Image>(source: T) -> Result<Self, ImageError>
+    where
+        Self: Sized,
+    {
+        let buffer = source.get_buffer();
+        let metadata = source.get_metadata();
+        Self::from_raw_parts(buffer, metadata)
+    }
+
+    /// Create this image type from a reference to another image type.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let jpeg_image: &JpegImage = /* ... */;
+    /// let png_image = PngImage::convert_from_ref(&jpeg_image)?;
+    /// ```
+    fn convert_from_ref<T: Image>(source: &T) -> Result<Self, ImageError>
+    where
+        Self: Sized,
+    {
+        let buffer = source.get_buffer();
+        let metadata = source.get_metadata();
+        Self::from_raw_parts(buffer, metadata)
+    }
+
+    /// Create this image type from a boxed trait object.
+    ///
+    /// This is useful when working with `Box<dyn Image>` from dynamic dispatch scenarios.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let image: Box<dyn Image> = /* ... */;
+    /// let png_image = PngImage::convert_from_boxed(image)?;
+    /// ```
+    fn convert_from_boxed(source: Box<dyn Image>) -> Result<Self, ImageError>
+    where
+        Self: Sized,
+    {
+        let buffer = source.get_buffer();
+        let metadata = source.get_metadata();
+        Self::from_raw_parts(buffer, metadata)
+    }
+}
+
+/// Blanket implementation of ConvertImage for all types implementing Image.
+impl<T: Image> ConvertImage for T {}
+
 #[derive(Error, Debug)]
 pub enum ImageError {
     #[error("IO error: {0}")]
@@ -210,5 +305,72 @@ mod tests {
         let (w, h) = resize_to_max_dimension(50, 50, 100);
         assert_eq!(w, 50);
         assert_eq!(h, 50);
+    }
+
+    #[test]
+    fn test_image_conversion() {
+        use crate::image::formats::{jpeg::JpegImage, png::PngImage};
+
+        // Create a sample JPEG image buffer
+        let width = 100;
+        let height = 100;
+        let data = vec![255u8; width * height * 3]; // RGB data
+
+        let buffer = ImageBuffer::new(
+            data,
+            width,
+            height,
+            buffer::PixelFormat::Rgb,
+            buffer::ComponentType::U8,
+            crate::metadata::ColorSpace::Srgb,
+        )
+        .unwrap();
+
+        let metadata = ImageMetadata {
+            format: "JPEG".to_string(),
+            file_size_bytes: 0,
+            width: width as u32,
+            height: height as u32,
+            bit_depth: 8,
+            color_space: crate::metadata::ColorSpace::Srgb,
+            ..Default::default()
+        };
+
+        // Create JPEG image from raw parts
+        let jpeg_image = JpegImage::from_raw_parts(buffer, metadata).unwrap();
+
+        // Test convert_to method (consuming)
+        let png_image: Result<PngImage, _> = jpeg_image.clone().convert_to();
+        assert!(png_image.is_ok());
+
+        // Test convert_to_ref method (borrowing)
+        let png_image: Result<PngImage, _> = jpeg_image.convert_to_ref();
+        assert!(png_image.is_ok());
+
+        // Test convert_from method
+        let jpeg_image2 = JpegImage::from_raw_parts(
+            ImageBuffer::new(
+                vec![255u8; width * height * 3],
+                width,
+                height,
+                buffer::PixelFormat::Rgb,
+                buffer::ComponentType::U8,
+                crate::metadata::ColorSpace::Srgb,
+            )
+            .unwrap(),
+            ImageMetadata {
+                format: "JPEG".to_string(),
+                file_size_bytes: 0,
+                width: width as u32,
+                height: height as u32,
+                bit_depth: 8,
+                color_space: crate::metadata::ColorSpace::Srgb,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        let png_image: Result<PngImage, _> = PngImage::convert_from(jpeg_image2);
+        assert!(png_image.is_ok());
     }
 }
