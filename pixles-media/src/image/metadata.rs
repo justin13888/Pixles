@@ -73,3 +73,35 @@ pub struct RawSpecifics {
     pub white_level: Option<u32>,
     pub is_compressed: bool,
 }
+
+/// The specific physical container format.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum ImageContainerFormat {
+    Jpeg,
+    Png,
+    WebP,
+    Heic,
+    Avif,
+    Tiff,
+    Dng,
+    // Manufacturer Raw
+    Cr3, // Canon
+    Nef, // Nikon
+    Arw, // Sony
+    Raf, // Fuji
+    Unknown(String),
+}
+
+/// Represents the orientation of the pixel data relative to the camera sensor.
+/// Conversion logic: If you rotate pixels, you MUST reset this to `TopLeft`.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+pub enum Orientation {
+    TopLeft = 1,
+    TopRight = 2,
+    BottomRight = 3,
+    BottomLeft = 4,
+    LeftTop = 5,
+    RightTop = 6,
+    RightBottom = 7,
+    LeftBottom = 8,
+}
