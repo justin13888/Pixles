@@ -56,7 +56,6 @@ impl IntoResponse for InternalServerError {
 pub struct ApiError {
     pub error: String,
 }
-// TODO: Remove this ^^
 
 impl ApiError {
     pub fn new(error: impl Into<String>) -> Self {

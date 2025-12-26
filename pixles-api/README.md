@@ -42,6 +42,18 @@ _We assume Linux-based systems for this service._
   brew install protobuf
   ```
 
+### Testing
+
+Most tests are written to require minimal system dependencies. However, some are still required:
+
+- Enable memory overcommit (Linux): `sudo sysctl vm.overcommit_memory=1` (or add to `/etc/sysctl.d/90-overcommit.conf`)
+- 
+<!-- - If using Podman (i.e. not Docker), testcontainers requires a Docker-compatible socket:
+  - Enable socket: `systemctl --user enable --now podman.socket`
+  - Check status: `systemctl --user status podman.socket`
+  - Configure environment variable: `export DOCKER_HOST=unix:///run/user/$UID/podman/podman.sock`
+  - Disable ryuk if running Podman in rootless mode: `export TESTCONTAINERS_RYUK_DISABLED=true` -->
+
 ### Running
 
 - Spin up some dependencies: `podman compose up` (could spin up individual services manually if needed)

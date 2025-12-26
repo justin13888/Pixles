@@ -10,7 +10,7 @@ pub mod config;
 pub mod constants;
 pub mod errors;
 #[cfg(feature = "server")]
-mod models;
+pub mod models;
 pub mod oidc;
 pub mod roles;
 #[cfg(feature = "server")]
@@ -19,7 +19,7 @@ pub mod service;
 #[cfg(feature = "server")]
 pub mod session;
 #[cfg(feature = "server")]
-mod state;
+pub mod state;
 pub mod utils;
 #[cfg(feature = "server")]
 pub mod validation;
