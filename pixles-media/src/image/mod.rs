@@ -6,7 +6,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::image::{buffer::ImageBuffer, metadata::ImageMetadata};
+use crate::{
+    core::types::ImageFormat,
+    image::{buffer::ImageBuffer, metadata::ImageMetadata},
+};
 
 pub mod buffer;
 pub mod formats;
@@ -20,6 +23,9 @@ pub struct ImageFile {
 }
 
 pub trait Image: std::fmt::Debug + Send + Sync {
+    /// Returns image format
+    fn get_format(&self) -> ImageFormat;
+
     /// Returns the raw pixel buffer of the image.
     ///
     /// This method allows access to the underlying pixel buffer. The format and characteristics

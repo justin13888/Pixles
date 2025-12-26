@@ -9,6 +9,10 @@ use crate::image::{
 pub struct AvifImage {}
 
 impl Image for AvifImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Avif
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

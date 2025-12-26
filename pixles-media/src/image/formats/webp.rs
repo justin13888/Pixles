@@ -1,4 +1,4 @@
-use std::io::{BufRead, Write};
+use std::io::Write;
 use std::path::Path;
 
 use crate::image::{
@@ -9,6 +9,10 @@ use crate::image::{
 pub struct WebpImage {}
 
 impl Image for WebpImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::WebP
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

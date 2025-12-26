@@ -9,6 +9,10 @@ use crate::image::{
 pub struct DngImage {}
 
 impl Image for DngImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Raw(crate::core::types::RawImageFormat::Dng)
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

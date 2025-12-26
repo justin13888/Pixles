@@ -2,17 +2,17 @@ use std::path::Path;
 
 use file_format::FileFormat;
 
-use crate::core::types::{ImageMediaType, MediaType, VideoMediaType};
+use crate::core::types::{ImageFormat, MediaType, VideoFormat};
 
 macro_rules! img {
     ($variant:ident) => {
-        Some(MediaType::Image(ImageMediaType::$variant))
+        Some(MediaType::Image(ImageFormat::$variant))
     };
 }
 
 macro_rules! vid {
     ($variant:ident) => {
-        Some(MediaType::Video(VideoMediaType::$variant))
+        Some(MediaType::Video(VideoFormat::$variant))
     };
 }
 

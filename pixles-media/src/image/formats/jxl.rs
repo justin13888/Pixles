@@ -9,6 +9,10 @@ use crate::image::{
 pub struct JxlImage {}
 
 impl Image for JxlImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Jxl
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

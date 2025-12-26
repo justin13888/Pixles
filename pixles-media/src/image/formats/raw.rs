@@ -1,20 +1,20 @@
 use std::io::Write;
 use std::path::Path;
 
-use crate::core::types::RawImageMediaType;
+use crate::core::types::RawImageFormat;
 use crate::image::{
     Image, ImageDecode, ImageEncode, ImageError, ImageMetadata, buffer::ImageBuffer,
 };
 
 #[derive(Debug, Clone)]
 pub struct RawImage {
-    pub subtype: RawImageMediaType,
+    pub subtype: RawImageFormat,
 }
 
 impl RawImage {
     pub async fn from_path(
         _path: impl AsRef<Path>,
-        subtype: RawImageMediaType,
+        subtype: RawImageFormat,
     ) -> Result<Self, ImageError> {
         // Placeholder for potentially reading metadata or validation
         Ok(Self { subtype })
@@ -22,6 +22,10 @@ impl RawImage {
 }
 
 impl Image for RawImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Raw(self.subtype.clone())
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

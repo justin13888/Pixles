@@ -9,6 +9,10 @@ use crate::image::{
 pub struct HeifImage {}
 
 impl Image for HeifImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Heic
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

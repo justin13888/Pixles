@@ -9,6 +9,10 @@ use crate::image::{
 pub struct GifImage {}
 
 impl Image for GifImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Gif
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }

@@ -2,9 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::core::types::{
-    ImageMediaType, ImageOutputSettings, VideoMediaType, VideoOutputSettings,
-};
+use crate::core::types::{ImageFormat, ImageOutputSettings, VideoFormat, VideoOutputSettings};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TranscodeTask {
@@ -15,7 +13,7 @@ pub enum TranscodeTask {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImageTranscodeTask {
     pub input: PathBuf,
-    pub input_type: ImageMediaType,
+    pub input_type: ImageFormat,
     pub output: PathBuf,
     pub output_settings: ImageOutputSettings,
 }
@@ -23,7 +21,7 @@ pub struct ImageTranscodeTask {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VideoTranscodeTask {
     pub input: PathBuf,
-    pub input_type: VideoMediaType,
+    pub input_type: VideoFormat,
     pub output: PathBuf,
     pub output_settings: VideoOutputSettings,
 }

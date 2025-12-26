@@ -22,6 +22,10 @@ pub struct JpegImage {
 }
 
 impl Image for JpegImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Jpeg
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         ImageBuffer::new(
             self.data.clone(),

@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MediaType {
-    Image(ImageMediaType),
-    Video(VideoMediaType),
+    Image(ImageFormat),
+    Video(VideoFormat),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ImageMediaType {
+pub enum ImageFormat {
     Jpeg,
     Jxl,
     Heic,
@@ -17,11 +17,11 @@ pub enum ImageMediaType {
     WebP,
     Gif,
     Bmp,
-    Raw(RawImageMediaType),
+    Raw(RawImageFormat),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum RawImageMediaType {
+pub enum RawImageFormat {
     /// Adobe Digital Negative
     Dng,
     /// Sony ARW
@@ -42,7 +42,7 @@ pub enum RawImageMediaType {
 pub enum ImageOutputSettings {
     Jpeg(JpegSettings),
     Jxl(JxlSettings),
-    Heic(HeicSettings),
+    // Heic(HeicSettings),
     Png(PngSettings),
     Tiff(TiffSettings),
     Avif(AvifSettings),
@@ -64,11 +64,11 @@ pub struct JxlSettings {
     pub effort: u8,    // 1-9
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct HeicSettings {
-    pub crf: u8,   // 0-51
-    pub speed: u8, // 0-9
-}
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// pub struct HeicSettings {
+//     pub crf: u8,   // 0-51
+//     pub speed: u8, // 0-9
+// }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PngSettings {
@@ -104,7 +104,7 @@ pub struct WebPSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum VideoMediaType {
+pub enum VideoFormat {
     Mp4,
     Webm,
     Mov,

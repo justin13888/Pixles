@@ -9,6 +9,10 @@ use crate::image::{
 pub struct TiffImage {}
 
 impl Image for TiffImage {
+    fn get_format(&self) -> crate::core::types::ImageFormat {
+        crate::core::types::ImageFormat::Tiff
+    }
+
     fn get_buffer(&self) -> ImageBuffer {
         unimplemented!()
     }
