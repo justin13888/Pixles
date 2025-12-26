@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use pixles_media::image::{Image, ImageDecode, formats::jpeg::JpegImage, lqip::LQIP};
+use pixles_media::image::{Image, ImageReader, formats::jpeg::JpegImage, lqip::LQIP};
 
 #[tokio::main]
 pub async fn main() {
