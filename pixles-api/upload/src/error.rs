@@ -5,8 +5,6 @@ use thiserror::Error;
 pub enum UploadError {
     #[error("File exceeds size limit")]
     FileTooLarge,
-    #[error("Cache is full")]
-    CacheFull,
     #[error("File system error: {0}")]
     IoError(#[from] std::io::Error),
     #[error("Database error: {0}")]
@@ -17,8 +15,6 @@ pub enum UploadError {
     ValkeyError(#[from] bb8_redis::redis::RedisError),
     #[error("RunError: {0}")]
     RunError(#[from] bb8_redis::bb8::RunError<bb8_redis::redis::RedisError>),
-    #[error("Configuration error: {0}")]
-    ConfigError(String),
     #[error("Session not found")]
     SessionNotFound,
     #[error("Upload already complete")]
@@ -31,6 +27,10 @@ pub enum UploadError {
     ProcessingError(String),
     #[error("Parse error: {0}")]
     ParseError(#[from] std::string::ParseError),
+    #[error("Checksum mismatch: expected {expected}, got {actual}")]
+    ChecksumMismatch { expected: String, actual: String },
+    #[error("Invalid chunk size: {0}")]
+    InvalidChunkSize(String),
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -42,10 +42,6 @@ impl Writer for UploadError {
             UploadError::FileTooLarge => (
                 StatusCode::PAYLOAD_TOO_LARGE,
                 String::from("File exceeds size limit"),
-            ),
-            UploadError::CacheFull => (
-                StatusCode::INSUFFICIENT_STORAGE,
-                String::from("Cache is full"),
             ),
             UploadError::IoError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -67,7 +63,6 @@ impl Writer for UploadError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 String::from("Cache connection error"),
             ),
-            UploadError::ConfigError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
             UploadError::SessionNotFound => (
                 StatusCode::NOT_FOUND,
                 String::from("Upload session not found"),
@@ -86,6 +81,14 @@ impl Writer for UploadError {
                 String::from("Processing error"),
             ),
             UploadError::ParseError(_) => (StatusCode::BAD_REQUEST, String::from("Parse error")),
+            UploadError::ChecksumMismatch { expected, actual } => (
+                StatusCode::BAD_REQUEST,
+                format!("Checksum mismatch. Expected {}, got {}", expected, actual),
+            ),
+            UploadError::InvalidChunkSize(msg) => (
+                StatusCode::BAD_REQUEST,
+                format!("Invalid chunk size: {msg}"),
+            ),
             UploadError::Unknown(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };
 

@@ -104,7 +104,7 @@ pub async fn refresh_token(
 }
 
 /// Validate an access token
-#[endpoint(operation_id = "validate_token", tags("auth"))]
+#[endpoint(operation_id = "validate_token", tags("auth"), security(("bearer" = [])))]
 pub async fn validate_token(req: &mut Request, depot: &mut Depot) -> ValidateTokenResponses {
     let state = depot.obtain::<AppState>().unwrap();
     let headers = req.headers();
@@ -123,7 +123,7 @@ pub async fn validate_token(req: &mut Request, depot: &mut Depot) -> ValidateTok
 }
 
 /// Logout user and invalidate tokens
-#[endpoint(operation_id = "logout", tags("auth"))]
+#[endpoint(operation_id = "logout", tags("auth"), security(("bearer" = [])))]
 pub async fn logout(req: &mut Request, depot: &mut Depot) -> LogoutResponses {
     let state = depot.obtain::<AppState>().unwrap();
     let headers = req.headers();

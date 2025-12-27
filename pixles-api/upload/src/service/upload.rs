@@ -1,6 +1,6 @@
 use crate::config::UploadServerConfig;
 use crate::error::UploadError;
-use crate::models::upload_session::UploadSession;
+use crate::models::session::{UploadSession, UploadStatus};
 use crate::service::processing::ProcessingService;
 use crate::service::storage::StorageService;
 use crate::session::UploadSessionManager;
@@ -11,7 +11,8 @@ use sea_orm::{ActiveModelTrait, DatabaseConnection, Set, TransactionTrait};
 use std::clone::Clone;
 use tokio::fs;
 
-use entity::{asset, owner, owner_member};
+use entity::asset;
+use service::album as AlbumService;
 
 #[derive(Clone)]
 pub struct UploadService {
@@ -45,8 +46,28 @@ impl UploadService {
         filename: Option<String>,
         content_type: Option<String>,
         total_size: Option<u64>,
+        expected_hash: u64,
+        album_id: Option<String>,
     ) -> Result<UploadSession, UploadError> {
         let upload_id = nanoid!();
+
+        // Validate Album access if provided
+        if let Some(album_id) = &album_id {
+            match AlbumService::Query::get_album_access(&self.conn, user_id, album_id).await {
+                Ok(access) => {
+                    let has_write_access = access.map_or(false, |a| a.is_write());
+                    if !has_write_access {
+                        return Err(UploadError::InvalidUpload(
+                            "Album access denied".to_string(),
+                        ));
+                    }
+                }
+                Err(e) => {
+                    return Err(UploadError::InvalidUpload(e.to_string()));
+                }
+            }
+        }
+
         let session = UploadSession {
             id: upload_id.clone(),
             user_id: user_id.to_string(),
@@ -54,7 +75,9 @@ impl UploadService {
             content_type,
             total_size,
             received_bytes: 0,
-            is_complete: false,
+            status: UploadStatus::Pending,
+            expected_hash,
+            album_id,
             created_at: Utc::now(),
             expires_at: Utc::now() + chrono::Duration::hours(24),
         };
@@ -87,7 +110,7 @@ impl UploadService {
             .await?
             .ok_or(UploadError::SessionNotFound)?;
 
-        if session.is_complete {
+        if session.status == UploadStatus::Completed {
             return Err(UploadError::UploadComplete);
         }
 
@@ -139,6 +162,7 @@ impl UploadService {
         Ok(updated_session)
     }
 
+    /// Finalize an upload, committing uploaded data to storage and processing.
     pub async fn finalize_upload(&self, upload_id: &str) -> Result<asset::Model, UploadError> {
         let session = self
             .get_session(upload_id)
@@ -159,7 +183,9 @@ impl UploadService {
         }
 
         // Mark session as complete atomically
-        self.session_manager.mark_complete(upload_id).await?;
+        self.session_manager
+            .update_status(upload_id, UploadStatus::WaitingForProcessing)
+            .await?;
 
         // Combine chunks
         let filename = session
@@ -172,6 +198,23 @@ impl UploadService {
             .combine_chunks(upload_id, &filename, num_chunks)
             .await?;
 
+        // Validate Hash - fail early and cleanup if mismatch
+        let hash = get_file_hash(&final_path)?;
+
+        if hash != session.expected_hash {
+            tracing::debug!(
+                "Hash mismatch for upload {upload_id} (expected: {:016x}, actual: {:016x})",
+                session.expected_hash,
+                hash
+            );
+            // Hash mismatch - cleanup files and fail
+            let _ = self.cancel_upload(upload_id).await;
+            return Err(UploadError::ChecksumMismatch {
+                expected: format!("{:016x}", session.expected_hash),
+                actual: format!("{:016x}", hash),
+            });
+        }
+
         // Extract Metadata
         let metadata = self
             .processing_service
@@ -179,27 +222,16 @@ impl UploadService {
             .await
             .map_err(|e| UploadError::ProcessingError(e.to_string()))?;
 
-        // Calculate Hash
-        let hash = get_file_hash(&final_path)?;
-
         // DB Insert with Transaction
         let txn = self.conn.begin().await?;
 
         let user_id = &session.user_id;
 
-        // Create new Owner for this User
-        let owner = owner::ActiveModel {
-            id: Set(nanoid!()),
-            created_at: Set(Utc::now()),
-        };
-        let owner_res = owner.insert(&txn).await?;
-
-        let member = owner_member::ActiveModel {
-            owner_id: Set(owner_res.id.clone()),
-            user_id: Set(user_id.clone()),
-            ..Default::default()
-        };
-        member.insert(&txn).await?;
+        // Get/Create Owner
+        let owner_service = crate::service::owner::OwnerService::new(self.conn.clone());
+        let owner_id = owner_service
+            .get_or_create_owner(&[user_id.clone()], &txn)
+            .await?;
 
         // Determine mime
         let mime = session
@@ -216,12 +248,13 @@ impl UploadService {
 
         let asset = asset::ActiveModel {
             id: Set(nanoid!()),
-            owner_id: Set(owner_res.id),
+            owner_id: Set(owner_id),
+            album_id: Set(session.album_id),
             asset_type: Set(asset_type),
-            original_filename: Set(session.filename.clone().unwrap_or_default()),
+            original_filename: Set(session.filename.unwrap_or_default()),
             file_size: Set(session.received_bytes as i64),
             file_hash: Set(hash as i64),
-            content_type: Set(session.content_type.clone().unwrap_or_default()),
+            content_type: Set(session.content_type.unwrap_or_default()),
             uploaded_at: Set(Utc::now()),
             modified_at: Set(Utc::now().into()),
             width: Set(metadata.width),

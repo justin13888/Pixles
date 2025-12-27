@@ -12,6 +12,7 @@ path = "src/lib.rs"
 pixles-api-auth = { path = "../auth" }
 pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment", features = ["upload"] }
+pixles-api-service = { path = "../service" }
 pixles-core = { path = "../../pixles-core-rust" }
 pixles-media = { path = "../../pixles-media" }
 bb8-redis = { workspace = true }

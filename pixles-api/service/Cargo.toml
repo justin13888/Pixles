@@ -11,6 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 pixles-api-entity = { path = "../entity" }
 pixles-api-model = { path = "../model" }
+pixles-core = { path = "../../pixles-core-rust" }
 chrono = { workspace = true }
 sea-orm = { workspace = true, features = [
     "sqlx-postgres",

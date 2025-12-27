@@ -14,7 +14,7 @@ use crate::utils::hash::{hash_password, verify_password};
 use crate::utils::headers::get_token_from_headers;
 
 /// Get user profile
-#[endpoint(operation_id = "get_user_profile", tags("auth"))]
+#[endpoint(operation_id = "get_user_profile", tags("auth"), security(("bearer" = [])))]
 pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfileResponses {
     let state = depot.obtain::<AppState>().unwrap();
     let headers = req.headers();
@@ -52,7 +52,7 @@ pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfi
 }
 
 /// Update user profile
-#[endpoint(operation_id = "update_user_profile", tags("auth"))]
+#[endpoint(operation_id = "update_user_profile", tags("auth"), security(("bearer" = [])))]
 pub async fn update_user_profile(
     req: &mut Request,
     depot: &mut Depot,

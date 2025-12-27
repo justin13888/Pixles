@@ -20,6 +20,23 @@ pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, Claim
     Ok(SecretString::from(&auth_header[7..]))
 }
 
+/// Extract and decode user_id from token in Authorization header
+pub fn get_user_id_from_headers(
+    headers: &HeaderMap,
+    decoding_key: &jsonwebtoken::DecodingKey,
+) -> Result<String, String> {
+    use crate::claims::Claims;
+    use secrecy::ExposeSecret;
+
+    let token_secret =
+        get_token_from_headers(headers).map_err(|e| format!("Authentication required: {}", e))?;
+
+    let token_data = Claims::decode(token_secret.expose_secret(), decoding_key)
+        .map_err(|e| format!("Invalid token: {}", e))?;
+
+    Ok(token_data.claims.sub)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

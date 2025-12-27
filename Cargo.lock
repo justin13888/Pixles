@@ -3414,6 +3414,7 @@ dependencies = [
  "chrono",
  "pixles-api-entity",
  "pixles-api-model",
+ "pixles-core",
  "sea-orm",
  "tokio",
 ]
@@ -3448,6 +3449,7 @@ dependencies = [
  "pixles-api-auth",
  "pixles-api-entity",
  "pixles-api-environment",
+ "pixles-api-service",
  "pixles-core",
  "pixles-media",
  "reflink",

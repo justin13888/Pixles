@@ -4,10 +4,11 @@ use crate::state::AppState;
 
 mod tus;
 
-pub fn get_router(state: AppState) -> Router {
+pub(super) fn get_router(state: AppState) -> Router {
     Router::new()
         .hoop(affix_state::inject(state))
         .push(Router::with_path("status").get(status))
+        .push(Router::with_path("sessions").get(tus::list_sessions))
         .push(Router::new().post(tus::create_upload))
         .push(
             Router::with_path("<id>")

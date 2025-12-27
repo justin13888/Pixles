@@ -1,5 +1,7 @@
 progenitor::generate_api!("openapi.json");
 
+pub mod upload;
+
 pub fn get_authenticated_client(base_url: &str, access_token: &str) -> Client {
     let authorization_header = format!("Bearer {}", access_token);
 
