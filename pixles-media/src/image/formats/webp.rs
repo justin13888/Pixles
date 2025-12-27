@@ -22,6 +22,9 @@ use crate::{
 pub struct WebpImage {}
 
 impl ImageMetadataExtractor for WebpImage {
+    fn get_date_taken(&self) -> Option<chrono::DateTime<chrono::Utc>> {
+        unimplemented!()
+    }
     fn get_dimensions(&self) -> (u32, u32) {
         unimplemented!()
     }

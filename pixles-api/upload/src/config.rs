@@ -1,3 +1,5 @@
+use environment::wrapper::SecretKeyWrapper;
+use jsonwebtoken::DecodingKey;
 use std::path::PathBuf;
 
 use environment::ServerConfig;
@@ -14,8 +16,10 @@ pub struct UploadServerConfig {
     pub max_file_size: usize,
     /// Maximum cache size in bytes
     pub max_cache_size: usize,
-    /// Sled database directory
-    pub sled_db_dir: PathBuf,
+    /// Valkey URL
+    pub valkey_url: String,
+    /// JWT Decoding Key
+    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>,
 }
 
 impl From<&ServerConfig> for UploadServerConfig {
@@ -27,7 +31,8 @@ impl From<&ServerConfig> for UploadServerConfig {
             upload_dir: config.upload_dir.clone(),
             max_file_size: config.max_file_size,
             max_cache_size: config.max_cache_size,
-            sled_db_dir: config.sled_db_dir.clone(),
+            valkey_url: config.valkey_url.clone(),
+            jwt_eddsa_decoding_key: config.jwt_eddsa_decoding_key.clone(),
         }
     }
 }
@@ -60,13 +65,6 @@ pub fn validate_config(config: &UploadServerConfig) -> Result<Vec<String>, Strin
             > 0
     {
         warnings.push("upload_dir is non-empty. This may be from server restarts.".to_string());
-    }
-
-    // Warn if sled_db_dir is an existing directory
-    if config.sled_db_dir.is_dir() {
-        warnings.push(
-            "sled_db_dir is an existing directory. This may be from server restarts.".to_string(),
-        );
     }
 
     Ok(warnings)

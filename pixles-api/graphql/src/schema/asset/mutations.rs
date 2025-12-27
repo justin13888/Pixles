@@ -20,7 +20,7 @@ impl AssetMutation {
 
         let upload_session = UploadSession {
             id: ID::from(nanoid!()),
-            user: User::default(), // TODO: Get user from context
+            user: todo!(), // TODO: Get user from context
             method,
             album_id: album_id.map(|id| id.to_string()),
             status: UploadStatus::Pending,

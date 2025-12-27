@@ -9,7 +9,7 @@ members = [
     "pixles-api/migration",
     "pixles-api/model",
     "pixles-api/testing",
-    # "pixles-api/upload", # TODO: Refactor to Salvo
+    "pixles-api/upload",
     "pixles-cli",
     "pixles-cli/migration",
     "pixles-core-rust",
@@ -26,18 +26,13 @@ publish = false
 [workspace.dependencies]
 argon2 = "0.5.3"
 axum = { version = "0.8.7", features = ["http2", "macros"] }
-salvo = { version = "0.77", features = [
-    "oapi",
-    "cors",
-    "server",
-    "test",
-    "affix-state",
-] }
 base64 = "0.22.1"
+bb8 = "0.9.1"
+bb8-redis = "0.26.0"
+bytes = "1.10"
 chrono = { version = "0.4.42", features = ["serde"] }
 eyre = "0.6.12"
 futures-util = "0.3.31"
-hyper = { version = "1.8.1", features = ["full"] }
 indexmap = { version = "2.12.1", features = ["serde"] }
 jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
 log = { version = "0.4.29", features = ["release_max_level_debug"] }
@@ -45,7 +40,15 @@ file-format = "0.28"
 nanoid = "0.4.0"
 num-rational = { version = "0.4.2", features = ["serde"] }
 prost = "0.14.1"
+redis = { version = "1.0.1", features = ["tokio-comp", "connection-manager"] }
 ring = "0.17.14"
+salvo = { version = "0.86.0", features = [
+    "oapi",
+    "cors",
+    "server",
+    "test",
+    "affix-state",
+] }
 sea-orm = { version = "1.1.19" }
 sea-orm-migration = { version = "1.1.19", features = [
     "sqlx-postgres",
@@ -70,7 +73,6 @@ uuid = { version = "1.19.0", features = [
     "v4",
 ] } # TODO: Remove v4, and only use v7
 tower-http = { version = "0.6.8", features = ["cors"] }
-schemars = { version = "0.8", features = ["chrono", "uuid1"] }
 tracing = "0.1.43"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 

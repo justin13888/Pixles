@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -31,6 +32,7 @@ pub trait ImageMetadataExtractor {
     fn get_file_size(&self) -> u64;
 
     // Generic typed metadata
+    fn get_date_taken(&self) -> Option<DateTime<Utc>>;
     fn get_device_metadata(&self) -> Option<DeviceMetadata>;
     fn get_capture_settings(&self) -> Option<CaptureSettings>;
     fn get_location(&self) -> Option<GpsLocation>;
@@ -64,6 +66,7 @@ impl<T: ImageMetadataExtractor + Image> ImageMetadataProvider for T {
             bit_depth: self.get_bit_depth(),
             color_space: self.get_color_space(),
 
+            date_taken: self.get_date_taken(),
             device: self.get_device_metadata(),
             capture_settings: self.get_capture_settings(),
             location: self.get_location(),
@@ -93,6 +96,8 @@ pub struct ImageMetadata {
     pub color_space: ColorSpace,
 
     // --- Extracted Typed Metadata (From your original struct) ---
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_taken: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub device: Option<DeviceMetadata>,
     #[serde(skip_serializing_if = "Option::is_none")]

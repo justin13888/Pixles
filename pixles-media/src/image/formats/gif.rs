@@ -20,6 +20,9 @@ use crate::metadata::{
 pub struct GifImage {}
 
 impl ImageMetadataExtractor for GifImage {
+    fn get_date_taken(&self) -> Option<chrono::DateTime<chrono::Utc>> {
+        unimplemented!()
+    }
     fn get_dimensions(&self) -> (u32, u32) {
         unimplemented!()
     }

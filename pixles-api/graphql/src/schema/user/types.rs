@@ -18,23 +18,6 @@ pub struct User {
     pub deleted_at: Option<DateTime<Utc>>,
 }
 
-impl Default for User {
-    fn default() -> Self {
-        Self {
-            id: nanoid!(),
-            username: "".to_string(),
-            name: "".to_string(),
-            email: "".to_string(),
-            account_verified: false,
-            needs_onboarding: true,
-            is_admin: false,
-            created_at: Utc::now(),
-            modified_at: Utc::now(),
-            deleted_at: None,
-        }
-    }
-}
-
 impl From<user::Model> for User {
     fn from(user: user::Model) -> Self {
         Self {

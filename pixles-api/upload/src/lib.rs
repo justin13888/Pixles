@@ -1,25 +1,26 @@
-use axum::extract::DefaultBodyLimit;
 use config::UploadServerConfig;
 use eyre::Result;
-use metadata::FileDatabase;
 use sea_orm::DatabaseConnection;
 
-use aide::axum::ApiRouter;
-use tower_http::cors::{Any, CorsLayer};
+use salvo::cors::Cors;
+use salvo::http::Method;
+use salvo::prelude::*;
 use tracing::info;
 
 use crate::{config::validate_config, state::AppState};
 
 mod config;
 mod error;
-mod metadata;
+mod models;
 mod routes;
+mod service;
+mod session;
 mod state;
 
 pub async fn get_router<C: Into<UploadServerConfig>>(
     conn: DatabaseConnection,
     config: C,
-) -> Result<ApiRouter> {
+) -> Result<Router> {
     let config = config.into();
     let config_warnings = validate_config(&config).map_err(|e| {
         eyre::eyre!(
@@ -31,23 +32,37 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
         info!("Upload server config warnings: {:?}", config_warnings);
     }
 
-    // Initialize database
-    let file_db = FileDatabase::new(config.clone()).await?;
-    // TODO: Read existing upload folder and db to ensure old stuff are recovered. Need to decide whether to attempt to recover whatever (e.g. intermittent, brief outages) or just restart everything
+    // Initialize Upload Session Manager
+    let session_manager = session::UploadSessionManager::new(&config.valkey_url)
+        .await
+        .map_err(|e| eyre::eyre!("Failed to initialize session manager: {}", e))?;
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
-    let default_body_limit = DefaultBodyLimit::max(config.max_file_size);
-    let state = AppState {
-        conn,
-        config,
-        file_db,
-    };
+    // Initialize Storage Service
+    let storage = service::storage::StorageService::new(config.clone());
 
-    Ok(ApiRouter::new()
-        .merge(routes::get_router(state))
-        .layer(cors)
-        .layer(default_body_limit))
+    // Initialize Upload Service
+    let upload_service = service::upload::UploadService::new(
+        config.clone(),
+        storage.clone(),
+        session_manager.clone(),
+        conn.clone(),
+    );
+
+    let cors = Cors::new()
+        .allow_origin("*") // TODO: restricting origins via config
+        .allow_methods(vec![
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::PATCH,
+            Method::HEAD,
+            Method::OPTIONS,
+        ])
+        .allow_headers("*")
+        .into_handler();
+
+    let state = AppState::new(config, upload_service);
+
+    Ok(Router::new().hoop(cors).push(routes::get_router(state)))
 }

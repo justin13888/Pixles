@@ -10,7 +10,7 @@ pixles-api-auth = { path = "./auth", optional = true }
 # TODO: Re-enable when graphql is production-ready
 # pixles-api-graphql = { path = "./graphql", optional = true }
 # TODO: Re-enable when upload is production-ready
-# pixles-api-upload = { path = "./upload", optional = true }
+pixles-api-upload = { path = "./upload", optional = true }
 pixles-api-environment = { path = "./environment" }
 # TODO: Re-enable when metadata is production-ready
 # pixles-api-metadata = { path = "./metadata", optional = true }
@@ -31,15 +31,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["auth", "openapi"]
+default = ["auth", "upload", "openapi"]
 auth = ["pixles-api-auth", "pixles-api-environment/auth"]
 # TODO: Re-enable when graphql is production-ready
 # graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
 # TODO: Re-enable when metadata is production-ready
 # metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]
-# TODO: Re-enable when upload is production-ready
-# upload = [
-#     "pixles-api-upload",
-#     "pixles-api-environment/upload",
-# ]
+upload = ["pixles-api-upload", "pixles-api-environment/upload"]
 openapi = []

@@ -15,7 +15,7 @@ use crate::jwt::convert_ed25519_der_to_jwt_keys;
 
 pub mod constants;
 mod jwt;
-mod wrapper;
+pub mod wrapper;
 
 #[derive(Debug, Error)]
 pub enum EnvironmentError {
@@ -44,9 +44,9 @@ pub struct ServerConfig {
     #[cfg(feature = "auth")]
     /// EdDSA encoding key
     pub jwt_eddsa_encoding_key: SecretKeyWrapper<EncodingKey>,
-    #[cfg(feature = "auth")]
+    // Decoding key is used by all servers so it is not feature gated
     /// EdDSA decoding key
-    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>, // TODO: Might need this for other components like graphql
+    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>,
     #[cfg(feature = "auth")]
     /// JWT refresh token duration in seconds
     pub jwt_refresh_token_duration_seconds: u64,
@@ -67,7 +67,7 @@ pub struct ServerConfig {
     /// Sled database directory
     pub sled_db_dir: PathBuf,
 
-    #[cfg(feature = "auth")]
+    #[cfg(any(feature = "auth", feature = "upload"))]
     /// Valkey URL (e.g. "redis://127.0.0.1:6379")
     pub valkey_url: String,
 }
@@ -171,7 +171,7 @@ impl Environment {
                 sled_db_dir: load_env("SLED_DB_DIR")
                     .unwrap_or(String::from("./.metadata"))
                     .into(),
-                #[cfg(feature = "auth")]
+                #[cfg(any(feature = "auth", feature = "upload"))]
                 valkey_url: load_env("VALKEY_URL")?,
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {

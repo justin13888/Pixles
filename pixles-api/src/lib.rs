@@ -67,15 +67,12 @@ pub async fn create_router(conn: DatabaseConnection, env: &Environment) -> Resul
     //         ),
     //     );
     // }
-    // TODO: Re-enable when upload is production-ready
-    // #[cfg(feature = "upload")]
-    // {
-    //     v1_router = v1_router.push(
-    //         Router::with_path("upload").push(
-    //             upload::get_router(conn.clone(), &env.server).await?,
-    //         ),
-    //     );
-    // }
+    #[cfg(feature = "upload")]
+    {
+        v1_router = v1_router.push(
+            Router::with_path("upload").push(upload::get_router(conn.clone(), &env.server).await?),
+        );
+    }
 
     // Add version endpoint
     v1_router = v1_router.push(Router::with_path("version").get(routes::version::get_version));

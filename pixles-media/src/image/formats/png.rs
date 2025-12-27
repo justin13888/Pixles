@@ -20,6 +20,9 @@ use crate::metadata::{
 pub struct PngImage {}
 
 impl ImageMetadataExtractor for PngImage {
+    fn get_date_taken(&self) -> Option<chrono::DateTime<chrono::Utc>> {
+        unimplemented!()
+    }
     fn get_dimensions(&self) -> (u32, u32) {
         unimplemented!()
     }
