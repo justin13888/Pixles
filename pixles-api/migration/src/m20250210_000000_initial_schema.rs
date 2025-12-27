@@ -7,16 +7,34 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // TODO: Inspect the generated postgres schema for column types and indices
-
         let db = manager.get_connection();
 
+        // Install required extensions
         db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
             .await?;
         db.execute_unprepared("CREATE EXTENSION IF NOT EXISTS btree_gin;")
             .await?;
 
-        // Create the users table
+        // ========================================
+        // 1. Create Owners Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(Owners::Table)
+                    .if_not_exists()
+                    .col(char_len(Owners::Id, 21).primary_key())
+                    .col(
+                        timestamp_with_time_zone(Owners::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 2. Create Users Table
+        // ========================================
         manager
             .create_table(
                 Table::create()
@@ -30,6 +48,10 @@ impl MigrationTrait for Migration {
                     .col(boolean(Users::AccountVerified).default(false))
                     .col(boolean(Users::NeedsOnboarding).default(true))
                     .col(string(Users::PasswordHash))
+                    .col(string_null(Users::PasswordResetToken).unique_key())
+                    .col(timestamp_with_time_zone_null(Users::PasswordResetExpiresAt))
+                    .col(timestamp_with_time_zone_null(Users::LastLoginAt))
+                    .col(integer(Users::FailedLoginAttempts).default(0))
                     .col(boolean(Users::IsAdmin).default(false))
                     .col(
                         timestamp_with_time_zone(Users::CreatedAt)
@@ -46,18 +68,18 @@ impl MigrationTrait for Migration {
 
         // Create users indices
         db.execute_unprepared(
-            r#"CREATE UNIQUE INDEX IF NOT EXISTS idx_username_lower ON users (LOWER(username))"#,
+            r#"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower ON users (LOWER(username))"#,
         )
-        .await?; // TODO: Verify index prevents usernames with difference casing to be inserted
+        .await?;
         db.execute_unprepared(
-            r#"CREATE UNIQUE INDEX IF NOT EXISTS idx_email_lower ON users (LOWER(email))"#,
+            r#"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))"#,
         )
         .await?;
         manager
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_deleted_at")
+                    .name("idx_users_deleted_at")
                     .table(Users::Table)
                     .col(Users::DeletedAt)
                     .index_type(IndexType::BTree)
@@ -68,7 +90,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_is_admin")
+                    .name("idx_users_is_admin")
                     .table(Users::Table)
                     .col(Users::IsAdmin)
                     .index_type(IndexType::Hash)
@@ -76,7 +98,58 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // Create albums table
+        // ========================================
+        // 3. Create Owner Members Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(OwnerMembers::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(OwnerMembers::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(char_len(OwnerMembers::OwnerId, 21))
+                    .col(char_len(OwnerMembers::UserId, 21))
+                    .col(
+                        timestamp_with_time_zone(OwnerMembers::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_owner_members_owner_id")
+                            .from(OwnerMembers::Table, OwnerMembers::OwnerId)
+                            .to(Owners::Table, Owners::Id)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_owner_members_user_id")
+                            .from(OwnerMembers::Table, OwnerMembers::UserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_owner_members_owner_user_unique")
+                            .table(OwnerMembers::Table)
+                            .col(OwnerMembers::OwnerId)
+                            .col(OwnerMembers::UserId)
+                            .unique(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 4. Create Albums Table
+        // ========================================
         manager
             .create_table(
                 Table::create()
@@ -95,6 +168,13 @@ impl MigrationTrait for Migration {
                             .default(Expr::current_timestamp()),
                     )
                     .col(timestamp_with_time_zone_null(Albums::DeletedAt))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_albums_owner_id")
+                            .from(Albums::Table, Albums::OwnerId)
+                            .to(Owners::Table, Owners::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -104,7 +184,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_owner_id")
+                    .name("idx_albums_owner_id")
                     .table(Albums::Table)
                     .col(Albums::OwnerId)
                     .index_type(IndexType::Hash)
@@ -115,7 +195,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_name")
+                    .name("idx_albums_name")
                     .table(Albums::Table)
                     .col(Albums::Name)
                     .index_type(IndexType::BTree)
@@ -126,7 +206,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_description")
+                    .name("idx_albums_description")
                     .table(Albums::Table)
                     .col(Albums::Description)
                     .index_type(IndexType::FullText)
@@ -137,7 +217,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_created_at")
+                    .name("idx_albums_created_at")
                     .table(Albums::Table)
                     .col(Albums::CreatedAt)
                     .index_type(IndexType::BTree)
@@ -148,7 +228,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_modified_at")
+                    .name("idx_albums_modified_at")
                     .table(Albums::Table)
                     .col(Albums::ModifiedAt)
                     .index_type(IndexType::BTree)
@@ -159,7 +239,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_deleted_at")
+                    .name("idx_albums_deleted_at")
                     .table(Albums::Table)
                     .col(Albums::DeletedAt)
                     .index_type(IndexType::BTree)
@@ -167,19 +247,43 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // // Add albums.user_id foreign key constraint
+        // ========================================
+        // 5. Create Album Shares Table
+        // ========================================
         manager
-            .create_foreign_key(
-                ForeignKey::create()
-                    .name("fk_albums_owner_id")
-                    .from(Albums::Table, Albums::OwnerId)
-                    .to(Users::Table, Users::Id)
-                    .on_delete(ForeignKeyAction::Restrict)
+            .create_table(
+                Table::create()
+                    .table(AlbumShares::Table)
+                    .if_not_exists()
+                    .col(char_len(AlbumShares::Id, 21).primary_key())
+                    .col(char_len(AlbumShares::AlbumId, 21))
+                    .col(char_len(AlbumShares::UserId, 21))
+                    .col(string_len(AlbumShares::Permission, 10))
+                    .col(
+                        timestamp_with_time_zone(AlbumShares::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_album_shares_album_id")
+                            .from(AlbumShares::Table, AlbumShares::AlbumId)
+                            .to(Albums::Table, Albums::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_album_shares_user_id")
+                            .from(AlbumShares::Table, AlbumShares::UserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
                     .to_owned(),
             )
             .await?;
 
-        // Create assets table
+        // ========================================
+        // 6. Create Assets Table
+        // ========================================
         manager
             .create_table(
                 Table::create()
@@ -190,10 +294,35 @@ impl MigrationTrait for Migration {
                     .col(char_len_null(Assets::AlbumId, 21))
                     .col(unsigned(Assets::Width))
                     .col(unsigned(Assets::Height))
-                    .col(timestamp_with_time_zone(Assets::Date))
-                    .col(timestamp_with_time_zone(Assets::UploadedAt))
-                    .col(timestamp_with_time_zone(Assets::ModifiedAt))
+                    .col(string_len(Assets::AssetType, 2))
+                    .col(string(Assets::OriginalFilename))
+                    .col(big_integer(Assets::FileSize))
+                    .col(big_integer(Assets::FileHash)) // i64 hash stored as bigint
+                    .col(string(Assets::ContentType))
+                    .col(timestamp_with_time_zone_null(Assets::Date)) // Nullable as per entity
+                    .col(
+                        timestamp_with_time_zone(Assets::UploadedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        timestamp_with_time_zone(Assets::ModifiedAt)
+                            .default(Expr::current_timestamp()),
+                    )
                     .col(timestamp_with_time_zone_null(Assets::DeletedAt))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_assets_owner_id")
+                            .from(Assets::Table, Assets::OwnerId)
+                            .to(Owners::Table, Owners::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_assets_album_id")
+                            .from(Assets::Table, Assets::AlbumId)
+                            .to(Albums::Table, Albums::Id)
+                            .on_delete(ForeignKeyAction::SetNull),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -203,7 +332,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_owner_id")
+                    .name("idx_assets_owner_id")
                     .table(Assets::Table)
                     .col(Assets::OwnerId)
                     .index_type(IndexType::Hash)
@@ -214,7 +343,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_album_id")
+                    .name("idx_assets_album_id")
                     .table(Assets::Table)
                     .col(Assets::AlbumId)
                     .index_type(IndexType::Hash)
@@ -225,7 +354,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_date")
+                    .name("idx_assets_date")
                     .table(Assets::Table)
                     .col(Assets::Date)
                     .index_type(IndexType::BTree)
@@ -236,7 +365,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_uploaded_at")
+                    .name("idx_assets_uploaded_at")
                     .table(Assets::Table)
                     .col(Assets::UploadedAt)
                     .index_type(IndexType::BTree)
@@ -247,7 +376,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_modified_at")
+                    .name("idx_assets_modified_at")
                     .table(Assets::Table)
                     .col(Assets::ModifiedAt)
                     .index_type(IndexType::BTree)
@@ -258,7 +387,7 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_deleted_at")
+                    .name("idx_assets_deleted_at")
                     .table(Assets::Table)
                     .col(Assets::DeletedAt)
                     .index_type(IndexType::BTree)
@@ -270,19 +399,39 @@ impl MigrationTrait for Migration {
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // Drop tables in reverse order
+        // Drop tables in reverse order of creation (respecting foreign keys)
         manager
             .drop_table(Table::drop().table(Assets::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(AlbumShares::Table).to_owned())
             .await?;
         manager
             .drop_table(Table::drop().table(Albums::Table).to_owned())
             .await?;
         manager
+            .drop_table(Table::drop().table(OwnerMembers::Table).to_owned())
+            .await?;
+        manager
             .drop_table(Table::drop().table(Users::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Owners::Table).to_owned())
             .await?;
 
         Ok(())
     }
+}
+
+// ========================================
+// Table Identifiers
+// ========================================
+
+#[derive(DeriveIden)]
+enum Owners {
+    Table,
+    Id,
+    CreatedAt,
 }
 
 #[derive(DeriveIden)]
@@ -296,10 +445,23 @@ enum Users {
     AccountVerified,
     NeedsOnboarding,
     PasswordHash,
+    PasswordResetToken,
+    PasswordResetExpiresAt,
+    LastLoginAt,
+    FailedLoginAttempts,
     IsAdmin,
     CreatedAt,
     ModifiedAt,
     DeletedAt,
+}
+
+#[derive(DeriveIden)]
+enum OwnerMembers {
+    Table,
+    Id,
+    OwnerId,
+    UserId,
+    CreatedAt,
 }
 
 #[derive(DeriveIden)]
@@ -315,6 +477,16 @@ enum Albums {
 }
 
 #[derive(DeriveIden)]
+enum AlbumShares {
+    Table,
+    Id,
+    AlbumId,
+    UserId,
+    Permission,
+    CreatedAt,
+}
+
+#[derive(DeriveIden)]
 enum Assets {
     Table,
     Id,
@@ -322,6 +494,11 @@ enum Assets {
     AlbumId,
     Width,
     Height,
+    AssetType,
+    OriginalFilename,
+    FileSize,
+    FileHash,
+    ContentType,
     Date,
     UploadedAt,
     ModifiedAt,
