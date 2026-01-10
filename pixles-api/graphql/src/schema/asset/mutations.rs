@@ -1,7 +1,7 @@
 // use crate::{constants::MAX_UPLOAD_SESSION_DURATION_SECONDS, schema::user::User};
 
 // use super::{
-//     AssetMetadata, CreateAssetInput, CreateUploadSessionInput, UploadSession, UploadStatus,
+//     AssetMetadata, CreateAssetInput, CreateUploadSessionInput, UploadSession, UploadSessionStatus,
 // };
 // use async_graphql::*;
 // use chrono::{Duration, Utc};
@@ -23,7 +23,7 @@
 //             user: todo!(), // TODO: Get user from context
 //             method,
 //             album_id: album_id.map(|id| id.to_string()),
-//             status: UploadStatus::Pending,
+//             status: UploadSessionStatus::Pending,
 //             created_at: Utc::now(),
 //             expires_at: Utc::now() + Duration::seconds(MAX_UPLOAD_SESSION_DURATION_SECONDS),
 //         };

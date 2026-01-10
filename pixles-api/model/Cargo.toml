@@ -10,3 +10,5 @@ path = "src/lib.rs"
 
 [dependencies]
 pixles-api-entity = { path = "../entity" }
+chrono = { workspace = true }
+serde = { workspace = true }

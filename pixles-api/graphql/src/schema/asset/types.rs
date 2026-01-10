@@ -148,6 +148,7 @@ impl AssetMetadata {
     }
 }
 
+// TODO: This is getting replaced
 #[derive(SimpleObject)]
 pub struct UploadSession {
     pub id: ID,
@@ -158,7 +159,7 @@ pub struct UploadSession {
     /// Destination of album. None if it is not associated
     pub album_id: Option<String>,
     /// Status of the upload session
-    pub status: UploadStatus,
+    pub status: UploadSessionStatus,
     /// Date when the upload session was created
     pub created_at: DateTime<Utc>,
     /// Date when the upload session automatically expires
@@ -172,7 +173,7 @@ pub struct UploadSessionFilter {
     /// Method
     pub method: Option<UploadMethod>,
     /// Statuses
-    pub status: Option<Vec<UploadStatus>>,
+    pub status: Option<Vec<UploadSessionStatus>>,
     /// Expired
     pub expired: Option<bool>,
 }
@@ -213,8 +214,9 @@ pub enum UploadMethod {
     Tus,
 }
 
+// TODO: This is getting replaced.
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
-pub enum UploadStatus {
+pub enum UploadSessionStatus {
     /// Active with no active upload
     Pending,
     /// Active with an active upload

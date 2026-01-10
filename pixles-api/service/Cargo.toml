@@ -13,11 +13,15 @@ pixles-api-entity = { path = "../entity" }
 pixles-api-model = { path = "../model" }
 pixles-core = { path = "../../pixles-core-rust" }
 chrono = { workspace = true }
+data-encoding = { workspace = true }
+nanoid = { workspace = true }
 sea-orm = { workspace = true, features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "debug-print",
 ] }
+thiserror = { workspace = true }
+
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

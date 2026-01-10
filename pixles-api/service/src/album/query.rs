@@ -3,7 +3,7 @@ use ::entity::{
     album_share::{self, Entity as AlbumShare, SharePermission},
     owner_member::{self, Entity as OwnerMember},
 };
-use pixles_core::models::AlbumAccess;
+use pixles_core::models::album::AlbumAccess;
 use sea_orm::*;
 
 pub struct Query;

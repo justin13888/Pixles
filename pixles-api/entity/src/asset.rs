@@ -52,6 +52,11 @@ pub struct Model {
     /// Date when the album was deleted if not NULL
     #[sea_orm(column_type = "TimestampWithTimeZone", nullable, indexed)]
     pub deleted_at: Option<DateTime<Utc>>,
+    /// Whether asset has been uploaded
+    pub uploaded: bool,
+    /// User who uploaded the asset (for storage quota)
+    #[sea_orm(indexed)]
+    pub upload_user_id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
@@ -81,6 +86,12 @@ pub enum Relation {
         to = "super::album::Column::Id"
     )]
     Album,
+    #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::UploadUserId",
+        to = "super::user::Column::Id"
+    )]
+    UploadUser,
 }
 
 impl Related<super::owner::Entity> for Entity {
@@ -92,6 +103,12 @@ impl Related<super::owner::Entity> for Entity {
 impl Related<super::album::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Album.def()
+    }
+}
+
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::UploadUser.def()
     }
 }
 

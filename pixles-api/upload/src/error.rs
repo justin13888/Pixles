@@ -19,6 +19,8 @@ pub enum UploadError {
     SessionNotFound,
     #[error("Upload already complete")]
     UploadComplete,
+    #[error("Upload session is being processed by another instance")]
+    UploadInstanceConflict,
     #[error("Invalid offset: expected {expected}, got {actual}")]
     InvalidOffset { expected: u64, actual: u64 },
     #[error("Invalid upload: {0}")]
@@ -88,6 +90,10 @@ impl Writer for UploadError {
             UploadError::InvalidChunkSize(msg) => (
                 StatusCode::BAD_REQUEST,
                 format!("Invalid chunk size: {msg}"),
+            ),
+            UploadError::UploadInstanceConflict => (
+                StatusCode::CONFLICT,
+                String::from("Upload session is being processed by another instance"),
             ),
             UploadError::Unknown(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };

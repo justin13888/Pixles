@@ -1,18 +1,19 @@
 use crate::config::UploadServerConfig;
 use crate::error::UploadError;
-use crate::models::session::{UploadSession, UploadStatus};
+use crate::models::session::{UploadSession, UploadSessionStatus};
 use crate::service::processing::ProcessingService;
 use crate::service::storage::StorageService;
 use crate::session::UploadSessionManager;
 use chrono::Utc;
 use nanoid::nanoid;
 use pixles_core::utils::hash::get_file_hash;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, Set, TransactionTrait};
+use sea_orm::{DatabaseConnection, TransactionTrait};
 use std::clone::Clone;
 use tokio::fs;
 
 use entity::asset;
 use service::album as AlbumService;
+use service::asset as AssetService;
 
 #[derive(Clone)]
 pub struct UploadService {
@@ -30,33 +31,33 @@ impl UploadService {
         session_manager: UploadSessionManager,
         conn: DatabaseConnection,
     ) -> Self {
-        let processing_service = ProcessingService::new();
         Self {
             config,
             storage,
             session_manager,
-            processing_service,
+            processing_service: ProcessingService::new(),
             conn,
         }
     }
 
+    /// Create a new upload session with asset record in Postgres
     pub async fn create_session(
         &self,
-        user_id: &str,
-        filename: Option<String>,
+        owner_id: &str,
+        upload_user_id: &str,
         content_type: Option<String>,
-        total_size: Option<u64>,
-        expected_hash: u64,
+        total_size: u64,
+        expected_hash: i64,
         album_id: Option<String>,
+        original_filename: String,
     ) -> Result<UploadSession, UploadError> {
         let upload_id = nanoid!();
 
         // Validate Album access if provided
         if let Some(album_id) = &album_id {
-            match AlbumService::Query::get_album_access(&self.conn, user_id, album_id).await {
+            match AlbumService::Query::get_album_access(&self.conn, owner_id, album_id).await {
                 Ok(access) => {
-                    let has_write_access = access.map_or(false, |a| a.is_write());
-                    if !has_write_access {
+                    if !access.is_some_and(|a| a.is_write()) {
                         return Err(UploadError::InvalidUpload(
                             "Album access denied".to_string(),
                         ));
@@ -68,34 +69,93 @@ impl UploadService {
             }
         }
 
+        // Check for duplicate hash - asset with same hash already exists for this user
+        if let Some(existing) =
+            AssetService::Query::find_by_hash_for_user(&self.conn, upload_user_id, expected_hash)
+                .await
+                .map_err(|e| UploadError::Unknown(e.to_string()))?
+        {
+            return Err(UploadError::InvalidUpload(format!(
+                "Asset with this hash already exists: {}",
+                existing.id
+            )));
+        }
+
+        // Determine asset type from content_type
+        let asset_type = content_type
+            .as_ref()
+            .map(|ct| {
+                if ct.starts_with("image/") {
+                    asset::AssetType::Photo
+                } else if ct.starts_with("video/") {
+                    asset::AssetType::Video
+                } else {
+                    asset::AssetType::Photo
+                }
+            })
+            .unwrap_or(asset::AssetType::Photo);
+
+        // Create pending asset in Postgres with uploaded=false
+        let asset = AssetService::Mutation::create_pending(
+            &self.conn,
+            owner_id.to_string(),
+            upload_user_id.to_string(),
+            album_id.clone(),
+            asset_type,
+            original_filename,
+            total_size as i64,
+            expected_hash,
+            content_type
+                .clone()
+                .unwrap_or_else(|| "application/octet-stream".to_string()),
+            None, // date will be extracted on finalize
+        )
+        .await
+        .map_err(|e| UploadError::Unknown(e.to_string()))?;
+
         let session = UploadSession {
             id: upload_id.clone(),
-            user_id: user_id.to_string(),
-            filename,
-            content_type,
-            total_size,
-            received_bytes: 0,
-            status: UploadStatus::Pending,
-            expected_hash,
+            asset_id: asset.id.clone(),
+            owner_id: owner_id.to_string(),
+            upload_user_id: upload_user_id.to_string(),
             album_id,
+            content_type,
+            expected_hash,
+            received_bytes: 0,
+            total_size,
+            status: UploadSessionStatus::Pending,
             created_at: Utc::now(),
             expires_at: Utc::now() + chrono::Duration::hours(24),
         };
 
-        // Init storage
-        self.storage.init_upload_dir(&upload_id).await?;
-
         // Create session in Redis (atomic HSET)
         self.session_manager.create(&session).await?;
-
-        // Save local backup state
-        self.save_local_state(&session).await?;
 
         Ok(session)
     }
 
     pub async fn get_session(&self, upload_id: &str) -> Result<Option<UploadSession>, UploadError> {
         self.session_manager.get(upload_id).await
+    }
+
+    /// List sessions by owner ID
+    pub async fn list_sessions_by_owner(
+        &self,
+        owner_id: &str,
+    ) -> Result<Vec<UploadSession>, UploadError> {
+        let session_ids = self.session_manager.list_by_owner(owner_id).await?;
+        let mut sessions = Vec::with_capacity(session_ids.len());
+
+        for id in session_ids {
+            if let Some(session) = self.session_manager.get(&id).await? {
+                // Only return active sessions
+                if session.status.is_active() {
+                    sessions.push(session);
+                }
+            }
+        }
+
+        Ok(sessions)
     }
 
     pub async fn append_chunk(
@@ -110,7 +170,7 @@ impl UploadService {
             .await?
             .ok_or(UploadError::SessionNotFound)?;
 
-        if session.status == UploadStatus::Completed {
+        if session.status.is_inactive() {
             return Err(UploadError::UploadComplete);
         }
 
@@ -126,9 +186,7 @@ impl UploadService {
 
         // Validate size limit before writing
         let new_size = session.received_bytes + chunk_len;
-        if let Some(total) = session.total_size
-            && new_size > total
-        {
+        if session.total_size > 0 && new_size > session.total_size {
             return Err(UploadError::InvalidUpload(
                 "Upload exceeds declared total size".to_string(),
             ));
@@ -137,8 +195,8 @@ impl UploadService {
             return Err(UploadError::FileTooLarge);
         }
 
-        // Count existing chunks to determine next chunk index
-        let chunk_count = self.count_chunks(upload_id).await?;
+        // Count existing chunks
+        let chunk_count = self.storage.count_chunks(upload_id).await?;
 
         // Write chunk to disk
         let chunk_path = self.storage.get_chunk_path(upload_id, chunk_count);
@@ -156,62 +214,64 @@ impl UploadService {
             ..session
         };
 
-        // Save local backup state with updated bytes
-        self.save_local_state(&updated_session).await?;
-
         Ok(updated_session)
     }
 
-    /// Finalize an upload, committing uploaded data to storage and processing.
     pub async fn finalize_upload(&self, upload_id: &str) -> Result<asset::Model, UploadError> {
         let session = self
             .get_session(upload_id)
             .await?
             .ok_or(UploadError::SessionNotFound)?;
 
-        if let Some(total) = session.total_size {
-            if session.received_bytes != total {
-                return Err(UploadError::InvalidUpload(format!(
-                    "Upload not complete: received {} of {}",
-                    session.received_bytes, total
-                )));
+        match session.status {
+            status if status.is_inactive() => return Err(UploadError::UploadComplete),
+            UploadSessionStatus::FailedProcessing => {
+                return Err(UploadError::UploadInstanceConflict);
             }
-        } else {
-            return Err(UploadError::InvalidUpload(
-                "Cannot finalize upload without known total size".to_string(),
-            ));
+            _ => {}
         }
 
-        // Mark session as complete atomically
+        if session.total_size > 0 && session.received_bytes != session.total_size {
+            return Err(UploadError::InvalidUpload(format!(
+                "Upload not complete: received {} of {}",
+                session.received_bytes, session.total_size
+            )));
+        }
+
+        // Mark session as processing
         self.session_manager
-            .update_status(upload_id, UploadStatus::WaitingForProcessing)
+            .update_status(upload_id, UploadSessionStatus::WaitingForProcessing)
             .await?;
 
         // Combine chunks
-        let filename = session
-            .filename
-            .clone()
-            .unwrap_or_else(|| format!("{}.bin", upload_id));
-        let num_chunks = self.count_chunks(upload_id).await?;
-        let final_path = self
-            .storage
-            .combine_chunks(upload_id, &filename, num_chunks)
-            .await?;
+        let num_chunks = self.storage.count_chunks(upload_id).await?;
 
-        // Validate Hash - fail early and cleanup if mismatch
-        let hash = get_file_hash(&final_path)?;
+        let final_path = self.storage.combine_chunks(upload_id, num_chunks).await?;
 
-        if hash != session.expected_hash {
-            tracing::debug!(
-                "Hash mismatch for upload {upload_id} (expected: {:016x}, actual: {:016x})",
-                session.expected_hash,
-                hash
-            );
-            // Hash mismatch - cleanup files and fail
-            let _ = self.cancel_upload(upload_id).await;
+        // Verify hash (run sync hash in blocking task)
+        let hash_path = final_path.clone();
+        let actual_hash = tokio::task::spawn_blocking(move || get_file_hash(&hash_path))
+            .await
+            .map_err(|e| UploadError::ProcessingError(e.to_string()))?
+            .map_err(|e| UploadError::ProcessingError(e.to_string()))?;
+
+        if actual_hash as i64 != session.expected_hash {
+            // Hash mismatch - clean up and delete asset
+            if let Err(e) = fs::remove_file(&final_path).await {
+                tracing::warn!("Failed to delete file after hash mismatch: {}", e);
+            }
+
+            // Delete the pending asset
+            let _ = AssetService::Mutation::delete(&self.conn, &session.asset_id).await;
+
+            // Update session status
+            self.session_manager
+                .update_status(upload_id, UploadSessionStatus::FailedProcessing)
+                .await?;
+
             return Err(UploadError::ChecksumMismatch {
                 expected: format!("{:016x}", session.expected_hash),
-                actual: format!("{:016x}", hash),
+                actual: format!("{:016x}", actual_hash),
             });
         }
 
@@ -222,82 +282,51 @@ impl UploadService {
             .await
             .map_err(|e| UploadError::ProcessingError(e.to_string()))?;
 
-        // DB Insert with Transaction
+        // Update asset in Postgres with uploaded=true and metadata
         let txn = self.conn.begin().await?;
 
-        let user_id = &session.user_id;
-
-        // Get/Create Owner
-        let owner_service = crate::service::owner::OwnerService::new(self.conn.clone());
-        let owner_id = owner_service
-            .get_or_create_owner(&[user_id.clone()], &txn)
-            .await?;
-
-        // Determine mime
-        let mime = session
-            .content_type
-            .clone()
-            .unwrap_or_else(|| "application/octet-stream".to_string());
-        let asset_type = if mime.starts_with("image/") {
-            asset::AssetType::Photo
-        } else if mime.starts_with("video/") {
-            asset::AssetType::Video
-        } else {
-            asset::AssetType::Photo // default
-        };
-
-        let asset = asset::ActiveModel {
-            id: Set(nanoid!()),
-            owner_id: Set(owner_id),
-            album_id: Set(session.album_id),
-            asset_type: Set(asset_type),
-            original_filename: Set(session.filename.unwrap_or_default()),
-            file_size: Set(session.received_bytes as i64),
-            file_hash: Set(hash as i64),
-            content_type: Set(session.content_type.unwrap_or_default()),
-            uploaded_at: Set(Utc::now()),
-            modified_at: Set(Utc::now().into()),
-            width: Set(metadata.width),
-            height: Set(metadata.height),
-            date: Set(metadata.date),
-            ..Default::default()
-        };
-
-        let asset_res = asset.insert(&txn).await?;
+        let asset = AssetService::Mutation::mark_uploaded(
+            &txn,
+            &session.asset_id,
+            metadata.width,
+            metadata.height,
+            metadata.date,
+        )
+        .await
+        .map_err(|e| UploadError::Unknown(e.to_string()))?;
 
         txn.commit().await?;
 
-        Ok(asset_res)
-    }
+        // Mark session as complete
+        self.session_manager
+            .update_status(upload_id, UploadSessionStatus::Completed)
+            .await?;
 
-    /// Count number of chunks belonging to an upload
-    async fn count_chunks(&self, upload_id: &str) -> tokio::io::Result<usize> {
-        let chunks_dir = self.storage.get_chunks_dir(upload_id);
-        let mut chunk_count = 0;
-        let mut entries = fs::read_dir(&chunks_dir).await?;
-        while (entries.next_entry().await?).is_some() {
-            chunk_count += 1;
-        }
-        Ok(chunk_count)
-    }
-
-    /// Save local state of upload session
-    async fn save_local_state(&self, session: &UploadSession) -> Result<(), UploadError> {
-        let path = self.storage.get_state_path(&session.id);
-        let content = serde_json::to_string(session)?;
-        fs::write(path, content).await?;
-        Ok(())
+        Ok(asset)
     }
 
     pub async fn cancel_upload(&self, upload_id: &str) -> Result<(), UploadError> {
-        // 1. Remove from Valkey
-        self.session_manager.delete(upload_id).await?;
+        // Get session to find asset_id
+        let session = self.get_session(upload_id).await?;
 
-        // 2. Delete local files
-        let upload_dir = self.storage.get_upload_dir(upload_id);
-        if upload_dir.exists() {
-            fs::remove_dir_all(&upload_dir).await?;
+        // Delete asset from Postgres if session exists
+        if let Some(session) = &session
+            && let Err(e) = AssetService::Mutation::delete(&self.conn, &session.asset_id).await
+        {
+            tracing::warn!(
+                "Failed to delete asset {} from Postgres: {}",
+                session.asset_id,
+                e
+            );
         }
+
+        // Delete chunks from disk
+        if let Err(e) = self.storage.delete_chunks(upload_id).await {
+            tracing::warn!("Failed to delete chunks for upload {}: {}", upload_id, e);
+        }
+
+        // Remove session from Redis
+        self.session_manager.delete(upload_id).await?;
 
         Ok(())
     }

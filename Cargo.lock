@@ -2540,9 +2540,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.178"
+version = "0.2.180"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
+checksum = "bcc35a38544a891a5f7c865aca548a982ccb3b8650a5b06d0fd33a10283c56fc"
 
 [[package]]
 name = "libm"
@@ -3404,7 +3404,9 @@ dependencies = [
 name = "pixles-api-model"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "pixles-api-entity",
+ "serde",
 ]
 
 [[package]]
@@ -3412,10 +3414,13 @@ name = "pixles-api-service"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "data-encoding",
+ "nanoid",
  "pixles-api-entity",
  "pixles-api-model",
  "pixles-core",
  "sea-orm",
+ "thiserror 2.0.17",
  "tokio",
 ]
 
@@ -3445,6 +3450,7 @@ dependencies = [
  "futures-util",
  "indexmap 2.12.1",
  "jsonwebtoken",
+ "libc",
  "nanoid",
  "pixles-api-auth",
  "pixles-api-entity",
@@ -3452,7 +3458,6 @@ dependencies = [
  "pixles-api-service",
  "pixles-core",
  "pixles-media",
- "reflink",
  "ring",
  "salvo",
  "sea-orm",
@@ -4071,16 +4076,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.111",
-]
-
-[[package]]
-name = "reflink"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc585ec28b565b4c28977ce8363a6636cedc280351ba25a7915f6c9f37f68cbe"
-dependencies = [
- "libc",
- "winapi",
 ]
 
 [[package]]

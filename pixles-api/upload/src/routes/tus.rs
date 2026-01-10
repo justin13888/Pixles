@@ -1,13 +1,15 @@
+use crate::models::requests::CreateUploadRequest;
 use crate::models::responses::{
     CreateUploadResponse, CreateUploadResponses, DeleteUploadResponses, HeadUploadResponse,
     HeadUploadResponses, ListSessionsResponse, ListSessionsResponses, PatchUploadResponses,
 };
-use crate::models::session::UploadStatus;
+use crate::models::session::UploadSessionStatus;
 use crate::state::AppState;
 use auth::utils::headers::get_user_id_from_headers;
-use base64::{Engine as _, engine::general_purpose};
+use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
-use service::album as AlbumService;
+
+use crate::error::UploadError;
 
 // TODO: Thoroughly review and test this module.
 
@@ -32,8 +34,13 @@ fn get_suggested_chunk_size(total_size: Option<u64>) -> u64 {
     tags("upload"),
     security(("bearer" = []))
 )]
-pub async fn create_upload(req: &mut Request, dep: &mut Depot) -> CreateUploadResponses {
+pub async fn create_upload(
+    req: &mut Request,
+    dep: &mut Depot,
+    body: JsonBody<CreateUploadRequest>,
+) -> CreateUploadResponses {
     let state = dep.obtain::<AppState>().unwrap();
+    let request = body.0;
 
     // Authenticate User
     let user_id =
@@ -42,93 +49,40 @@ pub async fn create_upload(req: &mut Request, dep: &mut Depot) -> CreateUploadRe
             Err(e) => return CreateUploadResponses::Unauthorized(e),
         };
 
-    // Parse X-Pixles headers
-    let upload_length: Option<u64> = req
-        .header::<String>("X-Pixles-Content-Length")
-        .and_then(|s| s.parse().ok());
+    // Use user_id as owner_id if not specified
+    let owner_id = request.owner_id.unwrap_or_else(|| user_id.clone());
 
-    let mut filename = None;
-    let mut content_type = None;
-    let mut expected_hash: Option<u64> = None;
-    let mut album_id = None;
+    // Permission check if owner is different
+    if owner_id != user_id {
+        let allowed =
+            service::friendship::Query::can_upload_with_owner(&state.conn, &user_id, &owner_id)
+                .await
+                .map_err(|e| {
+                    CreateUploadResponses::InternalServerError(UploadError::Unknown(e.to_string()))
+                });
 
-    if let Some(metadata) = req.header::<String>("X-Pixles-Metadata") {
-        for pair in metadata.split(',') {
-            let parts: Vec<&str> = pair.split_whitespace().collect();
-            if parts.len() == 2 {
-                let key = parts[0];
-                let value_b64 = parts[1];
-                if let Ok(decoded_bytes) = general_purpose::STANDARD.decode(value_b64) {
-                    match key {
-                        "filename" => {
-                            if let Ok(value) = String::from_utf8(decoded_bytes) {
-                                filename = Some(value);
-                            }
-                        }
-                        "content_type" => {
-                            if let Ok(value) = String::from_utf8(decoded_bytes) {
-                                content_type = Some(value);
-                            }
-                        }
-                        "hash" => {
-                            // Support raw 8 bytes (LE) or hex string
-                            if decoded_bytes.len() == 8 {
-                                expected_hash =
-                                    Some(u64::from_le_bytes(decoded_bytes.try_into().unwrap()));
-                            } else if let Ok(s) = String::from_utf8(decoded_bytes) {
-                                // Try Hex first as it's common for hashes
-                                if let Ok(h) = u64::from_str_radix(&s, 16) {
-                                    expected_hash = Some(h);
-                                } else if let Ok(h) = s.parse::<u64>() {
-                                    expected_hash = Some(h);
-                                }
-                            }
-                        }
-                        "album_id" | "aid" => {
-                            if let Ok(value) = String::from_utf8(decoded_bytes) {
-                                album_id = Some(value);
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-
-    // Enforce expected_hash
-    let Some(expected_hash) = expected_hash else {
-        return CreateUploadResponses::BadRequest("Missing required metadata: hash".to_string());
-    };
-
-    // Verify album_id exists and user has access
-    if let Some(album_id) = &album_id {
-        match AlbumService::Query::album_exists(&state.conn, album_id).await {
-            Ok(album_exists) => {
-                if !album_exists {
-                    return CreateUploadResponses::BadRequest("Album does not exist".to_string());
-                }
-            }
-            Err(e) => {
-                return CreateUploadResponses::InternalServerError(e.into());
-            }
+        match allowed {
+            Ok(true) => {} // Permitted
+            Ok(false) => return CreateUploadResponses::Forbidden,
+            Err(e) => return e,
         }
     }
 
     match state
         .upload_service
         .create_session(
+            &owner_id,
             &user_id,
-            filename,
-            content_type,
-            upload_length,
-            expected_hash,
-            album_id,
+            Some(request.content_type),
+            request.size,
+            request.hash,
+            request.album_id,
+            request.filename,
         )
         .await
     {
         Ok(session) => {
-            let suggested_chunk_size = get_suggested_chunk_size(upload_length);
+            let suggested_chunk_size = get_suggested_chunk_size(Some(request.size));
             CreateUploadResponses::Success(CreateUploadResponse {
                 id: session.id.clone(),
                 upload_url: format!("/upload/{}", session.id),
@@ -158,12 +112,17 @@ pub async fn head_upload(req: &mut Request, dep: &mut Depot) -> HeadUploadRespon
 
     match state.upload_service.get_session(&id).await {
         Ok(Some(session)) => {
-            if session.user_id != user_id {
+            // Check if user is the uploader or the owner
+            if session.upload_user_id != user_id && session.owner_id != user_id {
                 return HeadUploadResponses::Forbidden;
             }
             HeadUploadResponses::Success(HeadUploadResponse {
                 offset: session.received_bytes,
-                total_size: session.total_size,
+                total_size: if session.total_size > 0 {
+                    Some(session.total_size)
+                } else {
+                    None
+                },
                 status: session.status,
             })
         }
@@ -189,14 +148,10 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
             Err(e) => return PatchUploadResponses::Unauthorized(e),
         };
 
-    // Verify ownership
-    // We check ownership before creating the payload stream to fail fast
-    // However, for efficiency, we might want to check session existence first.
-    // The previous implementation fetched session later for alignment checks.
-    // We will do a lightweight check here.
+    // Verify ownership - only the uploader can append chunks
     match state.upload_service.get_session(&id).await {
         Ok(Some(session)) => {
-            if session.user_id != user_id {
+            if session.upload_user_id != user_id {
                 return PatchUploadResponses::Forbidden;
             }
         }
@@ -246,7 +201,8 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
             Err(e) => return PatchUploadResponses::InternalServerError(e),
         };
 
-        if let Some(total) = session.total_size {
+        if session.total_size > 0 {
+            let total = session.total_size;
             let new_offset = session.received_bytes + bytes.len() as u64;
             if new_offset != total {
                 return PatchUploadResponses::BadRequest(
@@ -260,9 +216,7 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
     match state.upload_service.append_chunk(&id, bytes, offset).await {
         Ok(session) => {
             // Check for completion
-            if let Some(total) = session.total_size
-                && session.received_bytes == total
-            {
+            if session.total_size > 0 && session.received_bytes == session.total_size {
                 // Attempt finalize
                 match state.upload_service.finalize_upload(&id).await {
                     Ok(_) => {
@@ -304,10 +258,10 @@ pub async fn delete_upload(req: &mut Request, dep: &mut Depot) -> DeleteUploadRe
             Err(e) => return DeleteUploadResponses::Unauthorized(e),
         };
 
-    // Verify ownership
+    // Verify ownership - only the uploader or owner can delete
     match state.upload_service.get_session(&id).await {
         Ok(Some(session)) => {
-            if session.user_id != user_id {
+            if session.upload_user_id != user_id && session.owner_id != user_id {
                 return DeleteUploadResponses::Forbidden;
             }
         }
@@ -344,16 +298,27 @@ pub async fn list_sessions(req: &mut Request, dep: &mut Depot) -> ListSessionsRe
         };
 
     // Parse query parameters
-    let status_filter: Option<UploadStatus> = req
+    let status_filter: Option<UploadSessionStatus> = req
         .query::<String>("status")
-        .and_then(|s| serde_json::from_str::<UploadStatus>(&format!("\"{}\"", s)).ok());
+        .and_then(|s| serde_json::from_str::<UploadSessionStatus>(&format!("\"{}\"", s)).ok());
 
-    let _date_from: Option<String> = req.query("date_from");
-    let _date_to: Option<String> = req.query("date_to");
+    // List sessions by owner
+    match state.upload_service.list_sessions_by_owner(&user_id).await {
+        Ok(sessions) => {
+            // Apply status filter if specified
+            let filtered_sessions = if let Some(status) = status_filter {
+                sessions
+                    .into_iter()
+                    .filter(|s| s.status == status)
+                    .collect()
+            } else {
+                sessions
+            };
 
-    // TODO: Implement list_user_sessions in session manager
-    // For now, return empty list
-    let _ = (user_id, status_filter);
-
-    ListSessionsResponses::Success(ListSessionsResponse { sessions: vec![] })
+            ListSessionsResponses::Success(ListSessionsResponse {
+                sessions: filtered_sessions,
+            })
+        }
+        Err(e) => ListSessionsResponses::InternalServerError(e),
+    }
 }

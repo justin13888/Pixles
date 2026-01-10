@@ -1,5 +1,5 @@
 use crate::error::UploadError;
-use crate::models::session::{UploadSession, UploadStatus};
+use crate::models::session::{UploadSession, UploadSessionStatus};
 use salvo::http::StatusCode;
 use salvo::oapi::{EndpointOutRegister, ToSchema};
 use salvo::prelude::*;
@@ -24,7 +24,7 @@ pub struct HeadUploadResponse {
     /// Total size if known
     pub total_size: Option<u64>,
     /// Upload status
-    pub status: UploadStatus,
+    pub status: UploadSessionStatus,
 }
 
 /// Response for session listing
@@ -37,6 +37,7 @@ pub struct ListSessionsResponse {
 pub enum CreateUploadResponses {
     Success(CreateUploadResponse),
     Unauthorized(String),
+    Forbidden,
     BadRequest(String),
     InternalServerError(UploadError),
 }
@@ -59,6 +60,9 @@ impl Writer for CreateUploadResponses {
             Self::Unauthorized(msg) => {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Text::Plain(msg));
+            }
+            Self::Forbidden => {
+                res.status_code(StatusCode::FORBIDDEN);
             }
             Self::BadRequest(msg) => {
                 res.status_code(StatusCode::BAD_REQUEST);
@@ -93,6 +97,10 @@ impl EndpointOutRegister for CreateUploadResponses {
         operation.responses.insert(
             String::from("401"),
             salvo::oapi::Response::new("Unauthorized - invalid or missing token"),
+        );
+        operation.responses.insert(
+            String::from("403"),
+            salvo::oapi::Response::new("Forbidden - insufficient permissions"),
         );
         operation.responses.insert(
             String::from("500"),

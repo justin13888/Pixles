@@ -1,5 +1,5 @@
 use crate::error::UploadError;
-use crate::models::session::{UploadSession, UploadStatus};
+use crate::models::session::{UploadSession, UploadSessionStatus};
 use bb8_redis::redis::AsyncCommands;
 use bb8_redis::{RedisConnectionManager, bb8::Pool};
 use chrono::{DateTime, Utc};
@@ -28,6 +28,10 @@ impl UploadSessionManager {
         format!("upload:session:{}", upload_id)
     }
 
+    fn owner_index_key(&self, owner_id: &str) -> String {
+        format!("upload:owner_sessions:{}", owner_id)
+    }
+
     /// Create a new upload session in Redis using HSET.
     /// This sets all fields at once during session creation.
     pub async fn create(&self, session: &UploadSession) -> Result<(), UploadError> {
@@ -35,37 +39,19 @@ impl UploadSessionManager {
         let key = self.key(&session.id);
 
         // Build field-value pairs for HSET
-        // Build field-value pairs for HSET
-        // key is string, value is bytes
         let mut fields: Vec<(&str, Vec<u8>)> = vec![
             ("id", session.id.as_bytes().to_vec()),
-            ("user_id", session.user_id.as_bytes().to_vec()),
-            (
-                "filename",
-                session
-                    .filename
-                    .as_ref()
-                    .map(|s| s.as_bytes().to_vec())
-                    .unwrap_or_default(),
-            ),
-            (
-                "content_type",
-                session
-                    .content_type
-                    .as_ref()
-                    .map(|s| s.as_bytes().to_vec())
-                    .unwrap_or_default(),
-            ),
-            (
-                "total_size",
-                session
-                    .total_size
-                    .map(|s| s.to_string().into_bytes())
-                    .unwrap_or_default(),
-            ),
+            ("asset_id", session.asset_id.as_bytes().to_vec()),
+            ("owner_id", session.owner_id.as_bytes().to_vec()),
+            ("upload_user_id", session.upload_user_id.as_bytes().to_vec()),
+            ("total_size", session.total_size.to_string().into_bytes()),
             (
                 "received_bytes",
                 session.received_bytes.to_string().into_bytes(),
+            ),
+            (
+                "expected_hash",
+                session.expected_hash.to_string().into_bytes(),
             ),
             (
                 "status",
@@ -77,15 +63,12 @@ impl UploadSessionManager {
             ("expires_at", session.expires_at.to_rfc3339().into_bytes()),
         ];
 
-        // Handle expected_hash (binary u64)
-        fields.push((
-            "expected_hash",
-            session.expected_hash.to_le_bytes().to_vec(),
-        ));
-
-        // Store album_id if present
+        // Store optional fields if present
         if let Some(album_id) = &session.album_id {
             fields.push(("album_id", album_id.as_bytes().to_vec()));
+        }
+        if let Some(content_type) = &session.content_type {
+            fields.push(("content_type", content_type.as_bytes().to_vec()));
         }
 
         // Use HSET with multiple fields
@@ -101,6 +84,16 @@ impl UploadSessionManager {
             .expire(
                 &key,
                 i64::try_from(self.expiration.as_secs()).unwrap_or(i64::MAX),
+            )
+            .await?;
+
+        // Add to owner index (SADD for session listing by owner)
+        let owner_index_key = self.owner_index_key(&session.owner_id);
+        let _: () = conn.sadd(&owner_index_key, &session.id).await?;
+        let _: () = conn
+            .expire(
+                &owner_index_key,
+                i64::try_from(self.expiration.as_secs()).unwrap_or(i64::MAX) * 2, // Keep index longer
             )
             .await?;
 
@@ -126,7 +119,7 @@ impl UploadSessionManager {
     pub async fn update_status(
         &self,
         upload_id: &str,
-        status: UploadStatus,
+        status: UploadSessionStatus,
     ) -> Result<(), UploadError> {
         let mut conn = self.pool.get().await?;
         let key = self.key(upload_id);
@@ -153,11 +146,32 @@ impl UploadSessionManager {
         Ok(Some(session))
     }
 
-    /// Delete a session from Redis.
+    /// List sessions by owner ID. Returns active session IDs.
+    pub async fn list_by_owner(&self, owner_id: &str) -> Result<Vec<String>, UploadError> {
+        let mut conn = self.pool.get().await?;
+        let owner_index_key = self.owner_index_key(owner_id);
+
+        let session_ids: Vec<String> = conn.smembers(&owner_index_key).await?;
+        Ok(session_ids)
+    }
+
+    /// Delete a session from Redis if it exists.
+    /// Does not return error if it does not exist.
     pub async fn delete(&self, upload_id: &str) -> Result<(), UploadError> {
         let mut conn = self.pool.get().await?;
         let key = self.key(upload_id);
-        let _: () = conn.del(key).await?;
+
+        // Get owner_id before deleting to clean up the index
+        let owner_id: Option<String> = conn.hget(&key, "owner_id").await.ok();
+
+        let _: () = conn.del(&key).await?;
+
+        // Remove from owner index if we found the owner
+        if let Some(owner_id) = owner_id {
+            let owner_index_key = self.owner_index_key(&owner_id);
+            let _: () = conn.srem(&owner_index_key, upload_id).await?;
+        }
+
         Ok(())
     }
 
@@ -176,56 +190,30 @@ impl UploadSessionManager {
         };
 
         let id = get_string("id")?;
-        let user_id = get_string("user_id")?;
+        let asset_id = get_string("asset_id")?;
+        let owner_id = get_string("owner_id")?;
+        let upload_user_id = get_string("upload_user_id")?;
 
-        let filename = fields.get("filename").and_then(|b| {
-            if b.is_empty() {
-                None
-            } else {
-                String::from_utf8(b.clone()).ok()
-            }
-        });
-
-        let content_type = fields.get("content_type").and_then(|b| {
-            if b.is_empty() {
-                None
-            } else {
-                String::from_utf8(b.clone()).ok()
-            }
-        });
-
-        let total_size = fields.get("total_size").and_then(|b| {
-            if b.is_empty() {
-                None
-            } else {
-                String::from_utf8(b.clone())
-                    .ok()
-                    .and_then(|s| s.parse().ok())
-            }
-        });
+        let album_id = fields
+            .get("album_id")
+            .and_then(|bytes| String::from_utf8(bytes.clone()).ok());
+        let content_type = fields
+            .get("content_type")
+            .and_then(|bytes| String::from_utf8(bytes.clone()).ok());
 
         let received_bytes: u64 = get_string("received_bytes")?
             .parse()
             .map_err(|e| UploadError::Unknown(format!("Invalid received_bytes: {}", e)))?;
+        let total_size: u64 = get_string("total_size")?
+            .parse()
+            .map_err(|e| UploadError::Unknown(format!("Invalid total_size: {}", e)))?;
+        let expected_hash: i64 = get_string("expected_hash")?
+            .parse()
+            .map_err(|e| UploadError::Unknown(format!("Invalid expected_hash: {}", e)))?;
 
         let status_str = get_string("status")?;
-        let status: UploadStatus = serde_json::from_str(&status_str)
+        let status: UploadSessionStatus = serde_json::from_str(&status_str)
             .map_err(|e| UploadError::Unknown(format!("Invalid status '{}': {}", status_str, e)))?;
-
-        let expected_hash = fields
-            .get("expected_hash")
-            .and_then(|bytes| {
-                if bytes.len() == 8 {
-                    Some(u64::from_le_bytes(bytes.clone().try_into().unwrap()))
-                } else {
-                    None
-                }
-            })
-            .ok_or_else(|| {
-                UploadError::Unknown(format!(
-                    "Missing or invalid expected_hash in session {upload_id}"
-                ))
-            })?;
 
         let created_at: DateTime<Utc> = get_string("created_at")?
             .parse()
@@ -235,20 +223,17 @@ impl UploadSessionManager {
             .parse()
             .map_err(|e| UploadError::Unknown(format!("Invalid expires_at: {}", e)))?;
 
-        let album_id = fields
-            .get("album_id")
-            .and_then(|bytes| String::from_utf8(bytes.clone()).ok());
-
         Ok(UploadSession {
             id,
-            user_id,
-            filename,
-            content_type,
-            total_size,
-            received_bytes,
-            status,
-            expected_hash,
+            asset_id,
+            owner_id,
+            upload_user_id,
             album_id,
+            content_type,
+            expected_hash,
+            received_bytes,
+            total_size,
+            status,
             created_at,
             expires_at,
         })

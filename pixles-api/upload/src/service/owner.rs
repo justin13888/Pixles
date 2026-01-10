@@ -19,7 +19,7 @@ impl OwnerService {
 
     /// Gets an existing owner for a set of users or creates a new one.
     /// This finds an owner group that contains EXACTLY the specified users.
-    // TODO: Optimzie this function
+    // TODO: Optimize this function
     pub async fn get_or_create_owner(
         &self,
         user_ids: &[String],

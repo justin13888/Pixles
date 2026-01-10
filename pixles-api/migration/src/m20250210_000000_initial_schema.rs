@@ -148,6 +148,90 @@ impl MigrationTrait for Migration {
             .await?;
 
         // ========================================
+        // 3.5. Create Friendships Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(Friendships::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Friendships::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(char_len(Friendships::UserId, 21))
+                    .col(char_len(Friendships::FriendId, 21))
+                    .col(string_len(Friendships::Status, 20).default("pending"))
+                    .col(
+                        timestamp_with_time_zone(Friendships::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(timestamp_with_time_zone_null(Friendships::AcceptedAt))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_friendships_user_id")
+                            .from(Friendships::Table, Friendships::UserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_friendships_friend_id")
+                            .from(Friendships::Table, Friendships::FriendId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_friendships_user_friend_unique")
+                            .table(Friendships::Table)
+                            .col(Friendships::UserId)
+                            .col(Friendships::FriendId)
+                            .unique(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // Create friendships indices
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_friendships_user_id")
+                    .table(Friendships::Table)
+                    .col(Friendships::UserId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_friendships_friend_id")
+                    .table(Friendships::Table)
+                    .col(Friendships::FriendId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_friendships_status")
+                    .table(Friendships::Table)
+                    .col(Friendships::Status)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
         // 4. Create Albums Table
         // ========================================
         manager
@@ -309,6 +393,15 @@ impl MigrationTrait for Migration {
                             .default(Expr::current_timestamp()),
                     )
                     .col(timestamp_with_time_zone_null(Assets::DeletedAt))
+                    .col(boolean(Assets::Uploaded))
+                    .col(char_len(Assets::UploadUserId, 21))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_assets_upload_user_id")
+                            .from(Assets::Table, Assets::UploadUserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_assets_owner_id")
@@ -402,6 +495,9 @@ impl MigrationTrait for Migration {
         // Drop tables in reverse order of creation (respecting foreign keys)
         manager
             .drop_table(Table::drop().table(Assets::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Friendships::Table).to_owned())
             .await?;
         manager
             .drop_table(Table::drop().table(AlbumShares::Table).to_owned())
@@ -503,4 +599,17 @@ enum Assets {
     UploadedAt,
     ModifiedAt,
     DeletedAt,
+    Uploaded,
+    UploadUserId,
+}
+
+#[derive(DeriveIden)]
+enum Friendships {
+    Table,
+    Id,
+    UserId,
+    FriendId,
+    Status,
+    CreatedAt,
+    AcceptedAt,
 }

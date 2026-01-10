@@ -11,5 +11,5 @@ indexmap = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
-uuid = { version = "1.11.0", features = ["v7"] }
-xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
+uuid = { workspace = true, features = ["v7"] }
+xxhash-rust = { workspace = true, features = ["xxh3"] }

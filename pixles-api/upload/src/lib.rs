@@ -62,7 +62,7 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
         .allow_headers("*")
         .into_handler();
 
-    let state = AppState::new(config, upload_service);
+    let state = AppState::new(conn, config, upload_service);
 
     Ok(Router::new().hoop(cors).push(routes::get_router(state)))
 }

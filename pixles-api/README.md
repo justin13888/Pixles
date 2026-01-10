@@ -16,7 +16,7 @@ They can be packaged together or separately (recommended for production).
 
 ### Prerequisites
 
-_We assume Linux-based systems for this service._
+_We assume Linux-based systems for this service due to use of platform-specific features. There are many tools to get a Linux environment on other OSes._
 
 - Rustup toolchain
 - Populate `.env` file based on `.env.example`

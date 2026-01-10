@@ -54,7 +54,7 @@ pub struct ServerConfig {
     /// JWT access token duration in seconds
     pub jwt_access_token_duration_seconds: u64,
 
-    #[cfg(feature = "upload")]
+    #[cfg(any(feature = "upload", feature = "metadata"))]
     /// Upload directory
     pub upload_dir: PathBuf,
     #[cfg(feature = "upload")]
