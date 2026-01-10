@@ -29,6 +29,7 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+clap = { version = "4.5.26", features = ["derive"] }
 
 [features]
 default = ["full"]

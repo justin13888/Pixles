@@ -9,6 +9,11 @@ SDK for Pixles API. Assess all Pixles APIs statelessly via one library only. Not
 - [Upload](../pixles-api/upload/README.md)
 - [Metadata](../pixles-api/metadata/README.md) -->
 
+## Development
+
+- Generate OpenAPI spec: `./generate_openapi.sh`
+  - [Progenitor](https://github.com/oxidecomputer/progenitor) is used to generate the SDK as long as the OpenAPI spec is provided at the assumed path.
+
 ## Usage
 
 Add this to your `Cargo.toml`:

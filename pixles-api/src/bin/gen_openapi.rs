@@ -1,12 +1,23 @@
+use clap::Parser;
 use environment::Environment;
 use eyre::Result;
 use pixles_api::{create_openapi_spec, create_router};
 use sea_orm::Database;
 use std::fs::File;
 use std::io::Write;
+use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Optional output path for the OpenAPI spec
+    #[arg(value_name = "FILE")]
+    output: Option<PathBuf>,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let cli = Cli::parse();
     color_eyre::install()?;
 
     // Load environment settings
@@ -28,9 +39,13 @@ async fn main() -> Result<()> {
     let json = serde_json::to_string_pretty(&api)?;
 
     // Write to file
-    let mut file = File::create("openapi.json")?;
+    let path = cli.output.unwrap_or_else(|| PathBuf::from("openapi.json"));
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let mut file = File::create(&path)?;
     file.write_all(json.as_bytes())?;
 
-    println!("Generated openapi.json");
+    println!("Generated JSON at: {}", path.display());
     Ok(())
 }
