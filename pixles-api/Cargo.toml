@@ -31,7 +31,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 [features]
-default = ["auth", "upload", "openapi"]
+default = ["full"]
+full = ["auth", "upload", "openapi"]
 auth = ["pixles-api-auth", "pixles-api-environment/auth"]
 # TODO: Re-enable when graphql is production-ready
 # graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
