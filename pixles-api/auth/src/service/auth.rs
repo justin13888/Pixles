@@ -1,11 +1,11 @@
-use model::user::CreateUser;
+// use crate::models::{CreateUser, UpdateUser};
 use sea_orm::DatabaseConnection;
 use service::user as UserService;
 
 use super::token::TokenService;
 use crate::claims::{Claims, Scope};
 use crate::config::AuthConfig;
-use crate::errors::{AuthError, ClaimValidationError};
+use crate::errors::{ClaimValidationError, LoginError, RegisterError};
 use crate::models::requests::RegisterRequest;
 use crate::models::responses::TokenResponse;
 use crate::session::SessionManager;
@@ -46,10 +46,10 @@ impl AuthService {
         conn: &DatabaseConnection,
         session_manager: &SessionManager,
         request: RegisterRequest,
-    ) -> Result<TokenResponse, AuthError> {
+    ) -> Result<TokenResponse, RegisterError> {
         // Validation
         if let Err(e) = RegistrationValidator::validate(&request) {
-            return Err(AuthError::BadRequest(e));
+            return Err(RegisterError::BadRequest(e));
         }
 
         let RegisterRequest {
@@ -61,19 +61,19 @@ impl AuthService {
 
         // Check duplicates
         if let Ok(Some(_)) = UserService::Query::find_user_by_email(conn, &email).await {
-            return Err(AuthError::UserAlreadyExists);
+            return Err(RegisterError::UserAlreadyExists);
         }
         if let Ok(Some(_)) = UserService::Query::find_user_by_username(conn, &username).await {
-            return Err(AuthError::UserAlreadyExists);
+            return Err(RegisterError::UserAlreadyExists);
         }
 
         let password_hash = hash_password(password.expose_secret())
-            .map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
+            .map_err(|e| RegisterError::Unexpected(eyre::eyre!(e).into()))?;
 
         // TODO: Handle unique constraint violation from DB if race condition occurs
         let user = UserService::Mutation::create_user(
             conn,
-            CreateUser {
+            service::user::CreateUserArgs {
                 username,
                 name,
                 email,
@@ -81,9 +81,11 @@ impl AuthService {
             },
         )
         .await
-        .map_err(|e| AuthError::InternalServerError(e.into()))?;
+        .map_err(|e| RegisterError::Unexpected(e.into()))?;
 
-        self.generate_token_pair(&user.id, session_manager).await
+        self.generate_token_pair(&user.id, session_manager)
+            .await
+            .map_err(RegisterError::Unexpected)
     }
 
     pub async fn authenticate_user(
@@ -92,19 +94,22 @@ impl AuthService {
         session_manager: &SessionManager,
         email: &str,
         password: &SecretString,
-    ) -> Result<TokenResponse, AuthError> {
+    ) -> Result<TokenResponse, LoginError> {
         let user = UserService::Query::find_user_by_email(conn, email)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| LoginError::Unexpected(e.into()))?;
 
         if let Some(user) = user {
             tracing::info!("User found: {}", user.id);
             let is_valid = verify_password(password.expose_secret(), &user.password_hash)
-                .map_err(|e| AuthError::InternalServerError(eyre::eyre!(e)))?;
+                .map_err(|e| LoginError::Unexpected(eyre::eyre!(e).into()))?;
 
             if is_valid {
                 let _ = UserService::Mutation::track_login_success(conn, user.id.clone()).await;
-                return self.generate_token_pair(&user.id, session_manager).await;
+                return self
+                    .generate_token_pair(&user.id, session_manager)
+                    .await
+                    .map_err(LoginError::Unexpected);
             } else {
                 let _ = UserService::Mutation::track_login_failure(conn, user.id).await;
             }
@@ -116,14 +121,14 @@ impl AuthService {
             let _ = verify_password("random", dummy_hash);
         }
 
-        Err(AuthError::InvalidCredentials)
+        Err(LoginError::InvalidCredentials)
     }
 
     pub async fn generate_token_pair(
         &self,
         user_id: &str,
         session_manager: &SessionManager,
-    ) -> Result<TokenResponse, AuthError> {
+    ) -> Result<TokenResponse, model::errors::InternalServerError> {
         let sid = session_manager
             .create_session(user_id.to_string(), None, None)
             .await?;

@@ -17,7 +17,7 @@ impl Mutation {
         file_size: i64,
         file_hash: i64,
         content_type: String,
-        date: Option<DateTime<Utc>>,
+        captured_at: Option<DateTime<Utc>>,
     ) -> Result<asset::Model, DbErr> {
         let model = asset::ActiveModel {
             id: Set(nanoid!()),
@@ -31,7 +31,7 @@ impl Mutation {
             file_size: Set(file_size),
             file_hash: Set(file_hash),
             content_type: Set(content_type),
-            date: Set(date),
+            captured_at: Set(captured_at),
             uploaded_at: Set(Utc::now()),
             modified_at: Set(Utc::now().into()),
             uploaded: Set(false),
@@ -46,7 +46,7 @@ impl Mutation {
         asset_id: &str,
         width: i32,
         height: i32,
-        date: Option<DateTime<Utc>>,
+        captured_at: Option<DateTime<Utc>>,
     ) -> Result<asset::Model, DbErr> {
         let asset = asset::Entity::find_by_id(asset_id)
             .one(db)
@@ -57,14 +57,41 @@ impl Mutation {
         model.uploaded = Set(true);
         model.width = Set(width);
         model.height = Set(height);
-        if date.is_some() {
-            model.date = Set(date);
+        if captured_at.is_some() {
+            model.captured_at = Set(captured_at);
         }
         model.modified_at = Set(Utc::now().into());
         model.update(db).await
     }
 
-    /// Delete asset (for cancelled uploads)
+    /// Soft delete asset (move to trash)
+    pub async fn soft_delete(
+        db: &impl ConnectionTrait,
+        asset_id: &str,
+    ) -> Result<asset::Model, DbErr> {
+        let asset = asset::Entity::find_by_id(asset_id)
+            .one(db)
+            .await?
+            .ok_or_else(|| DbErr::Custom("Asset not found".to_string()))?;
+
+        let mut model: asset::ActiveModel = asset.into();
+        model.deleted_at = Set(Some(Utc::now()));
+        model.update(db).await
+    }
+
+    /// Restore asset from trash
+    pub async fn restore(db: &impl ConnectionTrait, asset_id: &str) -> Result<asset::Model, DbErr> {
+        let asset = asset::Entity::find_by_id(asset_id)
+            .one(db)
+            .await?
+            .ok_or_else(|| DbErr::Custom("Asset not found".to_string()))?;
+
+        let mut model: asset::ActiveModel = asset.into();
+        model.deleted_at = Set(None);
+        model.update(db).await
+    }
+
+    /// Delete asset permanently
     pub async fn delete(db: &impl ConnectionTrait, asset_id: &str) -> Result<DeleteResult, DbErr> {
         asset::Entity::delete_by_id(asset_id).exec(db).await
     }

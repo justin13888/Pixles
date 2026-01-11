@@ -56,18 +56,14 @@ pub async fn refresh_token(
     ) {
         Ok(token) => token,
         Err(e) => {
-            return RefreshTokenResponses::InvalidRefreshToken(
-                ClaimValidationError::from(e).into(),
-            );
+            return ClaimValidationError::from(e).into();
         }
     };
 
     let sid = match token.claims.sid {
         Some(sid) => sid,
         None => {
-            return RefreshTokenResponses::InvalidRefreshToken(
-                ClaimValidationError::TokenInvalid("Missing session ID".to_string()).into(),
-            );
+            return ClaimValidationError::TokenInvalid("Missing session ID".to_string()).into();
         }
     };
 
@@ -75,23 +71,19 @@ pub async fn refresh_token(
     let session = match state.session_manager.get_session(&sid).await {
         Ok(Some(s)) => s,
         Ok(None) => {
-            return RefreshTokenResponses::InvalidRefreshToken(
-                ClaimValidationError::TokenInvalid("Session not found".to_string()).into(),
-            );
+            return ClaimValidationError::TokenInvalid("Session not found".to_string()).into();
         }
-        Err(e) => return RefreshTokenResponses::InternalServerError(e.into()),
+        Err(e) => return e.into(),
     };
 
     // Verify user ownership
     if session.user_id != token.claims.sub {
-        return RefreshTokenResponses::InvalidRefreshToken(
-            ClaimValidationError::TokenInvalid("Session user mismatch".to_string()).into(),
-        );
+        return ClaimValidationError::TokenInvalid("Session user mismatch".to_string()).into();
     }
 
     // Revoke old session (Rotation)
     if let Err(e) = state.session_manager.revoke_session(&sid).await {
-        return RefreshTokenResponses::InternalServerError(e.into());
+        return e.into();
     }
 
     let user_id = token.claims.sub;
@@ -112,7 +104,7 @@ pub async fn validate_token(req: &mut Request, depot: &mut Depot) -> ValidateTok
     // Get token string
     let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
-        Err(e) => return ValidateTokenResponses::Invalid(e.into()),
+        Err(e) => return e.into(),
     };
 
     // Validate token
@@ -131,20 +123,20 @@ pub async fn logout(req: &mut Request, depot: &mut Depot) -> LogoutResponses {
     // Authorize user
     let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
-        Err(e) => return LogoutResponses::Unauthorized(e.into()),
+        Err(e) => return e.into(),
     };
 
     // Just validate the token signatures
     let claims = match state.auth_service.get_claims(token_string.expose_secret()) {
         Ok(claims) => claims,
-        Err(e) => return LogoutResponses::Unauthorized(e.into()),
+        Err(e) => return e.into(),
     };
 
     // If it has a session ID, revoke it
     if let Some(sid) = claims.sid
         && let Err(e) = state.session_manager.revoke_session(&sid).await
     {
-        return LogoutResponses::InternalServerError(e.into());
+        return e.into();
     }
 
     LogoutResponses::Success

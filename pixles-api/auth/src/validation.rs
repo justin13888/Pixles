@@ -28,7 +28,7 @@ impl RegistrationValidator {
     }
 
     fn validate_password(password: &str) -> Result<(), BadRegisterUserRequestError> {
-        if UserService::is_valid_password(password).is_err() {
+        if !UserService::is_valid_password(password) {
             return Err(BadRegisterUserRequestError::Password);
         }
         Ok(())

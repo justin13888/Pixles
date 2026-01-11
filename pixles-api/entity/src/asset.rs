@@ -33,9 +33,31 @@ pub struct Model {
     /// MIME type
     pub content_type: String,
 
-    /// Date when the asset was taken
+    // ===== Geo-location (for efficient spatial queries) =====
+    /// GPS latitude
+    #[sea_orm(column_type = "Double", nullable)]
+    pub latitude: Option<f64>,
+    /// GPS longitude  
+    #[sea_orm(column_type = "Double", nullable)]
+    pub longitude: Option<f64>,
+
+    // ===== Visual placeholders =====
+    /// Low Quality Image Placeholder hash for instant loading
+    #[sea_orm(column_type = "String(StringLen::N(50))", nullable)]
+    pub lqip_hash: Option<String>,
+    /// Dominant color hex code (e.g., "#FF5733")
+    #[sea_orm(column_type = "String(StringLen::N(7))", nullable)]
+    pub dominant_color: Option<String>,
+
+    // ===== User preferences =====
+    /// Whether this asset is marked as favorite
+    #[sea_orm(default_value = "false", indexed)]
+    pub is_favorite: bool,
+
+    // ===== Timestamps =====
+    /// Date when the asset was captured/taken (from EXIF DateTimeOriginal)
     #[sea_orm(indexed)]
-    pub date: Option<DateTime<Utc>>,
+    pub captured_at: Option<DateTime<Utc>>,
     #[sea_orm(
         column_type = "TimestampWithTimeZone",
         default_value = "CURRENT_TIMESTAMP",

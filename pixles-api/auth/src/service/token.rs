@@ -1,32 +1,39 @@
 use crate::claims::{Claims, Scope};
-use crate::errors::AuthError;
 use jsonwebtoken::EncodingKey;
+use model::errors::InternalServerError;
 
+/// Token service creates JWT tokens for authentication
 pub struct TokenService;
 
 impl TokenService {
+    /// Creates a new access token
+    ///
+    /// Returns the token and the expiration time
     pub fn create_access_token(
         user_id: &str,
         scopes: Vec<Scope>,
         sid: Option<String>,
         encoding_key: &EncodingKey,
-    ) -> Result<(String, u64), AuthError> {
+    ) -> Result<(String, u64), InternalServerError> {
         let claims = Claims::new_access_token(user_id.to_string(), scopes, sid);
         let token = claims
             .encode(encoding_key)
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(InternalServerError::from)?;
         Ok((token, claims.exp))
     }
 
+    /// Creates a new refresh token
+    ///
+    /// Returns the token
     pub fn create_refresh_token(
         user_id: &str,
         sid: String,
         encoding_key: &EncodingKey,
-    ) -> Result<String, AuthError> {
+    ) -> Result<String, InternalServerError> {
         let claims = Claims::new_refresh_token(user_id.to_string(), sid);
         claims
             .encode(encoding_key)
-            .map_err(|e| AuthError::InternalServerError(e.into()))
+            .map_err(InternalServerError::from)
     }
 }
 

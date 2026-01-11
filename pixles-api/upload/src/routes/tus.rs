@@ -6,10 +6,8 @@ use crate::models::responses::{
 use crate::models::session::UploadSessionStatus;
 use crate::state::AppState;
 use auth::utils::headers::get_user_id_from_headers;
-use salvo::oapi::extract::JsonBody;
+use salvo::oapi::extract::{JsonBody, PathParam};
 use salvo::prelude::*;
-
-use crate::error::UploadError;
 
 // TODO: Thoroughly review and test this module.
 
@@ -57,9 +55,7 @@ pub async fn create_upload(
         let allowed =
             service::friendship::Query::can_upload_with_owner(&state.conn, &user_id, &owner_id)
                 .await
-                .map_err(|e| {
-                    CreateUploadResponses::InternalServerError(UploadError::Unknown(e.to_string()))
-                });
+                .map_err(|e| CreateUploadResponses::InternalServerError(eyre::eyre!(e).into()));
 
         match allowed {
             Ok(true) => {} // Permitted
@@ -89,7 +85,7 @@ pub async fn create_upload(
                 suggested_chunk_size,
             })
         }
-        Err(e) => CreateUploadResponses::InternalServerError(e),
+        Err(e) => CreateUploadResponses::InternalServerError(eyre::eyre!(e).into()),
     }
 }
 
@@ -99,9 +95,13 @@ pub async fn create_upload(
     tags("upload"),
     security(("bearer" = []))
 )]
-pub async fn head_upload(req: &mut Request, dep: &mut Depot) -> HeadUploadResponses {
+pub async fn head_upload(
+    req: &mut Request,
+    dep: &mut Depot,
+    id: PathParam<String>,
+) -> HeadUploadResponses {
     let state = dep.obtain::<AppState>().unwrap();
-    let id = req.param::<String>("id").unwrap();
+    let id = id.into_inner();
 
     // Authenticate User
     let user_id =
@@ -127,7 +127,7 @@ pub async fn head_upload(req: &mut Request, dep: &mut Depot) -> HeadUploadRespon
             })
         }
         Ok(None) => HeadUploadResponses::NotFound,
-        Err(e) => HeadUploadResponses::InternalServerError(e),
+        Err(e) => HeadUploadResponses::InternalServerError(eyre::eyre!(e).into()),
     }
 }
 
@@ -137,9 +137,13 @@ pub async fn head_upload(req: &mut Request, dep: &mut Depot) -> HeadUploadRespon
     tags("upload"),
     security(("bearer" = []))
 )]
-pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResponses {
+pub async fn patch_upload(
+    req: &mut Request,
+    dep: &mut Depot,
+    id: PathParam<String>,
+) -> PatchUploadResponses {
     let state = dep.obtain::<AppState>().unwrap();
-    let id = req.param::<String>("id").unwrap();
+    let id = id.into_inner();
 
     // Authenticate User
     let user_id =
@@ -156,7 +160,7 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
             }
         }
         Ok(None) => return PatchUploadResponses::NotFound,
-        Err(e) => return PatchUploadResponses::InternalServerError(e),
+        Err(e) => return PatchUploadResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     // Parse X-Pixles-Offset header
@@ -189,7 +193,7 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
                 new_offset: session.received_bytes,
             },
             Ok(None) => PatchUploadResponses::NotFound,
-            Err(e) => PatchUploadResponses::InternalServerError(e),
+            Err(e) => PatchUploadResponses::InternalServerError(eyre::eyre!(e).into()),
         };
     }
 
@@ -198,7 +202,7 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
         let session = match state.upload_service.get_session(&id).await {
             Ok(Some(s)) => s,
             Ok(None) => return PatchUploadResponses::NotFound,
-            Err(e) => return PatchUploadResponses::InternalServerError(e),
+            Err(e) => return PatchUploadResponses::InternalServerError(eyre::eyre!(e).into()),
         };
 
         if session.total_size > 0 {
@@ -223,7 +227,7 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
                         // Finalized successfully
                     }
                     Err(e) => {
-                        return PatchUploadResponses::InternalServerError(e);
+                        return PatchUploadResponses::InternalServerError(eyre::eyre!(e).into());
                     }
                 }
             }
@@ -235,7 +239,7 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
             if e.to_string().contains("Invalid offset") {
                 PatchUploadResponses::Conflict(e.to_string())
             } else {
-                PatchUploadResponses::InternalServerError(e)
+                PatchUploadResponses::InternalServerError(eyre::eyre!(e).into())
             }
         }
     }
@@ -247,9 +251,13 @@ pub async fn patch_upload(req: &mut Request, dep: &mut Depot) -> PatchUploadResp
     tags("upload"),
     security(("bearer" = []))
 )]
-pub async fn delete_upload(req: &mut Request, dep: &mut Depot) -> DeleteUploadResponses {
+pub async fn delete_upload(
+    req: &mut Request,
+    dep: &mut Depot,
+    id: PathParam<String>,
+) -> DeleteUploadResponses {
     let state = dep.obtain::<AppState>().unwrap();
-    let id = req.param::<String>("id").unwrap();
+    let id = id.into_inner();
 
     // Authenticate User
     let user_id =
@@ -266,7 +274,7 @@ pub async fn delete_upload(req: &mut Request, dep: &mut Depot) -> DeleteUploadRe
             }
         }
         Ok(None) => return DeleteUploadResponses::NotFound,
-        Err(e) => return DeleteUploadResponses::InternalServerError(e),
+        Err(e) => return DeleteUploadResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     match state.upload_service.cancel_upload(&id).await {
@@ -275,7 +283,7 @@ pub async fn delete_upload(req: &mut Request, dep: &mut Depot) -> DeleteUploadRe
             if matches!(e, crate::error::UploadError::SessionNotFound) {
                 DeleteUploadResponses::NotFound
             } else {
-                DeleteUploadResponses::InternalServerError(e)
+                DeleteUploadResponses::InternalServerError(eyre::eyre!(e).into())
             }
         }
     }
@@ -319,6 +327,6 @@ pub async fn list_sessions(req: &mut Request, dep: &mut Depot) -> ListSessionsRe
                 sessions: filtered_sessions,
             })
         }
-        Err(e) => ListSessionsResponses::InternalServerError(e),
+        Err(e) => ListSessionsResponses::InternalServerError(eyre::eyre!(e).into()),
     }
 }

@@ -383,7 +383,16 @@ impl MigrationTrait for Migration {
                     .col(big_integer(Assets::FileSize))
                     .col(big_integer(Assets::FileHash)) // i64 hash stored as bigint
                     .col(string(Assets::ContentType))
-                    .col(timestamp_with_time_zone_null(Assets::Date)) // Nullable as per entity
+                    // Geo-location for spatial queries
+                    .col(double_null(Assets::Latitude))
+                    .col(double_null(Assets::Longitude))
+                    // Visual placeholders
+                    .col(string_len_null(Assets::LqipHash, 50))
+                    .col(string_len_null(Assets::DominantColor, 7))
+                    // User preferences
+                    .col(boolean(Assets::IsFavorite).default(false))
+                    // Timestamps
+                    .col(timestamp_with_time_zone_null(Assets::CapturedAt))
                     .col(
                         timestamp_with_time_zone(Assets::UploadedAt)
                             .default(Expr::current_timestamp()),
@@ -447,9 +456,9 @@ impl MigrationTrait for Migration {
             .create_index(
                 Index::create()
                     .if_not_exists()
-                    .name("idx_assets_date")
+                    .name("idx_assets_captured_at")
                     .table(Assets::Table)
-                    .col(Assets::Date)
+                    .col(Assets::CapturedAt)
                     .index_type(IndexType::BTree)
                     .to_owned(),
             )
@@ -487,12 +496,374 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_assets_is_favorite")
+                    .table(Assets::Table)
+                    .col(Assets::IsFavorite)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 7. Create People Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(People::Table)
+                    .if_not_exists()
+                    .col(char_len(People::Id, 21).primary_key())
+                    .col(char_len(People::OwnerId, 21))
+                    .col(string_len_null(People::Name, 255))
+                    .col(char_len_null(People::CoverPhotoId, 21))
+                    .col(boolean(People::IsHidden).default(false))
+                    .col(integer(People::FaceCount).default(0))
+                    .col(
+                        timestamp_with_time_zone(People::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        timestamp_with_time_zone(People::ModifiedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_people_owner_id")
+                            .from(People::Table, People::OwnerId)
+                            .to(Owners::Table, Owners::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_people_cover_photo_id")
+                            .from(People::Table, People::CoverPhotoId)
+                            .to(Assets::Table, Assets::Id)
+                            .on_delete(ForeignKeyAction::SetNull),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_people_owner_id")
+                    .table(People::Table)
+                    .col(People::OwnerId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 8. Create Faces Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(Faces::Table)
+                    .if_not_exists()
+                    .col(char_len(Faces::Id, 21).primary_key())
+                    .col(char_len(Faces::AssetId, 21))
+                    .col(char_len_null(Faces::PersonId, 21))
+                    .col(text(Faces::BoundingBox)) // JSON format
+                    .col(ColumnDef::new(Faces::Embedding).binary_len(2048).null())
+                    .col(double(Faces::Confidence))
+                    .col(boolean(Faces::IsConfirmed).default(false))
+                    .col(
+                        timestamp_with_time_zone(Faces::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_faces_asset_id")
+                            .from(Faces::Table, Faces::AssetId)
+                            .to(Assets::Table, Assets::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_faces_person_id")
+                            .from(Faces::Table, Faces::PersonId)
+                            .to(People::Table, People::Id)
+                            .on_delete(ForeignKeyAction::SetNull),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_faces_asset_id")
+                    .table(Faces::Table)
+                    .col(Faces::AssetId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_faces_person_id")
+                    .table(Faces::Table)
+                    .col(Faces::PersonId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 9. Create Share Links Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(ShareLinks::Table)
+                    .if_not_exists()
+                    .col(char_len(ShareLinks::Id, 21).primary_key())
+                    .col(string_len(ShareLinks::Token, 32).unique_key())
+                    .col(char_len(ShareLinks::CreatorId, 21))
+                    .col(string_len(ShareLinks::ShareType, 15))
+                    .col(text(ShareLinks::TargetId))
+                    .col(boolean(ShareLinks::AllowDownload).default(true))
+                    .col(string_len_null(ShareLinks::PasswordHash, 255))
+                    .col(timestamp_with_time_zone_null(ShareLinks::ExpiresAt))
+                    .col(integer(ShareLinks::ViewCount).default(0))
+                    .col(
+                        timestamp_with_time_zone(ShareLinks::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_share_links_creator_id")
+                            .from(ShareLinks::Table, ShareLinks::CreatorId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_share_links_token")
+                    .table(ShareLinks::Table)
+                    .col(ShareLinks::Token)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_share_links_creator_id")
+                    .table(ShareLinks::Table)
+                    .col(ShareLinks::CreatorId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 10. Create Smart Tags Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(SmartTags::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(SmartTags::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(string_len(SmartTags::Name, 100).unique_key())
+                    .col(string_len(SmartTags::Category, 15))
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_smart_tags_name")
+                    .table(SmartTags::Table)
+                    .col(SmartTags::Name)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 11. Create Asset Smart Tags Table (junction)
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(AssetSmartTags::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(AssetSmartTags::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(char_len(AssetSmartTags::AssetId, 21))
+                    .col(integer(AssetSmartTags::SmartTagId))
+                    .col(double(AssetSmartTags::Confidence))
+                    .col(
+                        timestamp_with_time_zone(AssetSmartTags::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_asset_smart_tags_asset_id")
+                            .from(AssetSmartTags::Table, AssetSmartTags::AssetId)
+                            .to(Assets::Table, Assets::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_asset_smart_tags_smart_tag_id")
+                            .from(AssetSmartTags::Table, AssetSmartTags::SmartTagId)
+                            .to(SmartTags::Table, SmartTags::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_asset_smart_tags_asset_tag_unique")
+                            .table(AssetSmartTags::Table)
+                            .col(AssetSmartTags::AssetId)
+                            .col(AssetSmartTags::SmartTagId)
+                            .unique(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_asset_smart_tags_asset_id")
+                    .table(AssetSmartTags::Table)
+                    .col(AssetSmartTags::AssetId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_asset_smart_tags_smart_tag_id")
+                    .table(AssetSmartTags::Table)
+                    .col(AssetSmartTags::SmartTagId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
+        // ========================================
+        // 12. Create Memories Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(Memories::Table)
+                    .if_not_exists()
+                    .col(char_len(Memories::Id, 21).primary_key())
+                    .col(char_len(Memories::OwnerId, 21))
+                    .col(string_len(Memories::Title, 255))
+                    .col(string_len_null(Memories::Subtitle, 255))
+                    .col(char_len(Memories::CoverAssetId, 21))
+                    .col(text(Memories::AssetIds)) // JSON array
+                    .col(timestamp_with_time_zone(Memories::MemoryDate))
+                    .col(boolean(Memories::IsSeen).default(false))
+                    .col(boolean(Memories::IsHidden).default(false))
+                    .col(
+                        timestamp_with_time_zone(Memories::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_memories_owner_id")
+                            .from(Memories::Table, Memories::OwnerId)
+                            .to(Owners::Table, Owners::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_memories_cover_asset_id")
+                            .from(Memories::Table, Memories::CoverAssetId)
+                            .to(Assets::Table, Assets::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_memories_owner_id")
+                    .table(Memories::Table)
+                    .col(Memories::OwnerId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_memories_memory_date")
+                    .table(Memories::Table)
+                    .col(Memories::MemoryDate)
+                    .index_type(IndexType::BTree)
+                    .to_owned(),
+            )
+            .await?;
 
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Drop tables in reverse order of creation (respecting foreign keys)
+        manager
+            .drop_table(Table::drop().table(Memories::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(AssetSmartTags::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(SmartTags::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(ShareLinks::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Faces::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(People::Table).to_owned())
+            .await?;
         manager
             .drop_table(Table::drop().table(Assets::Table).to_owned())
             .await?;
@@ -595,7 +966,12 @@ enum Assets {
     FileSize,
     FileHash,
     ContentType,
-    Date,
+    Latitude,
+    Longitude,
+    LqipHash,
+    DominantColor,
+    IsFavorite,
+    CapturedAt,
     UploadedAt,
     ModifiedAt,
     DeletedAt,
@@ -612,4 +988,78 @@ enum Friendships {
     Status,
     CreatedAt,
     AcceptedAt,
+}
+
+#[derive(DeriveIden)]
+enum People {
+    Table,
+    Id,
+    OwnerId,
+    Name,
+    CoverPhotoId,
+    IsHidden,
+    FaceCount,
+    CreatedAt,
+    ModifiedAt,
+}
+
+#[derive(DeriveIden)]
+enum Faces {
+    Table,
+    Id,
+    AssetId,
+    PersonId,
+    BoundingBox,
+    Embedding,
+    Confidence,
+    IsConfirmed,
+    CreatedAt,
+}
+
+#[derive(DeriveIden)]
+enum ShareLinks {
+    Table,
+    Id,
+    Token,
+    CreatorId,
+    ShareType,
+    TargetId,
+    AllowDownload,
+    PasswordHash,
+    ExpiresAt,
+    ViewCount,
+    CreatedAt,
+}
+
+#[derive(DeriveIden)]
+enum SmartTags {
+    Table,
+    Id,
+    Name,
+    Category,
+}
+
+#[derive(DeriveIden)]
+enum AssetSmartTags {
+    Table,
+    Id,
+    AssetId,
+    SmartTagId,
+    Confidence,
+    CreatedAt,
+}
+
+#[derive(DeriveIden)]
+enum Memories {
+    Table,
+    Id,
+    OwnerId,
+    Title,
+    Subtitle,
+    CoverAssetId,
+    AssetIds,
+    MemoryDate,
+    IsSeen,
+    IsHidden,
+    CreatedAt,
 }

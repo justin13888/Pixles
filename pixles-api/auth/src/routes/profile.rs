@@ -1,4 +1,3 @@
-use model::user::UpdateUser;
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 use secrecy::ExposeSecret;
@@ -22,14 +21,14 @@ pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfi
     // Authorize user
     let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
-        Err(e) => return UserProfileResponses::Unauthorized(e.into()),
+        Err(e) => return UserProfileResponses::Unauthorized(e),
     };
     let token = match Claims::decode(
         token_string.expose_secret(),
         &state.config.jwt_eddsa_decoding_key,
     ) {
         Ok(token) => token,
-        Err(e) => return UserProfileResponses::Unauthorized(ClaimValidationError::from(e).into()),
+        Err(e) => return UserProfileResponses::Unauthorized(e.into()),
     };
     let user_id = token.claims.sub;
 
@@ -37,7 +36,7 @@ pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfi
     let user_model = match UserService::Query::find_user_by_id(&state.conn, user_id).await {
         Ok(Some(user)) => user,
         Ok(None) => return UserProfileResponses::UserNotFound,
-        Err(e) => return UserProfileResponses::InternalServerError(e.into()),
+        Err(e) => return UserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     let profile = UserProfile {
@@ -64,7 +63,7 @@ pub async fn update_user_profile(
     // Authorize user
     let token_string = match get_token_from_headers(headers) {
         Ok(token_string) => token_string,
-        Err(e) => return UpdateUserProfileResponses::Unauthorized(e.into()),
+        Err(e) => return UpdateUserProfileResponses::Unauthorized(e),
     };
     let token = match Claims::decode(
         token_string.expose_secret(),
@@ -72,7 +71,7 @@ pub async fn update_user_profile(
     ) {
         Ok(token) => token,
         Err(e) => {
-            return UpdateUserProfileResponses::Unauthorized(ClaimValidationError::from(e).into());
+            return UpdateUserProfileResponses::Unauthorized(e.into());
         }
     };
     let user_id = token.claims.sub;
@@ -85,7 +84,7 @@ pub async fn update_user_profile(
     {
         Ok(Some(user)) => user,
         Ok(None) => return UpdateUserProfileResponses::UserNotFound,
-        Err(e) => return UpdateUserProfileResponses::InternalServerError(e.into()),
+        Err(e) => return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     // Handle password change
@@ -99,10 +98,14 @@ pub async fn update_user_profile(
         ) {
             Ok(true) => match hash_password(new_password.expose_secret()) {
                 Ok(hash) => Some(hash),
-                Err(e) => return UpdateUserProfileResponses::InternalServerError(e.into()),
+                Err(e) => {
+                    return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into());
+                }
             },
             Ok(false) => return UpdateUserProfileResponses::InvalidPassword,
-            Err(e) => return UpdateUserProfileResponses::InternalServerError(e.into()),
+            Err(e) => {
+                return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into());
+            }
         }
     } else {
         None
@@ -112,7 +115,7 @@ pub async fn update_user_profile(
     let updated_user = match UserService::Mutation::update_user(
         &state.conn,
         user_id,
-        UpdateUser {
+        service::user::UpdateUserArgs {
             username: payload.username,
             name: None, // Name update not exposed in request yet?
             email: payload.email,
@@ -123,7 +126,7 @@ pub async fn update_user_profile(
     {
         Ok(user) => user,
         Err(sea_orm::DbErr::RecordNotFound(_)) => return UpdateUserProfileResponses::UserNotFound,
-        Err(e) => return UpdateUserProfileResponses::InternalServerError(e.into()),
+        Err(e) => return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     let updated_profile = UserProfile {

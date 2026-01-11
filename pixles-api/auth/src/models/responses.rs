@@ -1,7 +1,9 @@
 use super::UserProfile;
 use super::errors::*;
 use crate::claims::Claims;
-use crate::errors::{AuthError, ClaimValidationError};
+use crate::errors::{ClaimValidationError, LoginError, RegisterError};
+use derive_more::From;
+use model::errors::InternalServerError;
 use salvo::http::StatusCode;
 use salvo::oapi::{EndpointOutRegister, ToSchema};
 use salvo::prelude::*;
@@ -22,6 +24,7 @@ pub struct TokenResponse {
     pub expires_by: u64,
 }
 
+#[derive(From, Debug)]
 pub enum RegisterUserResponses {
     Success(TokenResponse),
     BadRequest(BadRegisterUserRequestError),
@@ -29,20 +32,28 @@ pub enum RegisterUserResponses {
     InternalServerError(InternalServerError),
 }
 
-impl From<Result<TokenResponse, AuthError>> for RegisterUserResponses {
-    fn from(result: Result<TokenResponse, AuthError>) -> Self {
+impl From<Result<TokenResponse, RegisterError>> for RegisterUserResponses {
+    fn from(result: Result<TokenResponse, RegisterError>) -> Self {
         match result {
-            Ok(token) => Self::Success(token),
-            Err(AuthError::UserAlreadyExists) => Self::UserAlreadyExists,
-            Err(AuthError::BadRequest(e)) => Self::BadRequest(e),
-            Err(e) => Self::InternalServerError(e.into()),
+            Ok(token) => token.into(),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<RegisterError> for RegisterUserResponses {
+    fn from(e: RegisterError) -> Self {
+        match e {
+            RegisterError::UserAlreadyExists => Self::UserAlreadyExists,
+            RegisterError::BadRequest(e) => Self::BadRequest(e),
+            RegisterError::Unexpected(e) => Self::InternalServerError(e),
         }
     }
 }
 
 #[async_trait]
 impl Writer for RegisterUserResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(token_response) => {
                 res.status_code(StatusCode::CREATED);
@@ -56,15 +67,7 @@ impl Writer for RegisterUserResponses {
                 res.status_code(StatusCode::CONFLICT);
                 res.render(Json(ApiError::new("User already exists")));
             }
-            Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
-            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
 }
@@ -94,6 +97,7 @@ impl EndpointOutRegister for RegisterUserResponses {
     }
 }
 
+#[derive(From, Debug)]
 pub enum LoginResponses {
     Success(TokenResponse),
     BadRequest,
@@ -101,12 +105,20 @@ pub enum LoginResponses {
     InternalServerError(InternalServerError),
 }
 
-impl From<Result<TokenResponse, AuthError>> for LoginResponses {
-    fn from(result: Result<TokenResponse, AuthError>) -> Self {
+impl From<Result<TokenResponse, LoginError>> for LoginResponses {
+    fn from(result: Result<TokenResponse, LoginError>) -> Self {
         match result {
-            Ok(token) => Self::Success(token),
-            Err(AuthError::InvalidCredentials) => Self::InvalidCredentials,
-            Err(e) => Self::InternalServerError(e.into()),
+            Ok(token) => token.into(),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<LoginError> for LoginResponses {
+    fn from(e: LoginError) -> Self {
+        match e {
+            LoginError::InvalidCredentials => Self::InvalidCredentials,
+            LoginError::Unexpected(e) => Self::InternalServerError(e),
         }
     }
 }
@@ -128,13 +140,8 @@ impl Writer for LoginResponses {
                 res.render(Json(ApiError::new("Invalid credentials")));
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(_req, _depot, res).await;
+                return;
             }
         }
     }
@@ -164,24 +171,31 @@ impl EndpointOutRegister for LoginResponses {
     }
 }
 
+#[derive(From, Debug)]
 pub enum RefreshTokenResponses {
     Success(TokenResponse),
-    InvalidRefreshToken(AuthError),
+    InvalidRefreshToken(String),
     InternalServerError(InternalServerError),
 }
 
-impl From<Result<TokenResponse, AuthError>> for RefreshTokenResponses {
-    fn from(result: Result<TokenResponse, AuthError>) -> Self {
+impl From<ClaimValidationError> for RefreshTokenResponses {
+    fn from(error: ClaimValidationError) -> Self {
+        Self::InvalidRefreshToken(error.to_string())
+    }
+}
+
+impl From<Result<TokenResponse, InternalServerError>> for RefreshTokenResponses {
+    fn from(result: Result<TokenResponse, InternalServerError>) -> Self {
         match result {
-            Ok(token) => Self::Success(token),
-            Err(e) => Self::InternalServerError(e.into()),
+            Ok(token) => token.into(),
+            Err(e) => e.into(),
         }
     }
 }
 
 #[async_trait]
 impl Writer for RefreshTokenResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(token_response) => {
                 res.status_code(StatusCode::OK);
@@ -192,13 +206,8 @@ impl Writer for RefreshTokenResponses {
                 res.render(Json(ApiError::new(e.to_string())));
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(req, depot, res).await;
+                return;
             }
         }
     }
@@ -224,16 +233,17 @@ impl EndpointOutRegister for RefreshTokenResponses {
     }
 }
 
+#[derive(From, Debug)]
 pub enum ValidateTokenResponses {
     Valid(String),
-    Invalid(AuthError),
+    Invalid(ClaimValidationError),
 }
 
 impl From<Result<Claims, ClaimValidationError>> for ValidateTokenResponses {
     fn from(result: Result<Claims, ClaimValidationError>) -> Self {
         match result {
             Ok(claims) => Self::Valid(claims.sub),
-            Err(e) => Self::Invalid(e.into()),
+            Err(e) => e.into(),
         }
     }
 }
@@ -267,6 +277,7 @@ impl EndpointOutRegister for ValidateTokenResponses {
     }
 }
 
+#[derive(From, Debug)]
 pub enum ResetPasswordRequestResponses {
     Success,
     BadRequest,
@@ -275,7 +286,7 @@ pub enum ResetPasswordRequestResponses {
 
 #[async_trait]
 impl Writer for ResetPasswordRequestResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
                 res.status_code(StatusCode::OK);
@@ -285,15 +296,7 @@ impl Writer for ResetPasswordRequestResponses {
                 res.status_code(StatusCode::BAD_REQUEST);
                 res.render(Json(ApiError::new("Invalid request")));
             }
-            Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
-            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
 }
@@ -315,6 +318,7 @@ impl EndpointOutRegister for ResetPasswordRequestResponses {
     }
 }
 
+#[derive(From, Debug)]
 pub enum PasswordResetResponses {
     Success,
     InvalidToken,
@@ -324,7 +328,7 @@ pub enum PasswordResetResponses {
 
 #[async_trait]
 impl Writer for PasswordResetResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
                 res.status_code(StatusCode::OK);
@@ -338,15 +342,7 @@ impl Writer for PasswordResetResponses {
                 res.status_code(StatusCode::BAD_REQUEST);
                 res.render(Json(ApiError::new("Invalid new password")));
             }
-            Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
-            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
 }
@@ -368,16 +364,17 @@ impl EndpointOutRegister for PasswordResetResponses {
     }
 }
 
+#[derive(From, Debug)]
 pub enum UserProfileResponses {
     Success(UserProfile),
-    Unauthorized(AuthError),
+    Unauthorized(ClaimValidationError),
     UserNotFound,
     InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for UserProfileResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(user_profile) => {
                 res.status_code(StatusCode::OK);
@@ -391,15 +388,7 @@ impl Writer for UserProfileResponses {
                 res.status_code(StatusCode::NOT_FOUND);
                 res.render(Json(ApiError::new("User not found")));
             }
-            Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
-            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
 }
@@ -431,7 +420,7 @@ impl EndpointOutRegister for UserProfileResponses {
 pub enum UpdateUserProfileResponses {
     Success(UserProfile),
     BadRequest,
-    Unauthorized(AuthError),
+    Unauthorized(ClaimValidationError),
     InvalidPassword,
     UserNotFound,
     InternalServerError(InternalServerError),
@@ -439,7 +428,7 @@ pub enum UpdateUserProfileResponses {
 
 #[async_trait]
 impl Writer for UpdateUserProfileResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(profile) => {
                 res.status_code(StatusCode::OK);
@@ -461,15 +450,7 @@ impl Writer for UpdateUserProfileResponses {
                 res.status_code(StatusCode::NOT_FOUND);
                 res.render(Json(ApiError::new("User not found")));
             }
-            Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
-            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
 }
@@ -502,15 +483,16 @@ impl EndpointOutRegister for UpdateUserProfileResponses {
     }
 }
 
+#[derive(From)]
 pub enum LogoutResponses {
     Success,
-    Unauthorized(AuthError),
+    Unauthorized(ClaimValidationError),
     InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for LogoutResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
                 res.status_code(StatusCode::OK);
@@ -520,15 +502,7 @@ impl Writer for LogoutResponses {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Json(ApiError::new(e.to_string())));
             }
-            Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
-            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
 }

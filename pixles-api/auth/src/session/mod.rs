@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::errors::AuthError;
+use model::errors::InternalServerError;
 
 pub mod storage;
 pub use self::storage::{InMemorySessionStorage, RedisSessionStorage, SessionStorage};
@@ -24,13 +24,13 @@ pub struct SessionManager {
 }
 
 impl SessionManager {
-    pub async fn new(redis_url: String, ttl: Duration) -> Result<Self, AuthError> {
-        let manager = RedisConnectionManager::new(redis_url)
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+    pub async fn new(redis_url: String, ttl: Duration) -> Result<Self, InternalServerError> {
+        let manager =
+            RedisConnectionManager::new(redis_url).map_err(|e| InternalServerError::from(e))?;
         let pool = Pool::builder()
             .build(manager)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(InternalServerError::from)?;
 
         Ok(Self {
             storage: Arc::new(Box::new(RedisSessionStorage::new(pool))),
@@ -51,7 +51,7 @@ impl SessionManager {
         user_id: String,
         user_agent: Option<String>,
         ip_address: Option<String>,
-    ) -> Result<String, AuthError> {
+    ) -> Result<String, InternalServerError> {
         let sid = nanoid::nanoid!();
         let session = Session {
             user_id: user_id.clone(),
@@ -60,8 +60,7 @@ impl SessionManager {
             ip_address,
         };
 
-        let session_data = serde_json::to_string(&session)
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+        let session_data = serde_json::to_string(&session).map_err(InternalServerError::from)?;
 
         self.storage
             .save_session(&sid, session_data, self.ttl)
@@ -73,24 +72,24 @@ impl SessionManager {
         Ok(sid)
     }
 
-    pub async fn get_session(&self, sid: &str) -> Result<Option<Session>, AuthError> {
+    pub async fn get_session(&self, sid: &str) -> Result<Option<Session>, InternalServerError> {
         let session_data = self.storage.get_session(sid).await?;
 
         match session_data {
             Some(data) => {
-                let session: Session = serde_json::from_str(&data)
-                    .map_err(|e| AuthError::InternalServerError(e.into()))?;
+                let session: Session =
+                    serde_json::from_str(&data).map_err(InternalServerError::from)?;
                 Ok(Some(session))
             }
             None => Ok(None),
         }
     }
 
-    pub async fn revoke_session(&self, sid: &str) -> Result<(), AuthError> {
+    pub async fn revoke_session(&self, sid: &str) -> Result<(), InternalServerError> {
         self.storage.delete_session(sid).await
     }
 
-    pub async fn revoke_all_for_user(&self, user_id: &str) -> Result<(), AuthError> {
+    pub async fn revoke_all_for_user(&self, user_id: &str) -> Result<(), InternalServerError> {
         let sessions = self.storage.get_user_sessions(user_id).await?;
 
         for sid in sessions {

@@ -6,6 +6,7 @@ impl EmailService {
         Self
     }
 
+    // TODO: Implement actual email service
     pub async fn send_password_reset_email(
         &self,
         email: &str,

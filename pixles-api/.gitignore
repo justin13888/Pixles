@@ -6,3 +6,5 @@ uploads/
 
 # Default Sled database directory
 .metadata/
+
+openapi.json

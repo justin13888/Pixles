@@ -1,4 +1,4 @@
-use pixles_sdk::{Client, get_authenticated_client, types::AuthModelsRequestsLoginRequest};
+use pixles_sdk::{AuthenticatedClient, Client, types::AuthModelsRequestsLoginRequest};
 use std::env;
 
 #[tokio::main]
@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify profile
     println!("Fetching profile...");
-    let authenticated_client = get_authenticated_client(&base_url, &res.access_token);
+    let authenticated_client = AuthenticatedClient::new(&base_url, &res.access_token);
     let profile = authenticated_client.get_user_profile().await?;
     println!("Profile: {:#?}", profile);
 

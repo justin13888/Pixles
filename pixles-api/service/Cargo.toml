@@ -10,8 +10,9 @@ path = "src/lib.rs"
 
 [dependencies]
 pixles-api-entity = { path = "../entity" }
-pixles-api-model = { path = "../model" }
 pixles-core = { path = "../../pixles-core-rust" }
+serde = { workspace = true }
+uuid = { workspace = true }
 chrono = { workspace = true }
 data-encoding = { workspace = true }
 nanoid = { workspace = true }

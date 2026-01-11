@@ -1,9 +1,21 @@
 #!/bin/bash
-set -e
 
-# Navigate to pixles-api directory
-cd "$(dirname "$0")/../pixles-api"
+set -euo pipefail
 
-# Run the gen_openapi binary
-# output path is relative to pixles-api, so ../pixles-sdk/openapi.json
-cargo run --bin gen_openapi --features full -- ../pixles-sdk/openapi.json
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+API_DIR="$SCRIPT_DIR/../pixles-api"
+SDK_DIR="$SCRIPT_DIR/../pixles-sdk"
+
+cd "$API_DIR"
+
+echo "Generating OpenAPI 3.1 spec..."
+cargo run --bin gen_openapi --features full -- ./openapi.json
+
+if [ ! -s "./openapi.json" ]; then
+    echo "Error: ./openapi.json was not generated or is empty." >&2
+    exit 1
+fi
+
+# Downgrading to OpenAPI 3.0...
+
+npx @apiture/openapi-down-convert --input ./openapi.json > $SDK_DIR/openapi.json

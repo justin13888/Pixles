@@ -1,7 +1,13 @@
 pub mod album;
 pub mod album_share;
 pub mod asset;
+pub mod asset_smart_tag;
+pub mod face;
 pub mod friendship;
+pub mod memory;
 pub mod owner;
 pub mod owner_member;
+pub mod person;
+pub mod share_link;
+pub mod smart_tag;
 pub mod user;

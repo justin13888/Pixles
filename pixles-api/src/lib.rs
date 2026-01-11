@@ -12,6 +12,10 @@ pub mod tags {
     pub const API: &str = "api";
     pub const AUTH: &str = "auth";
     pub const UPLOAD: &str = "upload";
+    pub const MEDIA: &str = "media";
+    pub const SHARE: &str = "share";
+    pub const LIBRARY: &str = "library";
+    pub const SYNC: &str = "sync";
 }
 
 /// Create OpenAPI specification with proper metadata
@@ -28,6 +32,10 @@ pub fn create_openapi_spec() -> OpenApi {
             Tag::new(tags::API).description("Pixles API"),
             Tag::new(tags::AUTH).description("Pixles Authentication API"),
             Tag::new(tags::UPLOAD).description("Pixles Upload API"),
+            Tag::new(tags::MEDIA).description("Pixles Media Serving API"),
+            Tag::new(tags::SHARE).description("Pixles Public Share API"),
+            Tag::new(tags::LIBRARY).description("Pixles Library API (GraphQL)"),
+            Tag::new(tags::SYNC).description("Pixles Sync API (gRPC)"),
         ])
         .add_security_scheme(
             "bearer",
@@ -49,28 +57,37 @@ pub async fn create_router(conn: DatabaseConnection, env: &Environment) -> Resul
             Router::with_path("auth").push(auth::get_router(conn.clone(), &env.server).await?),
         );
     }
-    // TODO: Re-enable when graphql is production-ready
-    // #[cfg(feature = "graphql")]
-    // {
-    //     v1_router = v1_router.push(
-    //         Router::with_path("graphql").push(
-    //             graphql::get_router(conn.clone(), &env.server, (&env.server).into()).await?,
-    //         ),
-    //     );
-    // }
-    // TODO: Re-enable when metadata is production-ready
-    // #[cfg(feature = "metadata")]
-    // {
-    //     v1_router = v1_router.push(
-    //         Router::with_path("metadata").push(
-    //             metadata::get_router(conn.clone(), &env.server).await?,
-    //         ),
-    //     );
-    // }
+    #[cfg(feature = "library")]
+    {
+        v1_router = v1_router.push(
+            Router::with_path("library")
+                .push(library::get_router(conn.clone(), &env.server, (&env.server).into()).await?),
+        );
+    }
     #[cfg(feature = "upload")]
     {
         v1_router = v1_router.push(
             Router::with_path("upload").push(upload::get_router(conn.clone(), &env.server).await?),
+        );
+    }
+    #[cfg(feature = "media")]
+    {
+        v1_router = v1_router
+            .push(
+                Router::with_path("media")
+                    .push(media::get_router(conn.clone(), &env.server).await?),
+            )
+            .push(
+                Router::with_path("s")
+                    .push(media::get_share_router(conn.clone(), &env.server).await?),
+            );
+    }
+    // TODO: Verify this GRPc route works
+    #[cfg(feature = "sync")]
+    {
+        // gRPC sync routes
+        v1_router = v1_router.push(
+            Router::with_path("sync").push(sync::get_router(conn.clone(), &env.server).await?),
         );
     }
 
@@ -102,10 +119,13 @@ pub async fn create_router(conn: DatabaseConnection, env: &Environment) -> Resul
 }
 
 // Re-export dependency crates if needed by binaries
+#[cfg(feature = "auth")]
 pub use auth;
-// TODO: Re-enable when graphql is production-ready
-// pub use graphql;
-// TODO: Re-enable when metadata is production-ready
-// pub use metadata;
-// TODO: Re-enable when upload is production-ready
-// pub use upload;
+#[cfg(feature = "library")]
+pub use library;
+#[cfg(feature = "media")]
+pub use media;
+#[cfg(feature = "sync")]
+pub use sync;
+#[cfg(feature = "upload")]
+pub use upload;

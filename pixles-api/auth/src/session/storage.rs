@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
 
-use crate::errors::AuthError;
+use model::errors::InternalServerError;
 
 #[async_trait::async_trait]
 pub trait SessionStorage: Send + Sync {
@@ -16,17 +16,17 @@ pub trait SessionStorage: Send + Sync {
         sid: &str,
         session_data: String,
         ttl: Duration,
-    ) -> Result<(), AuthError>;
-    async fn get_session(&self, sid: &str) -> Result<Option<String>, AuthError>;
-    async fn delete_session(&self, sid: &str) -> Result<(), AuthError>;
+    ) -> Result<(), InternalServerError>;
+    async fn get_session(&self, sid: &str) -> Result<Option<String>, InternalServerError>;
+    async fn delete_session(&self, sid: &str) -> Result<(), InternalServerError>;
     async fn add_user_session(
         &self,
         user_id: &str,
         sid: &str,
         ttl: Duration,
-    ) -> Result<(), AuthError>;
-    async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, AuthError>;
-    async fn delete_user_sessions_key(&self, user_id: &str) -> Result<(), AuthError>;
+    ) -> Result<(), InternalServerError>;
+    async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, InternalServerError>;
+    async fn delete_user_sessions_key(&self, user_id: &str) -> Result<(), InternalServerError>;
 }
 
 #[derive(Clone)]
@@ -47,45 +47,45 @@ impl SessionStorage for RedisSessionStorage {
         sid: &str,
         session_data: String,
         ttl: Duration,
-    ) -> Result<(), AuthError> {
+    ) -> Result<(), InternalServerError> {
         let mut con = self
             .client
             .get()
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let key = format!("pixles:session:{}", sid);
         let _: () = con
             .set_ex(&key, session_data, ttl.as_secs())
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(())
     }
 
-    async fn get_session(&self, sid: &str) -> Result<Option<String>, AuthError> {
+    async fn get_session(&self, sid: &str) -> Result<Option<String>, InternalServerError> {
         let mut con = self
             .client
             .get()
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let key = format!("pixles:session:{}", sid);
         let data: Option<String> = con
             .get(&key)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(data)
     }
 
-    async fn delete_session(&self, sid: &str) -> Result<(), AuthError> {
+    async fn delete_session(&self, sid: &str) -> Result<(), InternalServerError> {
         let mut con = self
             .client
             .get()
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let key = format!("pixles:session:{}", sid);
         let _: () = con
             .del(&key)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(())
     }
 
@@ -94,49 +94,49 @@ impl SessionStorage for RedisSessionStorage {
         user_id: &str,
         sid: &str,
         ttl: Duration,
-    ) -> Result<(), AuthError> {
+    ) -> Result<(), InternalServerError> {
         let mut con = self
             .client
             .get()
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let user_key = format!("pixles:user_sessions:{}", user_id);
         let _: () = con
             .sadd(&user_key, sid)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let _: () = con
             .expire(&user_key, ttl.as_secs() as i64)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(())
     }
 
-    async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, AuthError> {
+    async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, InternalServerError> {
         let mut con = self
             .client
             .get()
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let user_key = format!("pixles:user_sessions:{}", user_id);
         let sessions: Vec<String> = con
             .smembers(&user_key)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(sessions)
     }
 
-    async fn delete_user_sessions_key(&self, user_id: &str) -> Result<(), AuthError> {
+    async fn delete_user_sessions_key(&self, user_id: &str) -> Result<(), InternalServerError> {
         let mut con = self
             .client
             .get()
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         let user_key = format!("pixles:user_sessions:{}", user_id);
         let _: () = con
             .del(&user_key)
             .await
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(())
     }
 }
@@ -169,7 +169,7 @@ impl SessionStorage for InMemorySessionStorage {
         sid: &str,
         session_data: String,
         _ttl: Duration,
-    ) -> Result<(), AuthError> {
+    ) -> Result<(), InternalServerError> {
         self.sessions
             .write()
             .await
@@ -177,11 +177,11 @@ impl SessionStorage for InMemorySessionStorage {
         Ok(())
     }
 
-    async fn get_session(&self, sid: &str) -> Result<Option<String>, AuthError> {
+    async fn get_session(&self, sid: &str) -> Result<Option<String>, InternalServerError> {
         Ok(self.sessions.read().await.get(sid).cloned())
     }
 
-    async fn delete_session(&self, sid: &str) -> Result<(), AuthError> {
+    async fn delete_session(&self, sid: &str) -> Result<(), InternalServerError> {
         self.sessions.write().await.remove(sid);
         Ok(())
     }
@@ -191,7 +191,7 @@ impl SessionStorage for InMemorySessionStorage {
         user_id: &str,
         sid: &str,
         _ttl: Duration,
-    ) -> Result<(), AuthError> {
+    ) -> Result<(), InternalServerError> {
         let mut user_sessions = self.user_sessions.write().await;
         user_sessions
             .entry(user_id.to_string())
@@ -200,7 +200,7 @@ impl SessionStorage for InMemorySessionStorage {
         Ok(())
     }
 
-    async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, AuthError> {
+    async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, InternalServerError> {
         Ok(self
             .user_sessions
             .read()
@@ -210,7 +210,7 @@ impl SessionStorage for InMemorySessionStorage {
             .unwrap_or_default())
     }
 
-    async fn delete_user_sessions_key(&self, user_id: &str) -> Result<(), AuthError> {
+    async fn delete_user_sessions_key(&self, user_id: &str) -> Result<(), InternalServerError> {
         self.user_sessions.write().await.remove(user_id);
         Ok(())
     }

@@ -164,10 +164,7 @@ pub struct UploadClient {
 impl UploadClient {
     /// Create a new upload client
     pub fn new(client: AuthenticatedClient) -> Self {
-        Self {
-            base_url: base_url.into(),
-            auth_token: auth_token.into(),
-        }
+        Self { client }
     }
 
     /// Upload a file using adaptive chunked upload

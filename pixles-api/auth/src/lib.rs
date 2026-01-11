@@ -1,5 +1,4 @@
 use config::AuthConfig;
-use eyre::Result;
 use salvo::cors::Cors;
 use salvo::http::Method;
 use salvo::prelude::*;
@@ -29,14 +28,15 @@ pub mod validation;
 pub async fn get_router<C: Into<AuthConfig>>(
     conn: DatabaseConnection,
     config: C,
-) -> Result<Router> {
+) -> eyre::Result<Router> {
     let config = config.into();
 
     let session_manager = session::SessionManager::new(
         config.valkey_url.clone(),
         std::time::Duration::from_secs(config.jwt_refresh_token_duration_seconds),
     )
-    .await?;
+    .await
+    .map_err(|e| e.0)?;
 
     // Initialize Email Service
     let email_service = service::EmailService::new();

@@ -1,2 +1,3 @@
-pub mod user;
 pub mod asset;
+pub mod errors;
+pub mod user;

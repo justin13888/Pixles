@@ -1,5 +1,6 @@
 use crate::error::UploadError;
 use crate::models::session::{UploadSession, UploadSessionStatus};
+use model::errors::InternalServerError;
 use salvo::http::StatusCode;
 use salvo::oapi::{EndpointOutRegister, ToSchema};
 use salvo::prelude::*;
@@ -39,12 +40,12 @@ pub enum CreateUploadResponses {
     Unauthorized(String),
     Forbidden,
     BadRequest(String),
-    InternalServerError(UploadError),
+    InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for CreateUploadResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(response) => {
                 res.status_code(StatusCode::CREATED);
@@ -69,13 +70,7 @@ impl Writer for CreateUploadResponses {
                 res.render(Text::Plain(msg));
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(req, depot, res).await;
             }
         }
     }
@@ -115,12 +110,12 @@ pub enum HeadUploadResponses {
     Unauthorized(String),
     NotFound,
     Forbidden,
-    InternalServerError(UploadError),
+    InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for HeadUploadResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(response) => {
                 res.status_code(StatusCode::OK);
@@ -144,13 +139,7 @@ impl Writer for HeadUploadResponses {
                 res.status_code(StatusCode::FORBIDDEN);
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(req, depot, res).await;
             }
         }
     }
@@ -192,12 +181,12 @@ pub enum PatchUploadResponses {
     Forbidden,
     NotFound,
     Conflict(String),
-    InternalServerError(UploadError),
+    InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for PatchUploadResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success { new_offset } => {
                 res.status_code(StatusCode::NO_CONTENT);
@@ -223,13 +212,7 @@ impl Writer for PatchUploadResponses {
                 res.render(Text::Plain(msg));
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(req, depot, res).await;
             }
         }
     }
@@ -274,12 +257,12 @@ pub enum DeleteUploadResponses {
     Unauthorized(String),
     Forbidden,
     NotFound,
-    InternalServerError(UploadError),
+    InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for DeleteUploadResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success => {
                 res.status_code(StatusCode::NO_CONTENT);
@@ -295,13 +278,7 @@ impl Writer for DeleteUploadResponses {
                 res.status_code(StatusCode::NOT_FOUND);
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(req, depot, res).await;
             }
         }
     }
@@ -336,12 +313,12 @@ impl EndpointOutRegister for DeleteUploadResponses {
 pub enum ListSessionsResponses {
     Success(ListSessionsResponse),
     Unauthorized(String),
-    InternalServerError(UploadError),
+    InternalServerError(InternalServerError),
 }
 
 #[async_trait]
 impl Writer for ListSessionsResponses {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
         match self {
             Self::Success(response) => {
                 res.status_code(StatusCode::OK);
@@ -352,13 +329,7 @@ impl Writer for ListSessionsResponses {
                 res.render(Text::Plain(msg));
             }
             Self::InternalServerError(e) => {
-                res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
-                let msg = if cfg!(debug_assertions) {
-                    e.to_string()
-                } else {
-                    "Internal server error".to_string()
-                };
-                res.render(Text::Plain(msg));
+                e.write(req, depot, res).await;
             }
         }
     }
