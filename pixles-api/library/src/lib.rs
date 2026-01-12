@@ -86,12 +86,15 @@ pub async fn get_router<C: Into<GraphqlServerConfig>>(
     // Build GraphQL schema
     let schema: AppSchema = create_schema(loaders);
 
+    // Create auth service
+    let auth_service = AuthService::new(conn.clone(), auth_config);
+
     // Define state
     let state = AppState {
         schema,
         conn,
         config,
-        auth_service: Arc::new(AuthService::new(auth_config)),
+        auth_service: Arc::new(auth_service),
     };
 
     // Build router

@@ -23,7 +23,7 @@ pub async fn register_user(
 
     state
         .auth_service
-        .register_user(&state.conn, &state.session_manager, request)
+        .register_user(&state.session_manager, request)
         .await
         .into()
 }
@@ -36,7 +36,7 @@ pub async fn login_user(depot: &mut Depot, body: JsonBody<LoginRequest>) -> Logi
 
     state
         .auth_service
-        .authenticate_user(&state.conn, &state.session_manager, &email, &password)
+        .authenticate_user(&state.session_manager, &email, &password)
         .await
         .into()
 }

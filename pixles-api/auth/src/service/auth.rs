@@ -15,12 +15,13 @@ use secrecy::{ExposeSecret, SecretString};
 
 #[derive(Clone)]
 pub struct AuthService {
+    conn: DatabaseConnection,
     config: AuthConfig,
 }
 
 impl AuthService {
-    pub fn new(config: AuthConfig) -> Self {
-        Self { config }
+    pub fn new(conn: DatabaseConnection, config: AuthConfig) -> Self {
+        Self { conn, config }
     }
 
     /// Get [Claims] from token string
@@ -43,7 +44,6 @@ impl AuthService {
 
     pub async fn register_user(
         &self,
-        conn: &DatabaseConnection,
         session_manager: &SessionManager,
         request: RegisterRequest,
     ) -> Result<TokenResponse, RegisterError> {
@@ -60,10 +60,11 @@ impl AuthService {
         } = request;
 
         // Check duplicates
-        if let Ok(Some(_)) = UserService::Query::find_user_by_email(conn, &email).await {
+        if let Ok(Some(_)) = UserService::Query::find_user_by_email(&self.conn, &email).await {
             return Err(RegisterError::UserAlreadyExists);
         }
-        if let Ok(Some(_)) = UserService::Query::find_user_by_username(conn, &username).await {
+        if let Ok(Some(_)) = UserService::Query::find_user_by_username(&self.conn, &username).await
+        {
             return Err(RegisterError::UserAlreadyExists);
         }
 
@@ -72,7 +73,7 @@ impl AuthService {
 
         // TODO: Handle unique constraint violation from DB if race condition occurs
         let user = UserService::Mutation::create_user(
-            conn,
+            &self.conn,
             service::user::CreateUserArgs {
                 username,
                 name,
@@ -90,12 +91,11 @@ impl AuthService {
 
     pub async fn authenticate_user(
         &self,
-        conn: &DatabaseConnection,
         session_manager: &SessionManager,
         email: &str,
         password: &SecretString,
     ) -> Result<TokenResponse, LoginError> {
-        let user = UserService::Query::find_user_by_email(conn, email)
+        let user = UserService::Query::find_user_by_email(&self.conn, email)
             .await
             .map_err(|e| LoginError::Unexpected(e.into()))?;
 
@@ -105,13 +105,13 @@ impl AuthService {
                 .map_err(|e| LoginError::Unexpected(eyre::eyre!(e).into()))?;
 
             if is_valid {
-                let _ = UserService::Mutation::track_login_success(conn, user.id.clone()).await;
+                let _ = UserService::Mutation::track_login_success(&self.conn, &user.id).await;
                 return self
                     .generate_token_pair(&user.id, session_manager)
                     .await
                     .map_err(LoginError::Unexpected);
             } else {
-                let _ = UserService::Mutation::track_login_failure(conn, user.id).await;
+                let _ = UserService::Mutation::track_login_failure(&self.conn, &user.id).await;
             }
         } else {
             tracing::info!("User not found");
@@ -135,7 +135,6 @@ impl AuthService {
 
         let (access_token, expires_by) = TokenService::create_access_token(
             user_id,
-            vec![Scope::ReadUser, Scope::WriteUser],
             Some(sid.clone()),
             &self.config.jwt_eddsa_encoding_key,
         )?;
@@ -149,6 +148,18 @@ impl AuthService {
             token_type: "Bearer".to_string(),
             expires_by,
         })
+    }
+
+    /// Generate an MFA token for TOTP verification
+    /// This token has a 3-minute TTL and no authorization scopes
+    pub fn generate_mfa_token(
+        &self,
+        user_id: &str,
+    ) -> Result<String, model::errors::InternalServerError> {
+        let claims = Claims::new_mfa_token(user_id.to_string());
+        claims
+            .encode(&self.config.jwt_eddsa_encoding_key)
+            .map_err(|e| model::errors::InternalServerError::from(eyre::eyre!(e)))
     }
 }
 
@@ -172,7 +183,12 @@ mod tests {
         (encoding_key, decoding_key)
     }
 
+    fn get_test_db_connection() -> DatabaseConnection {
+        todo!("Implement test DB connection")
+    }
+
     fn get_test_service() -> AuthService {
+        let conn = get_test_db_connection();
         let (encoding_key, decoding_key) = get_test_keys();
         let config = AuthConfig {
             host: "localhost".to_string(),
@@ -184,13 +200,13 @@ mod tests {
             jwt_access_token_duration_seconds: 300,
             valkey_url: "redis://localhost:6379".to_string(),
         };
-        AuthService::new(config)
+        AuthService::new(conn, config)
     }
 
     #[test]
     fn test_validate_claims_valid() {
         let service = get_test_service();
-        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser], None);
+        let claims = Claims::new_access_token("user1".to_string(), None);
 
         assert!(service.validate_claims(&claims, &[Scope::ReadUser]).is_ok());
     }
@@ -198,7 +214,7 @@ mod tests {
     #[test]
     fn test_validate_claims_invalid_scope() {
         let service = get_test_service();
-        let claims = Claims::new_access_token("user1".to_string(), vec![Scope::ReadUser], None);
+        let claims = Claims::new_access_token("user1".to_string(), None);
 
         let result = service.validate_claims(&claims, &[Scope::WriteUser]);
         assert!(matches!(result, Err(ClaimValidationError::InvalidScopes)));

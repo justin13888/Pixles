@@ -35,10 +35,7 @@ impl PasswordService {
 
                 // Update user with token
                 match UserService::Mutation::update_password_reset_token(
-                    conn,
-                    user.id.clone(),
-                    token.clone(),
-                    expires_at,
+                    conn, &user.id, &token, expires_at,
                 )
                 .await
                 {

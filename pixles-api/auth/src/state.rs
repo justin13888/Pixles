@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
+use environment::constants::TOTP_ISSUER;
 use sea_orm::DatabaseConnection;
 
 use crate::config::AuthConfig;
-use crate::service::{AuthService, EmailService, PasswordService};
+use crate::service::{AuthService, EmailService, PasswordService, TotpService};
 use crate::session::SessionManager;
 
 #[derive(Clone)]
@@ -18,6 +19,7 @@ pub struct AppStateInner {
     pub email_service: EmailService,
     pub auth_service: AuthService,
     pub password_service: PasswordService,
+    pub totp_service: TotpService,
 }
 
 impl AppState {
@@ -27,8 +29,9 @@ impl AppState {
         session_manager: SessionManager,
         email_service: crate::service::EmailService,
     ) -> Self {
-        let auth_service = AuthService::new(config.clone());
+        let auth_service = AuthService::new(conn.clone(), config.clone());
         let password_service = PasswordService::new(1000); // 1s minimum
+        let totp_service = TotpService::new(conn.clone(), TOTP_ISSUER);
 
         Self {
             inner: Arc::new(AppStateInner {
@@ -38,6 +41,7 @@ impl AppState {
                 email_service,
                 auth_service,
                 password_service,
+                totp_service,
             }),
         }
     }

@@ -100,4 +100,20 @@ impl SessionManager {
 
         Ok(())
     }
+
+    // MFA attempt tracking methods
+    pub async fn increment_mfa_attempt(
+        &self,
+        mfa_token_jti: &str,
+    ) -> Result<i32, InternalServerError> {
+        self.storage.increment_mfa_attempt(mfa_token_jti).await
+    }
+
+    pub async fn get_mfa_attempts(&self, mfa_token_jti: &str) -> Result<i32, InternalServerError> {
+        self.storage.get_mfa_attempts(mfa_token_jti).await
+    }
+
+    pub async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError> {
+        self.storage.clear_mfa_attempts(mfa_token_jti).await
+    }
 }

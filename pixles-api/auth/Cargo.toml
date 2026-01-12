@@ -39,6 +39,7 @@ base64 = { workspace = true }
 strum = { version = "0.27.1", features = ["derive"] }
 strum_macros = "0.27.1"
 async-trait = "0.1.89"
+totp-rs = { version = "5.7.0", features = ["gen_secret"] }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }

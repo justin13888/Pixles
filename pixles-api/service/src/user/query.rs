@@ -5,7 +5,7 @@ pub struct Query;
 
 impl Query {
     /// Returns user by ID
-    pub async fn find_user_by_id(db: &DbConn, id: String) -> Result<Option<user::Model>, DbErr> {
+    pub async fn find_user_by_id(db: &DbConn, id: &str) -> Result<Option<user::Model>, DbErr> {
         User::find_by_id(id).one(db).await
     }
 

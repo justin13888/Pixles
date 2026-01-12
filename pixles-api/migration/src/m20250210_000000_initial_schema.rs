@@ -48,6 +48,8 @@ impl MigrationTrait for Migration {
                     .col(boolean(Users::AccountVerified).default(false))
                     .col(boolean(Users::NeedsOnboarding).default(true))
                     .col(string(Users::PasswordHash))
+                    .col(string_len_null(Users::TotpSecret, 255))
+                    .col(boolean(Users::TotpVerified).default(false))
                     .col(string_null(Users::PasswordResetToken).unique_key())
                     .col(timestamp_with_time_zone_null(Users::PasswordResetExpiresAt))
                     .col(timestamp_with_time_zone_null(Users::LastLoginAt))
@@ -912,6 +914,8 @@ enum Users {
     AccountVerified,
     NeedsOnboarding,
     PasswordHash,
+    TotpSecret,
+    TotpVerified,
     PasswordResetToken,
     PasswordResetExpiresAt,
     LastLoginAt,

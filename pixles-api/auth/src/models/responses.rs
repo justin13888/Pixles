@@ -1,6 +1,8 @@
 use super::UserProfile;
 use super::errors::*;
 use crate::claims::Claims;
+use crate::errors::TotpEnrollError;
+use crate::errors::TotpVerificationError;
 use crate::errors::{ClaimValidationError, LoginError, RegisterError};
 use derive_more::From;
 use model::errors::InternalServerError;
@@ -516,6 +518,345 @@ impl EndpointOutRegister for LogoutResponses {
         operation.responses.insert(
             String::from("401"),
             salvo::oapi::Response::new("Unauthorized - invalid or missing token"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+// TOTP Response types
+
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
+pub struct TotpEnrollmentResponse {
+    pub provisioning_uri: String,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
+pub struct MfaRequiredResponse {
+    #[salvo(schema(value_type = String))]
+    #[serde(serialize_with = "crate::models::serialize_secret")]
+    pub mfa_token: SecretString,
+    pub message: String,
+}
+
+#[derive(From, Debug)]
+pub enum TotpEnrollResponses {
+    Success(TotpEnrollmentResponse),
+    AlreadyEnabled,
+    Unauthorized(ClaimValidationError),
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<TotpEnrollmentResponse, TotpEnrollError>> for TotpEnrollResponses {
+    fn from(result: Result<TotpEnrollmentResponse, TotpEnrollError>) -> Self {
+        match result {
+            Ok(response) => response.into(),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<TotpEnrollError> for TotpEnrollResponses {
+    fn from(e: TotpEnrollError) -> Self {
+        match e {
+            TotpEnrollError::AlreadyEnabled => Self::AlreadyEnabled,
+            TotpEnrollError::UserNotFound => {
+                Self::InternalServerError(eyre::eyre!("User not found").into())
+            }
+            TotpEnrollError::Db(e) => Self::InternalServerError(e.into()),
+            TotpEnrollError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for TotpEnrollResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(enrollment) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(enrollment));
+            }
+            Self::AlreadyEnabled => {
+                res.status_code(StatusCode::CONFLICT);
+                res.render(Json(ApiError::new("TOTP is already enabled")));
+            }
+            Self::Unauthorized(e) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for TotpEnrollResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - TOTP enrollment initiated").add_content(
+                "application/json",
+                salvo::oapi::Content::new(TotpEnrollmentResponse::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
+        );
+        operation.responses.insert(
+            String::from("409"),
+            salvo::oapi::Response::new("TOTP already enabled"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum TotpVerifyEnrollmentResponses {
+    Success,
+    InvalidCode,
+    NotEnrolled,
+    Unauthorized(ClaimValidationError),
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<(), TotpVerificationError>> for TotpVerifyEnrollmentResponses {
+    fn from(result: Result<(), TotpVerificationError>) -> Self {
+        match result {
+            Ok(()) => Self::Success,
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<TotpVerificationError> for TotpVerifyEnrollmentResponses {
+    fn from(e: TotpVerificationError) -> Self {
+        match e {
+            TotpVerificationError::UserNotFound => {
+                Self::InternalServerError(eyre::eyre!("User not found").into())
+            }
+            TotpVerificationError::InvalidCode => Self::InvalidCode,
+            TotpVerificationError::NotEnabled => Self::NotEnrolled,
+            TotpVerificationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for TotpVerifyEnrollmentResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("TOTP enabled successfully")));
+            }
+            Self::InvalidCode => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("Invalid TOTP code")));
+            }
+            Self::NotEnrolled => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("TOTP enrollment not initiated")));
+            }
+            Self::Unauthorized(e) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for TotpVerifyEnrollmentResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("TOTP enabled successfully"),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Invalid TOTP code or enrollment not initiated"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum TotpVerifyLoginResponses {
+    Success(TokenResponse),
+    InvalidMfaToken,
+    InvalidCode,
+    NotEnrolled,
+    MaxAttemptsExceeded,
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<TokenResponse, TotpVerificationError>> for TotpVerifyLoginResponses {
+    fn from(result: Result<TokenResponse, TotpVerificationError>) -> Self {
+        match result {
+            Ok(tokens) => tokens.into(),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<TotpVerificationError> for TotpVerifyLoginResponses {
+    fn from(e: TotpVerificationError) -> Self {
+        match e {
+            TotpVerificationError::UserNotFound => {
+                Self::InternalServerError(eyre::eyre!("User not found").into())
+            }
+            TotpVerificationError::NotEnabled => Self::NotEnrolled,
+            TotpVerificationError::InvalidCode => Self::InvalidCode,
+            TotpVerificationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for TotpVerifyLoginResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(tokens) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(tokens));
+            }
+            Self::InvalidMfaToken => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new("Invalid MFA token")));
+            }
+            Self::InvalidCode => {
+                res.status_code(StatusCode::FORBIDDEN);
+                res.render(Json(ApiError::new("Invalid TOTP code")));
+            }
+            Self::NotEnrolled => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("TOTP not enrolled")));
+            }
+            Self::MaxAttemptsExceeded => {
+                res.status_code(StatusCode::TOO_MANY_REQUESTS);
+                res.render(Json(ApiError::new(
+                    "Maximum verification attempts exceeded",
+                )));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for TotpVerifyLoginResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - login completed").add_content(
+                "application/json",
+                salvo::oapi::Content::new(TokenResponse::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Invalid or expired MFA token"),
+        );
+        operation.responses.insert(
+            String::from("403"),
+            salvo::oapi::Response::new("Invalid TOTP code"),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("TOTP not enrolled"),
+        );
+        operation.responses.insert(
+            String::from("429"),
+            salvo::oapi::Response::new("Maximum verification attempts exceeded"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum TotpDisableResponses {
+    Success,
+    NotEnrolled,
+    Unauthorized(ClaimValidationError),
+    InvalidCode,
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<(), TotpVerificationError>> for TotpDisableResponses {
+    fn from(result: Result<(), TotpVerificationError>) -> Self {
+        match result {
+            Ok(()) => Self::Success,
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<TotpVerificationError> for TotpDisableResponses {
+    fn from(e: TotpVerificationError) -> Self {
+        match e {
+            TotpVerificationError::UserNotFound => {
+                Self::InternalServerError(eyre::eyre!("User not found").into())
+            }
+            TotpVerificationError::NotEnabled => Self::NotEnrolled,
+            TotpVerificationError::InvalidCode => Self::InvalidCode,
+            TotpVerificationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for TotpDisableResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("TOTP enabled successfully")));
+            }
+            Self::NotEnrolled => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new("TOTP enrollment not initiated")));
+            }
+            Self::Unauthorized(e) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
+            }
+            Self::InvalidCode => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new("Invalid TOTP code")));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for TotpDisableResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("TOTP enabled successfully"),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Invalid TOTP code or enrollment not initiated"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Invalid or expired MFA token"),
         );
         operation.responses.insert(
             String::from("500"),

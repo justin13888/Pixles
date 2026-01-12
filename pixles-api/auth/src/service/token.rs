@@ -11,11 +11,10 @@ impl TokenService {
     /// Returns the token and the expiration time
     pub fn create_access_token(
         user_id: &str,
-        scopes: Vec<Scope>,
         sid: Option<String>,
         encoding_key: &EncodingKey,
     ) -> Result<(String, u64), InternalServerError> {
-        let claims = Claims::new_access_token(user_id.to_string(), scopes, sid);
+        let claims = Claims::new_access_token(user_id.to_string(), sid);
         let token = claims
             .encode(encoding_key)
             .map_err(InternalServerError::from)?;
@@ -61,15 +60,12 @@ mod tests {
     fn test_create_access_token() {
         let (encoding_key, decoding_key) = get_test_keys();
         let user_id = "user123";
-        let scopes = vec![Scope::ReadUser];
 
-        let (token, exp) =
-            TokenService::create_access_token(user_id, scopes.clone(), None, &encoding_key)
-                .unwrap();
+        let (token, exp) = TokenService::create_access_token(user_id, None, &encoding_key).unwrap();
 
         let decoded = Claims::decode(&token, &decoding_key).unwrap();
         assert_eq!(decoded.claims.sub, user_id);
-        assert_eq!(decoded.claims.scopes, scopes);
+        assert_eq!(decoded.claims.scopes, vec![Scope::AccessToken]);
         assert_eq!(decoded.claims.exp, exp);
         assert!(decoded.claims.sid.is_none());
     }

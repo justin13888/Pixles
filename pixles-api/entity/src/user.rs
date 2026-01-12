@@ -26,6 +26,10 @@ pub struct Model {
     #[sea_orm(unique, column_type = "String(StringLen::N(255))")]
     pub password_hash: String,
     #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
+    pub totp_secret: Option<String>,
+    #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
+    pub totp_verified: Option<bool>,
+    #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
     pub password_reset_token: Option<String>,
     #[sea_orm(column_type = "TimestampWithTimeZone", nullable)]
     pub password_reset_expires_at: Option<DateTime<Utc>>,

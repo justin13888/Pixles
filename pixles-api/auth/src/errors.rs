@@ -136,3 +136,29 @@ impl Writer for ClaimValidationError {
         res.render(Text::Plain(error_message));
     }
 }
+
+/// TOTP enrollment error
+#[derive(Debug, Error)]
+pub enum TotpEnrollError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("TOTP is already enabled")]
+    AlreadyEnabled,
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// TOTP verification error
+#[derive(Debug, Error)]
+pub enum TotpVerificationError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("TOTP is not enabled")]
+    NotEnabled,
+    #[error("Invalid code")]
+    InvalidCode,
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}

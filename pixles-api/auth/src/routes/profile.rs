@@ -33,7 +33,7 @@ pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfi
     let user_id = token.claims.sub;
 
     // Fetch user profile from database
-    let user_model = match UserService::Query::find_user_by_id(&state.conn, user_id).await {
+    let user_model = match UserService::Query::find_user_by_id(&state.conn, &user_id).await {
         Ok(Some(user)) => user,
         Ok(None) => return UserProfileResponses::UserNotFound,
         Err(e) => return UserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
@@ -80,7 +80,8 @@ pub async fn update_user_profile(
     let payload = body.into_inner();
 
     // Fetch current user to check password if needed
-    let current_user = match UserService::Query::find_user_by_id(&state.conn, user_id.clone()).await
+    let current_user = match UserService::Query::find_user_by_id(&state.conn, &user_id.clone())
+        .await
     {
         Ok(Some(user)) => user,
         Ok(None) => return UpdateUserProfileResponses::UserNotFound,
@@ -114,7 +115,7 @@ pub async fn update_user_profile(
     // Update user profile in database
     let updated_user = match UserService::Mutation::update_user(
         &state.conn,
-        user_id,
+        &user_id,
         service::user::UpdateUserArgs {
             username: payload.username,
             name: None, // Name update not exposed in request yet?

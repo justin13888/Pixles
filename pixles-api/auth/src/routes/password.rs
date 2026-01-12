@@ -75,8 +75,7 @@ pub async fn reset_password(
 
     // Confirm reset
     if let Err(e) =
-        UserService::Mutation::confirm_password_reset(&state.conn, user.id.clone(), password_hash)
-            .await
+        UserService::Mutation::confirm_password_reset(&state.conn, &user.id, &password_hash).await
     {
         return PasswordResetResponses::InternalServerError(eyre::eyre!(e).into());
     }
