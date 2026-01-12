@@ -320,8 +320,30 @@ async fn test_create_user() {
 
 ## Security Practices
 
+### General Guidelines
+
 1. **Input Validation**: Validate all user input at the network layer
 2. **Authorization**: Check permissions before every operation
 3. **Rate Limiting**: Apply rate limits to authentication and resource-intensive endpoints
 4. **Parameterized Queries**: SeaORM handles this, but be careful with raw SQL
 5. **Secret Management**: Use `SecretString` for sensitive data, never log tokens
+6. **Limit Dependencies:** Only depend on the minimum number of crates necessary. This specifically includes:
+   * `sea_orm` code should exist only in `pixles-api-entity`, `pixles-api-migration`, `pixles-api-service`, `pixles-api-testing`
+   * ID generation of any sort (e.q., `uuid`, `nanoid`) should exist only in `pixles-api-entity`, `pixles-api-service`
+
+### Dependency Hierarchy
+
+To ease auditing sensitive dependencies/crates, we enforce the following hierarchy of crates (amongst the API crates) (from least to most sensitive):
+
+```plaintext
+pixles-api
+pixles-api-library; pixles-api-media; pixles-api-sync; pixles-api-upload; pixles-api-auth
+pixles-api-service; pixles-api-model; pixles-api-environment
+pixles-api-entity; pixles-api-migration
+
+# Omitted: pixles-api-environment, pixles-api-testing
+```
+
+The crates in each line must only at most depend on the crate in the same line or the next line. Additionally some of the crates have feature flags guarding certain functionality strictly to certain crates (e.g. `auth` feature in `pixles-api-service` for `pixles-api-auth`).
+
+Note: Some crates in `pixles-api` may have been not mentioned here so use some judgement.

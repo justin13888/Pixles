@@ -10,6 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 pixles-api-entity = { path = "../entity" }
+pixles-api-model = { path = "../model" }
 pixles-core = { path = "../../pixles-core-rust" }
 serde = { workspace = true }
 uuid = { workspace = true }
@@ -23,6 +24,9 @@ sea-orm = { workspace = true, features = [
 ] }
 thiserror = { workspace = true }
 
+[features]
+default = []
+auth = []
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

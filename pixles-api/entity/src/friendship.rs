@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "friendships")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = true)]
@@ -22,7 +21,7 @@ pub struct Model {
     pub accepted_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(20))")]
 pub enum FriendshipStatus {
     #[sea_orm(string_value = "pending")]

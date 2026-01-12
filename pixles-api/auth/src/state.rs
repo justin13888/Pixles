@@ -4,7 +4,7 @@ use environment::constants::TOTP_ISSUER;
 use sea_orm::DatabaseConnection;
 
 use crate::config::AuthConfig;
-use crate::service::{AuthService, EmailService, PasswordService, TotpService};
+use crate::service::{AuthService, EmailService, PasskeyService, PasswordService, TotpService};
 use crate::session::SessionManager;
 
 #[derive(Clone)]
@@ -20,6 +20,7 @@ pub struct AppStateInner {
     pub auth_service: AuthService,
     pub password_service: PasswordService,
     pub totp_service: TotpService,
+    pub passkey_service: PasskeyService,
 }
 
 impl AppState {
@@ -28,6 +29,7 @@ impl AppState {
         config: AuthConfig,
         session_manager: SessionManager,
         email_service: crate::service::EmailService,
+        passkey_service: PasskeyService,
     ) -> Self {
         let auth_service = AuthService::new(conn.clone(), config.clone());
         let password_service = PasswordService::new(1000); // 1s minimum
@@ -42,6 +44,7 @@ impl AppState {
                 auth_service,
                 password_service,
                 totp_service,
+                passkey_service,
             }),
         }
     }

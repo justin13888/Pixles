@@ -101,7 +101,20 @@ impl AuthService {
 
         if let Some(user) = user {
             tracing::info!("User found: {}", user.id);
-            let is_valid = verify_password(password.expose_secret(), &user.password_hash)
+
+            match UserService::Query::get_account_verification_status_by_id(&self.conn, &user.id)
+                .await?
+            {
+                Some(true) => {}                                           // User is verified
+                Some(false) => return Err(LoginError::AccountNotVerified), // User is not verified
+                None => return Err(LoginError::Unexpected(eyre::eyre!("User not found").into())), // User not found
+            }
+
+            let password_hash = UserService::Query::get_password_hash_by_id(&self.conn, &user.id)
+                .await?
+                .ok_or(LoginError::Unexpected(eyre::eyre!("User not found").into()))?;
+
+            let is_valid = verify_password(password.expose_secret(), &password_hash)
                 .map_err(|e| LoginError::Unexpected(eyre::eyre!(e).into()))?;
 
             if is_valid {

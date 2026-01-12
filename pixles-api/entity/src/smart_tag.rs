@@ -1,8 +1,7 @@
 use sea_orm::entity::prelude::*;
-use serde::{Deserialize, Serialize};
 
 /// Category of AI-generated smart tags
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(15))")]
 pub enum TagCategory {
     #[sea_orm(string_value = "scene")]
@@ -20,7 +19,7 @@ pub enum TagCategory {
 }
 
 /// Represents an AI-generated smart tag for categorizing assets
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "smart_tags")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = true)]

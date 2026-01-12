@@ -7,6 +7,7 @@ pub mod friendship;
 pub mod memory;
 pub mod owner;
 pub mod owner_member;
+pub mod passkey;
 pub mod person;
 pub mod share_link;
 pub mod smart_tag;

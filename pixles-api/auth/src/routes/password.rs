@@ -1,4 +1,3 @@
-use model::errors::InternalServerError;
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 use service::user as UserService;

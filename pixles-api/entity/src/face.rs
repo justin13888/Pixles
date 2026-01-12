@@ -1,10 +1,9 @@
 use chrono::{DateTime, Utc};
 use nanoid::nanoid;
 use sea_orm::{Set, entity::prelude::*};
-use serde::{Deserialize, Serialize};
 
 /// Represents a detected face within an asset
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "faces")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Char(Some(21))")]

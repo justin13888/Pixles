@@ -1,9 +1,8 @@
 use chrono::{DateTime, Utc};
 use nanoid::nanoid;
 use sea_orm::{Set, entity::prelude::*};
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(10))")]
 pub enum SharePermission {
     #[sea_orm(string_value = "view")]
@@ -12,7 +11,7 @@ pub enum SharePermission {
     Edit,
 }
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "album_shares")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Char(Some(21))")]

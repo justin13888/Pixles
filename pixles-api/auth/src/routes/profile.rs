@@ -1,10 +1,10 @@
+use model::user::User;
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 use secrecy::ExposeSecret;
 use service::user as UserService;
 
 use crate::claims::Claims;
-use crate::errors::ClaimValidationError;
 use crate::models::UserProfile;
 use crate::models::requests::UpdateProfileRequest;
 use crate::models::responses::{UpdateUserProfileResponses, UserProfileResponses};
@@ -33,19 +33,12 @@ pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfi
     let user_id = token.claims.sub;
 
     // Fetch user profile from database
-    let user_model = match UserService::Query::find_user_by_id(&state.conn, &user_id).await {
+    let user = match UserService::Query::find_user_by_id(&state.conn, &user_id).await {
         Ok(Some(user)) => user,
         Ok(None) => return UserProfileResponses::UserNotFound,
         Err(e) => return UserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
     };
-
-    let profile = UserProfile {
-        user_id: user_model.id,
-        username: user_model.username,
-        email: user_model.email,
-        created_at: user_model.created_at.to_rfc3339(),
-        updated_at: user_model.modified_at.to_rfc3339(),
-    };
+    let profile = UserProfile::from(user);
 
     UserProfileResponses::Success(profile)
 }
@@ -88,15 +81,21 @@ pub async fn update_user_profile(
         Err(e) => return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
+    let current_password_hash =
+        match UserService::Query::get_password_hash_by_id(&state.conn, &user_id).await {
+            Ok(Some(hash)) => hash,
+            Ok(None) => return UpdateUserProfileResponses::UserNotFound,
+            Err(e) => {
+                return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into());
+            }
+        };
+
     // Handle password change
     let new_password_hash = if let (Some(current_password), Some(new_password)) = (
         payload.current_password.as_ref(),
         payload.new_password.as_ref(),
     ) {
-        match verify_password(
-            current_password.expose_secret(),
-            &current_user.password_hash,
-        ) {
+        match verify_password(current_password.expose_secret(), &current_password_hash) {
             Ok(true) => match hash_password(new_password.expose_secret()) {
                 Ok(hash) => Some(hash),
                 Err(e) => {
@@ -130,13 +129,8 @@ pub async fn update_user_profile(
         Err(e) => return UpdateUserProfileResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
-    let updated_profile = UserProfile {
-        user_id: updated_user.id,
-        username: updated_user.username,
-        email: updated_user.email,
-        created_at: updated_user.created_at.to_rfc3339(),
-        updated_at: updated_user.modified_at.to_rfc3339(),
-    };
+    let updated_user = User::from(updated_user);
+    let updated_profile = UserProfile::from(updated_user);
 
     UpdateUserProfileResponses::Success(updated_profile)
 }

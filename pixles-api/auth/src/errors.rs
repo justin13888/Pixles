@@ -58,6 +58,7 @@ impl Writer for RegisterError {
 #[derive(Debug)]
 pub enum LoginError {
     InvalidCredentials,
+    AccountNotVerified,
     Unexpected(InternalServerError),
 }
 
@@ -65,6 +66,7 @@ impl std::fmt::Display for LoginError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidCredentials => write!(f, "User not found or invalid credentials"),
+            Self::AccountNotVerified => write!(f, "Account not verified"),
             Self::Unexpected(e) => write!(f, "Internal server error: {}", e),
         }
     }
@@ -76,6 +78,12 @@ impl From<InternalServerError> for LoginError {
     }
 }
 
+impl From<sea_orm::DbErr> for LoginError {
+    fn from(err: sea_orm::DbErr) -> Self {
+        InternalServerError::from(err).into()
+    }
+}
+
 #[async_trait]
 impl Writer for LoginError {
     async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
@@ -83,6 +91,10 @@ impl Writer for LoginError {
             LoginError::InvalidCredentials => {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Text::Plain("Invalid credentials"));
+            }
+            LoginError::AccountNotVerified => {
+                res.status_code(StatusCode::FORBIDDEN);
+                res.render(Text::Plain("Account not verified"));
             }
             LoginError::Unexpected(e) => {
                 e.write(req, depot, res).await;
@@ -159,6 +171,53 @@ pub enum TotpVerificationError {
     NotEnabled,
     #[error("Invalid code")]
     InvalidCode,
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// Passkey registration error
+#[derive(Debug, Error)]
+pub enum PasskeyRegistrationError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("Passkey already exists")]
+    AlreadyExists,
+    #[error("Registration failed: {0}")]
+    RegistrationFailed(String),
+    #[error("Invalid challenge")]
+    InvalidChallenge,
+    #[error("Limit reached: {0}")]
+    LimitReached(String),
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// Passkey authentication error
+#[derive(Debug, Error)]
+pub enum PasskeyAuthenticationError {
+    #[error("User not found")]
+    UserNotFound, // Used for start_authentication
+    #[error("Constraint violation: {0}")]
+    ConstraintViolation(String), // e.g. user verification failed
+    #[error("Invalid credential")]
+    InvalidCredential, // Used for finish_authentication
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// Passkey management error
+#[derive(Debug, Error)]
+pub enum PasskeyManagementError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("Passkey not found")]
+    NotFound,
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
     #[error("Unexpected error: {0}")]
     Unexpected(#[from] eyre::Report),
 }

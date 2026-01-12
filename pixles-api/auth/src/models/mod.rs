@@ -2,6 +2,7 @@ pub mod errors;
 pub mod requests;
 pub mod responses;
 
+use model::user::User;
 pub use requests::*;
 pub use responses::*; // Assuming we want responses exported too
 
@@ -59,11 +60,43 @@ pub struct ResetPasswordPayload {
     pub new_password: String,
 }
 
+/// User profile information
+///
+/// Typically private data, not to be retrieved by any user
 #[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct UserProfile {
     pub user_id: String,
     pub username: String,
     pub email: String,
+    /// URL to profile image
+    pub profile_image_url: Option<String>,
+    pub is_admin: bool,
     pub created_at: String,
     pub updated_at: String,
+}
+
+impl From<User> for UserProfile {
+    fn from(user: User) -> Self {
+        let User {
+            id,
+            username,
+            name: _,
+            email,
+            profile_image_url,
+            needs_onboarding: _,
+            is_admin,
+            created_at,
+            modified_at,
+            deleted_at: _,
+        } = user;
+        Self {
+            user_id: id,
+            username,
+            email,
+            profile_image_url,
+            is_admin,
+            created_at: created_at.to_rfc3339(),
+            updated_at: modified_at.to_rfc3339(),
+        }
+    }
 }

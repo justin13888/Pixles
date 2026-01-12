@@ -843,11 +843,59 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // ========================================
+        // 13. Create Passkeys Table
+        // ========================================
+        manager
+            .create_table(
+                Table::create()
+                    .table(Passkeys::Table)
+                    .if_not_exists()
+                    .col(char_len(Passkeys::Id, 21).primary_key())
+                    .col(char_len(Passkeys::UserId, 21))
+                    .col(binary(Passkeys::CredId))
+                    .col(binary(Passkeys::PublicKey))
+                    .col(big_integer(Passkeys::Counter))
+                    .col(string(Passkeys::Name))
+                    .col(
+                        timestamp_with_time_zone(Passkeys::CreatedAt)
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(timestamp_with_time_zone_null(Passkeys::LastUsedAt))
+                    .col(uuid_null(Passkeys::Aaguid))
+                    .col(boolean(Passkeys::BackupEligible).default(false))
+                    .col(boolean(Passkeys::BackupState).default(false))
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_passkeys_user_id")
+                            .from(Passkeys::Table, Passkeys::UserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .if_not_exists()
+                    .name("idx_passkeys_user_id")
+                    .table(Passkeys::Table)
+                    .col(Passkeys::UserId)
+                    .index_type(IndexType::Hash)
+                    .to_owned(),
+            )
+            .await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Drop tables in reverse order of creation (respecting foreign keys)
+        manager
+            .drop_table(Table::drop().table(Passkeys::Table).to_owned())
+            .await?;
         manager
             .drop_table(Table::drop().table(Memories::Table).to_owned())
             .await?;
@@ -1066,4 +1114,20 @@ enum Memories {
     IsSeen,
     IsHidden,
     CreatedAt,
+}
+
+#[derive(DeriveIden)]
+enum Passkeys {
+    Table,
+    Id,
+    UserId,
+    CredId,
+    PublicKey,
+    Counter,
+    Name,
+    CreatedAt,
+    LastUsedAt,
+    Aaguid,
+    BackupEligible,
+    BackupState,
 }

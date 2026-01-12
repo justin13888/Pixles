@@ -116,4 +116,33 @@ impl SessionManager {
     pub async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError> {
         self.storage.clear_mfa_attempts(mfa_token_jti).await
     }
+
+    // Ephemeral data (Passkeys, etc)
+    pub async fn save_temp_data<T: Serialize>(
+        &self,
+        key: &str,
+        value: &T,
+        ttl: Duration,
+    ) -> Result<(), InternalServerError> {
+        let json = serde_json::to_string(value).map_err(InternalServerError::from)?;
+        self.storage.save_temp_data(key, json, ttl).await
+    }
+
+    pub async fn get_temp_data<T: for<'de> Deserialize<'de>>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>, InternalServerError> {
+        let data = self.storage.get_temp_data(key).await?;
+        match data {
+            Some(json) => {
+                let value = serde_json::from_str(&json).map_err(InternalServerError::from)?;
+                Ok(Some(value))
+            }
+            None => Ok(None),
+        }
+    }
+
+    pub async fn delete_temp_data(&self, key: &str) -> Result<(), InternalServerError> {
+        self.storage.delete_temp_data(key).await
+    }
 }

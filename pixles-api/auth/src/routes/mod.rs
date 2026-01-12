@@ -1,4 +1,5 @@
 mod auth;
+mod passkey;
 mod password;
 mod profile;
 mod totp;
@@ -37,6 +38,22 @@ pub(super) fn get_router(state: AppState) -> Router {
                 .push(Router::with_path("enroll").post(totp::totp_enroll))
                 .push(Router::with_path("verify-enrollment").post(totp::totp_verify_enrollment))
                 .push(Router::with_path("disable").post(totp::totp_disable)),
+        )
+        // Passkey routes
+        .push(
+            Router::with_path("passkey")
+                .push(
+                    Router::with_path("register")
+                        .push(Router::with_path("start").post(passkey::start_registration))
+                        .push(Router::with_path("finish").post(passkey::finish_registration)),
+                )
+                .push(
+                    Router::with_path("login")
+                        .push(Router::with_path("start").post(passkey::start_authentication))
+                        .push(Router::with_path("finish").post(passkey::finish_authentication)),
+                )
+                .push(Router::with_path("credentials").get(passkey::list_credentials))
+                .push(Router::with_path("credentials/:cred_id").delete(passkey::delete_credential)),
         )
 }
 

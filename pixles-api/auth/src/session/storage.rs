@@ -26,7 +26,7 @@ pub trait SessionStorage: Send + Sync {
         session_data: String,
         ttl: Duration,
     ) -> Result<(), InternalServerError>;
-    
+
     /// Retrieves session data for the given session ID.
     ///
     /// # Arguments
@@ -36,7 +36,7 @@ pub trait SessionStorage: Send + Sync {
     /// Returns `Ok(Some(session_data))` if the session exists, `Ok(None)` if not found,
     /// or an `InternalServerError` if the operation fails.
     async fn get_session(&self, sid: &str) -> Result<Option<String>, InternalServerError>;
-    
+
     /// Deletes a session from storage.
     ///
     /// # Arguments
@@ -45,7 +45,7 @@ pub trait SessionStorage: Send + Sync {
     /// # Returns
     /// Returns `Ok(())` on success, or an `InternalServerError` if the operation fails.
     async fn delete_session(&self, sid: &str) -> Result<(), InternalServerError>;
-    
+
     /// Associates a session with a user, allowing tracking of all active sessions for a user.
     ///
     /// # Arguments
@@ -61,7 +61,7 @@ pub trait SessionStorage: Send + Sync {
         sid: &str,
         ttl: Duration,
     ) -> Result<(), InternalServerError>;
-    
+
     /// Retrieves all active session IDs for a given user.
     ///
     /// # Arguments
@@ -71,7 +71,7 @@ pub trait SessionStorage: Send + Sync {
     /// Returns `Ok(Vec<session_ids>)` with all active session IDs for the user,
     /// or an `InternalServerError` if the operation fails.
     async fn get_user_sessions(&self, user_id: &str) -> Result<Vec<String>, InternalServerError>;
-    
+
     /// Deletes the user sessions key, effectively removing the association between a user and their sessions.
     ///
     /// Note: This does not delete the individual sessions themselves, only the tracking key.
@@ -93,7 +93,7 @@ pub trait SessionStorage: Send + Sync {
     /// Returns `Ok(attempt_count)` with the new attempt count after incrementing,
     /// or an `InternalServerError` if the operation fails.
     async fn increment_mfa_attempt(&self, mfa_token_jti: &str) -> Result<i32, InternalServerError>;
-    
+
     /// Retrieves the current MFA attempt count for a given MFA token.
     ///
     /// # Arguments
@@ -103,7 +103,7 @@ pub trait SessionStorage: Send + Sync {
     /// Returns `Ok(attempt_count)` with the current attempt count (0 if no attempts recorded),
     /// or an `InternalServerError` if the operation fails.
     async fn get_mfa_attempts(&self, mfa_token_jti: &str) -> Result<i32, InternalServerError>;
-    
+
     /// Clears the MFA attempt counter for a given MFA token.
     ///
     /// This should be called after successful MFA verification.
@@ -114,6 +114,18 @@ pub trait SessionStorage: Send + Sync {
     /// # Returns
     /// Returns `Ok(())` on success, or an `InternalServerError` if the operation fails.
     async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError>;
+
+    // Ephemeral/Temporary data storage (for flows like Passkey)
+    async fn save_temp_data(
+        &self,
+        key: &str,
+        value: String,
+        ttl: Duration,
+    ) -> Result<(), InternalServerError>;
+
+    async fn get_temp_data(&self, key: &str) -> Result<Option<String>, InternalServerError>;
+
+    async fn delete_temp_data(&self, key: &str) -> Result<(), InternalServerError>;
 }
 
 #[derive(Clone)]
@@ -275,12 +287,60 @@ impl SessionStorage for RedisSessionStorage {
             .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
         Ok(())
     }
+
+    async fn save_temp_data(
+        &self,
+        key: &str,
+        value: String,
+        ttl: Duration,
+    ) -> Result<(), InternalServerError> {
+        let mut con = self
+            .client
+            .get()
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        let redis_key = format!("pixles:temp:{}", key);
+        let _: () = con
+            .set_ex(&redis_key, value, ttl.as_secs())
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        Ok(())
+    }
+
+    async fn get_temp_data(&self, key: &str) -> Result<Option<String>, InternalServerError> {
+        let mut con = self
+            .client
+            .get()
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        let redis_key = format!("pixles:temp:{}", key);
+        let data: Option<String> = con
+            .get(&redis_key)
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        Ok(data)
+    }
+
+    async fn delete_temp_data(&self, key: &str) -> Result<(), InternalServerError> {
+        let mut con = self
+            .client
+            .get()
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        let redis_key = format!("pixles:temp:{}", key);
+        let _: () = con
+            .del(&redis_key)
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        Ok(())
+    }
 }
 
 pub struct InMemorySessionStorage {
     sessions: Arc<RwLock<HashMap<String, String>>>,
     user_sessions: Arc<RwLock<HashMap<String, Vec<String>>>>,
     mfa_attempts: Arc<RwLock<HashMap<String, i32>>>,
+    temp_data: Arc<RwLock<HashMap<String, String>>>,
 }
 
 impl Default for InMemorySessionStorage {
@@ -296,6 +356,7 @@ impl InMemorySessionStorage {
             sessions: Arc::new(RwLock::new(HashMap::new())),
             user_sessions: Arc::new(RwLock::new(HashMap::new())),
             mfa_attempts: Arc::new(RwLock::new(HashMap::new())),
+            temp_data: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
@@ -371,6 +432,25 @@ impl SessionStorage for InMemorySessionStorage {
 
     async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError> {
         self.mfa_attempts.write().await.remove(mfa_token_jti);
+        Ok(())
+    }
+
+    async fn save_temp_data(
+        &self,
+        key: &str,
+        value: String,
+        _ttl: Duration,
+    ) -> Result<(), InternalServerError> {
+        self.temp_data.write().await.insert(key.to_string(), value);
+        Ok(())
+    }
+
+    async fn get_temp_data(&self, key: &str) -> Result<Option<String>, InternalServerError> {
+        Ok(self.temp_data.read().await.get(key).cloned())
+    }
+
+    async fn delete_temp_data(&self, key: &str) -> Result<(), InternalServerError> {
+        self.temp_data.write().await.remove(key);
         Ok(())
     }
 }

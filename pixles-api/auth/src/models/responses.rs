@@ -6,6 +6,7 @@ use crate::errors::TotpVerificationError;
 use crate::errors::{ClaimValidationError, LoginError, RegisterError};
 use derive_more::From;
 use model::errors::InternalServerError;
+use model::passkey::Passkey;
 use salvo::http::StatusCode;
 use salvo::oapi::{EndpointOutRegister, ToSchema};
 use salvo::prelude::*;
@@ -104,6 +105,7 @@ pub enum LoginResponses {
     Success(TokenResponse),
     BadRequest,
     InvalidCredentials,
+    AccountNotVerified,
     InternalServerError(InternalServerError),
 }
 
@@ -120,6 +122,7 @@ impl From<LoginError> for LoginResponses {
     fn from(e: LoginError) -> Self {
         match e {
             LoginError::InvalidCredentials => Self::InvalidCredentials,
+            LoginError::AccountNotVerified => Self::AccountNotVerified,
             LoginError::Unexpected(e) => Self::InternalServerError(e),
         }
     }
@@ -140,6 +143,10 @@ impl Writer for LoginResponses {
             Self::InvalidCredentials => {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Json(ApiError::new("Invalid credentials")));
+            }
+            Self::AccountNotVerified => {
+                res.status_code(StatusCode::FORBIDDEN);
+                res.render(Json(ApiError::new("Account not verified")));
             }
             Self::InternalServerError(e) => {
                 e.write(_req, _depot, res).await;
@@ -857,6 +864,423 @@ impl EndpointOutRegister for TotpDisableResponses {
         operation.responses.insert(
             String::from("401"),
             salvo::oapi::Response::new("Invalid or expired MFA token"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+// ========================================
+// Passkey
+// ========================================
+
+use crate::errors::{PasskeyAuthenticationError, PasskeyManagementError, PasskeyRegistrationError};
+// use webauthn_rs::prelude::{CreationChallengeActions, RequestChallengeActions};
+
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
+pub struct PasskeyModel {
+    /// Passkey ID
+    pub id: String,
+    /// Passkey name
+    pub name: String,
+    /// Creation timestamp (RFC 3339)
+    pub created_at: String,
+    /// Last used timestamp (RFC 3339)
+    pub last_used_at: Option<String>,
+}
+
+impl From<Passkey> for PasskeyModel {
+    fn from(passkey: Passkey) -> Self {
+        Self {
+            id: passkey.id,
+            name: passkey.name,
+            created_at: passkey.created_at.to_rfc3339(),
+            last_used_at: passkey.last_used_at.map(|t| t.to_rfc3339()),
+        }
+    }
+}
+
+#[derive(From, Debug)]
+pub enum PasskeyRegistrationStartResponses {
+    Success(serde_json::Value),
+    UserNotFound,
+    AlreadyExists,
+    RegistrationFailed(String),
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<serde_json::Value, PasskeyRegistrationError>>
+    for PasskeyRegistrationStartResponses
+{
+    fn from(result: Result<serde_json::Value, PasskeyRegistrationError>) -> Self {
+        match result {
+            Ok(ccr) => Self::Success(ccr),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<PasskeyRegistrationError> for PasskeyRegistrationStartResponses {
+    fn from(e: PasskeyRegistrationError) -> Self {
+        match e {
+            PasskeyRegistrationError::UserNotFound => Self::UserNotFound,
+            PasskeyRegistrationError::AlreadyExists => Self::AlreadyExists,
+            PasskeyRegistrationError::RegistrationFailed(msg) => Self::RegistrationFailed(msg),
+            PasskeyRegistrationError::LimitReached(msg) => Self::RegistrationFailed(msg),
+            PasskeyRegistrationError::InvalidChallenge => {
+                Self::InternalServerError(eyre::eyre!("Invalid challenge state").into())
+            }
+            PasskeyRegistrationError::Db(e) => Self::InternalServerError(e.into()),
+            PasskeyRegistrationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for PasskeyRegistrationStartResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(ccr) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(ccr));
+            }
+            Self::UserNotFound => {
+                res.status_code(StatusCode::NOT_FOUND);
+                res.render(Json(ApiError::new("User not found")));
+            }
+            Self::AlreadyExists => {
+                res.status_code(StatusCode::CONFLICT);
+                res.render(Json(ApiError::new("Passkey already exists")));
+            }
+            Self::RegistrationFailed(msg) => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new(msg)));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for PasskeyRegistrationStartResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Registration started").add_content(
+                "application/json",
+                // salvo::oapi::Content::new(CreationChallengeActions::to_schema(components)), // Webauthn types might not impl ToSchema?
+                salvo::oapi::Content::new(salvo::oapi::Object::new()),
+            ),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum PasskeyRegistrationFinishResponses {
+    Success,
+    RegistrationFailed(String),
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<(), PasskeyRegistrationError>> for PasskeyRegistrationFinishResponses {
+    fn from(result: Result<(), PasskeyRegistrationError>) -> Self {
+        match result {
+            Ok(()) => Self::Success,
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<PasskeyRegistrationError> for PasskeyRegistrationFinishResponses {
+    fn from(e: PasskeyRegistrationError) -> Self {
+        match e {
+            PasskeyRegistrationError::UserNotFound => {
+                Self::RegistrationFailed("User not found".into())
+            }
+            PasskeyRegistrationError::AlreadyExists => {
+                Self::RegistrationFailed("Passkey already exists".into())
+            }
+            PasskeyRegistrationError::RegistrationFailed(msg) => Self::RegistrationFailed(msg),
+            PasskeyRegistrationError::LimitReached(msg) => Self::RegistrationFailed(msg),
+            PasskeyRegistrationError::InvalidChallenge => {
+                Self::RegistrationFailed("Invalid challenge".into())
+            }
+            PasskeyRegistrationError::Db(e) => Self::InternalServerError(e.into()),
+            PasskeyRegistrationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for PasskeyRegistrationFinishResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("Passkey registered successfully")));
+            }
+            Self::RegistrationFailed(msg) => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new(msg)));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for PasskeyRegistrationFinishResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Passkey registered"),
+        );
+        operation.responses.insert(
+            String::from("400"),
+            salvo::oapi::Response::new("Registration failed"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+// Authentication
+#[derive(From, Debug)]
+pub enum PasskeyAuthStartResponses {
+    Success(serde_json::Value),
+    UserNotFound,
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<(serde_json::Value, Option<String>), PasskeyAuthenticationError>>
+    for PasskeyAuthStartResponses
+{
+    fn from(
+        result: Result<(serde_json::Value, Option<String>), PasskeyAuthenticationError>,
+    ) -> Self {
+        match result {
+            Ok((rcr, _)) => Self::Success(rcr),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<PasskeyAuthenticationError> for PasskeyAuthStartResponses {
+    fn from(e: PasskeyAuthenticationError) -> Self {
+        match e {
+            PasskeyAuthenticationError::UserNotFound => Self::UserNotFound,
+            PasskeyAuthenticationError::ConstraintViolation(msg) => {
+                Self::InternalServerError(eyre::eyre!(msg).into())
+            }
+            PasskeyAuthenticationError::InvalidCredential => {
+                Self::InternalServerError(eyre::eyre!("Invalid credential").into())
+            }
+            PasskeyAuthenticationError::Db(e) => Self::InternalServerError(e.into()),
+            PasskeyAuthenticationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for PasskeyAuthStartResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(rcr) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(rcr));
+            }
+            Self::UserNotFound => {
+                res.status_code(StatusCode::NOT_FOUND);
+                res.render(Json(ApiError::new("User not found")));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for PasskeyAuthStartResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Authentication started"),
+        );
+        operation.responses.insert(
+            String::from("404"),
+            salvo::oapi::Response::new("User not found"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum PasskeyAuthFinishResponses {
+    Success(TokenResponse),
+    InvalidCredential,
+    InternalServerError(InternalServerError),
+}
+
+impl From<PasskeyAuthenticationError> for PasskeyAuthFinishResponses {
+    fn from(e: PasskeyAuthenticationError) -> Self {
+        match e {
+            PasskeyAuthenticationError::UserNotFound => Self::InvalidCredential,
+            PasskeyAuthenticationError::ConstraintViolation(_) => Self::InvalidCredential,
+            PasskeyAuthenticationError::InvalidCredential => Self::InvalidCredential,
+            PasskeyAuthenticationError::Db(e) => Self::InternalServerError(e.into()),
+            PasskeyAuthenticationError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for PasskeyAuthFinishResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(tokens) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(tokens));
+            }
+            Self::InvalidCredential => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new("Invalid credential")));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for PasskeyAuthFinishResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Authentication successful").add_content(
+                "application/json",
+                salvo::oapi::Content::new(TokenResponse::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Invalid credential"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum PasskeyListResponses {
+    Success(Vec<PasskeyModel>),
+    NotFound,
+    InternalServerError(InternalServerError),
+}
+
+impl From<PasskeyManagementError> for PasskeyListResponses {
+    fn from(e: PasskeyManagementError) -> Self {
+        match e {
+            PasskeyManagementError::UserNotFound => Self::NotFound,
+            PasskeyManagementError::NotFound => Self::Success(vec![]),
+            PasskeyManagementError::Db(e) => Self::InternalServerError(e.into()),
+            PasskeyManagementError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for PasskeyListResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(models) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(models));
+            }
+            Self::NotFound => {
+                res.status_code(StatusCode::NOT_FOUND);
+                res.render(Json(ApiError::new("User not found")));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for PasskeyListResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("List passkeys").add_content(
+                "application/json",
+                salvo::oapi::Content::new(Vec::<PasskeyModel>::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum PasskeyManageResponses {
+    Success,
+    NotFound,
+    InternalServerError(InternalServerError),
+}
+
+impl From<Result<(), PasskeyManagementError>> for PasskeyManageResponses {
+    fn from(result: Result<(), PasskeyManagementError>) -> Self {
+        match result {
+            Ok(()) => Self::Success,
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl From<PasskeyManagementError> for PasskeyManageResponses {
+    fn from(e: PasskeyManagementError) -> Self {
+        match e {
+            PasskeyManagementError::UserNotFound => Self::NotFound,
+            PasskeyManagementError::NotFound => Self::NotFound,
+            PasskeyManagementError::Db(e) => Self::InternalServerError(e.into()),
+            PasskeyManagementError::Unexpected(e) => Self::InternalServerError(e.into()),
+        }
+    }
+}
+
+#[async_trait]
+impl Writer for PasskeyManageResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(ApiError::new("Success")));
+            }
+            Self::NotFound => {
+                res.status_code(StatusCode::NOT_FOUND);
+                res.render(Json(ApiError::new("Passkey or User not found")));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for PasskeyManageResponses {
+    fn register(_components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Operation successful"),
+        );
+        operation.responses.insert(
+            String::from("404"),
+            salvo::oapi::Response::new("Resource not found"),
         );
         operation.responses.insert(
             String::from("500"),

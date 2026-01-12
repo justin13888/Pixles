@@ -1,10 +1,9 @@
 use chrono::{DateTime, Utc};
 use nanoid::nanoid;
 use sea_orm::{Set, entity::prelude::*};
-use serde::{Deserialize, Serialize};
 
 // TODO: Check
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Char(Some(21))")]
@@ -57,10 +56,13 @@ pub struct Model {
 }
 
 // TODO: Add in related columns:
-// - password_reset_token, password_reset_expires_at
-// - Login activity: last_login_at, failed_login_attempts
-// - profile_image_url
 // - verification_token
+
+impl Model {
+    pub fn profile_image_url(&self) -> Option<String> {
+        self.profile_image_url.clone() // TODO: Need to process this properly to ensure access for public
+    }
+}
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {

@@ -1,10 +1,9 @@
 use chrono::{DateTime, Utc};
 use nanoid::nanoid;
 use sea_orm::{Set, entity::prelude::*};
-use serde::{Deserialize, Serialize};
 
 // TODO: Check
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "albums")]
 pub struct Model {
     #[sea_orm(primary_key)]

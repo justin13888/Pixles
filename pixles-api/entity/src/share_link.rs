@@ -1,10 +1,9 @@
 use chrono::{DateTime, Utc};
 use nanoid::nanoid;
 use sea_orm::{Set, entity::prelude::*};
-use serde::{Deserialize, Serialize};
 
 /// Type of content being shared via a public link
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(15))")]
 pub enum ShareLinkType {
     #[sea_orm(string_value = "album")]
@@ -16,7 +15,7 @@ pub enum ShareLinkType {
 }
 
 /// Represents a public share link for sharing content externally
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "share_links")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Char(Some(21))")]

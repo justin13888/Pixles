@@ -1,4 +1,3 @@
-use crate::error::UploadError;
 use crate::models::session::{UploadSession, UploadSessionStatus};
 use model::errors::InternalServerError;
 use salvo::http::StatusCode;

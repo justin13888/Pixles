@@ -1,4 +1,4 @@
-use crate::claims::{Claims, Scope};
+use crate::claims::Claims;
 use jsonwebtoken::EncodingKey;
 use model::errors::InternalServerError;
 

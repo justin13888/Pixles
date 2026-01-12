@@ -1,4 +1,3 @@
-use eyre::Context;
 use sea_orm::DatabaseConnection;
 
 use crate::{
@@ -27,21 +26,33 @@ impl TotpService {
     /// Throws error if user is already enrolled
     pub async fn enroll(&self, user_id: &str) -> Result<String, TotpEnrollError> {
         // Check if TOTP is already enabled
-        let user = match service::user::Query::find_user_by_id(&self.conn, user_id).await {
-            Ok(Some(u)) => u,
-            Ok(None) => {
-                return Err(TotpEnrollError::UserNotFound);
-            }
+        match service::user::Query::get_totp_secret_by_id(&self.conn, user_id).await {
+            Ok(Some(Some(_))) => return Err(TotpEnrollError::AlreadyEnabled),
+            Ok(Some(None)) => {} // Good. User exists but not enrolled
+            Ok(None) => return Err(TotpEnrollError::UserNotFound),
             Err(e) => return Err(TotpEnrollError::Db(e)),
-        };
-
-        if user.totp_secret.is_some() {
-            return Err(TotpEnrollError::AlreadyEnabled);
         }
+        // let user = match service::user::Query::find_user_by_id(&self.conn, user_id).await {
+        //     Ok(Some(u)) => u,
+        //     Ok(None) => {
+        //         return Err(TotpEnrollError::UserNotFound);
+        //     }
+        //     Err(e) => return Err(TotpEnrollError::Db(e)),
+        // };
+
+        // if user.totp_secret.is_some() {
+        //     return Err(TotpEnrollError::AlreadyEnabled);
+        // }
 
         // Generate TOTP secret
         let secret = generate_secret();
-        let provisioning_uri = match self.get_provisioning_uri(&secret, &user.email) {
+        // Fetch user's email
+        let email = match service::user::Query::get_email_by_id(&self.conn, user_id).await {
+            Ok(Some(email)) => email,
+            Ok(None) => return Err(TotpEnrollError::UserNotFound),
+            Err(e) => return Err(TotpEnrollError::Db(e)),
+        };
+        let provisioning_uri = match self.get_provisioning_uri(&secret, &email) {
             Ok(uri) => uri,
             Err(e) => {
                 return Err(e.into());
@@ -59,19 +70,12 @@ impl TotpService {
         &self,
         user_id: &str,
     ) -> Result<String, TotpVerificationError> {
-        let user = match service::user::Query::find_user_by_id(&self.conn, user_id).await {
-            Ok(Some(u)) => u,
-            Ok(None) => {
-                return Err(TotpVerificationError::UserNotFound);
-            }
-            Err(e) => return Err(TotpVerificationError::Unexpected(e.into())),
-        };
-
-        if user.totp_secret.is_none() {
-            return Err(TotpVerificationError::NotEnabled);
+        match service::user::Query::get_totp_secret_by_id(&self.conn, user_id).await {
+            Ok(Some(Some(secret))) => Ok(secret),
+            Ok(Some(None)) => Err(TotpVerificationError::NotEnabled),
+            Ok(None) => Err(TotpVerificationError::UserNotFound),
+            Err(e) => Err(TotpVerificationError::Unexpected(e.into())),
         }
-
-        Ok(user.totp_secret.unwrap())
     }
 
     /// Verify TOTP token for user
@@ -126,23 +130,6 @@ impl TotpService {
         }
 
         Ok(())
-    }
-
-    /// Returns whether TOTP secret is verified for user
-    pub async fn is_user_totp_verified(&self, user_id: &str) -> eyre::Result<bool> {
-        let user = match service::user::Query::find_user_by_id(&self.conn, user_id).await {
-            Ok(Some(u)) => u,
-            Ok(None) => {
-                return Err(eyre::eyre!("User not found"));
-            }
-            Err(e) => return Err(e.into()),
-        };
-
-        if user.totp_secret.is_none() {
-            return Ok(false);
-        }
-
-        Ok(true)
     }
 
     /// Clear TOTP secret for user

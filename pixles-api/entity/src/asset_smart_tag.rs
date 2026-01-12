@@ -1,9 +1,8 @@
 use chrono::{DateTime, Utc};
 use sea_orm::entity::prelude::*;
-use serde::{Deserialize, Serialize};
 
 /// Junction table linking assets to smart tags (many-to-many)
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "asset_smart_tags")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = true)]

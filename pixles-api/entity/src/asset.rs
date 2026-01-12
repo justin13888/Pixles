@@ -2,10 +2,9 @@ use chrono::{DateTime, FixedOffset, Utc};
 use nanoid::nanoid;
 use sea_orm::Set;
 use sea_orm::entity::prelude::*;
-use serde::{Deserialize, Serialize};
 
 // TODO: Check
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "assets")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -81,7 +80,7 @@ pub struct Model {
     pub upload_user_id: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(rs_type = "String", db_type = "String(StringLen::N(2))")]
 pub enum AssetType {
     #[sea_orm(string_value = "ph")]

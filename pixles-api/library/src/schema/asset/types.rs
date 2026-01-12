@@ -1,7 +1,7 @@
 use async_graphql::*;
 use chrono::{DateTime, Utc};
-use entity::asset::AssetType as EntityAssetType;
 use entity::asset::Model as AssetModel;
+use model::asset::AssetType as ModelAssetType;
 
 use crate::schema::{Tag, user::User};
 
@@ -17,13 +17,13 @@ pub enum AssetType {
     Sidecar,
 }
 
-impl From<EntityAssetType> for AssetType {
-    fn from(t: EntityAssetType) -> Self {
+impl From<ModelAssetType> for AssetType {
+    fn from(t: ModelAssetType) -> Self {
         match t {
-            EntityAssetType::Photo => AssetType::Photo,
-            EntityAssetType::Video => AssetType::Video,
-            EntityAssetType::MotionPhoto => AssetType::MotionPhoto,
-            EntityAssetType::Sidecar => AssetType::Sidecar,
+            ModelAssetType::Photo => AssetType::Photo,
+            ModelAssetType::Video => AssetType::Video,
+            ModelAssetType::MotionPhoto => AssetType::MotionPhoto,
+            ModelAssetType::Sidecar => AssetType::Sidecar,
         }
     }
 }
@@ -92,7 +92,8 @@ impl AssetMetadata {
 
     #[graphql(name = "type")]
     async fn asset_type(&self) -> AssetType {
-        self.model.asset_type.clone().into()
+        // self.model.asset_type.into()
+        todo!("Implement asset type handling")
     }
 
     async fn file_name(&self) -> &String {
