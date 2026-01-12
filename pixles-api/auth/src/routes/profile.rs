@@ -4,13 +4,11 @@ use salvo::prelude::*;
 use secrecy::ExposeSecret;
 use service::user as UserService;
 
-use crate::claims::Claims;
 use crate::models::UserProfile;
 use crate::models::requests::UpdateProfileRequest;
 use crate::models::responses::{UpdateUserProfileResponses, UserProfileResponses};
 use crate::state::AppState;
 use crate::utils::hash::{hash_password, verify_password};
-use crate::utils::headers::get_token_from_headers;
 
 /// Get user profile
 #[endpoint(operation_id = "get_user_profile", tags("auth"), security(("bearer" = [])))]
@@ -19,18 +17,13 @@ pub async fn get_user_profile(req: &mut Request, depot: &mut Depot) -> UserProfi
     let headers = req.headers();
 
     // Authorize user
-    let token_string = match get_token_from_headers(headers) {
-        Ok(token_string) => token_string,
-        Err(e) => return UserProfileResponses::Unauthorized(e),
-    };
-    let token = match Claims::decode(
-        token_string.expose_secret(),
+    let user_id = match crate::utils::headers::validate_user_from_headers(
+        headers,
         &state.config.jwt_eddsa_decoding_key,
     ) {
-        Ok(token) => token,
-        Err(e) => return UserProfileResponses::Unauthorized(e.into()),
+        Ok(user_id) => user_id,
+        Err(e) => return UserProfileResponses::Unauthorized(e),
     };
-    let user_id = token.claims.sub;
 
     // Fetch user profile from database
     let user = match UserService::Query::find_user_by_id(&state.conn, &user_id).await {
@@ -54,26 +47,19 @@ pub async fn update_user_profile(
     let headers = req.headers();
 
     // Authorize user
-    let token_string = match get_token_from_headers(headers) {
-        Ok(token_string) => token_string,
-        Err(e) => return UpdateUserProfileResponses::Unauthorized(e),
-    };
-    let token = match Claims::decode(
-        token_string.expose_secret(),
+    let user_id = match crate::utils::headers::validate_user_from_headers(
+        headers,
         &state.config.jwt_eddsa_decoding_key,
     ) {
-        Ok(token) => token,
-        Err(e) => {
-            return UpdateUserProfileResponses::Unauthorized(e.into());
-        }
+        Ok(user_id) => user_id,
+        Err(e) => return UpdateUserProfileResponses::Unauthorized(e),
     };
-    let user_id = token.claims.sub;
 
     // Parse request body
     let payload = body.into_inner();
 
     // Fetch current user to check password if needed
-    let current_user = match UserService::Query::find_user_by_id(&state.conn, &user_id.clone())
+    let _current_user = match UserService::Query::find_user_by_id(&state.conn, &user_id.clone())
         .await
     {
         Ok(Some(user)) => user,

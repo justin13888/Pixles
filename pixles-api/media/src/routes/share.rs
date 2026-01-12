@@ -4,6 +4,9 @@ use salvo::oapi::extract::PathParam;
 use salvo::prelude::*;
 use serde::Serialize;
 
+// TODO: Remember to delete share links if underlying asset is deleted
+// Whether asset is deleted or unshared, just give a generic 404 indicating asset not found.
+
 /// Shared content response
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SharedContentResponse {

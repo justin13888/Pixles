@@ -4,7 +4,6 @@ use secrecy::{ExposeSecret, SecretString};
 
 use crate::errors::ClaimValidationError;
 
-// TODO: Make this private
 /// Get the token from the Authorization header
 pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, ClaimValidationError> {
     let auth_header = headers
@@ -22,21 +21,6 @@ pub fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, Claim
     Ok(SecretString::from(&auth_header[7..]))
 }
 
-// TODO: Remove this vv and prefer one that verifies other parts of the claim (e.g. type)
-/// Extract and decode user_id from token in Authorization header
-pub fn get_user_id_from_headers(
-    headers: &HeaderMap,
-    decoding_key: &jsonwebtoken::DecodingKey,
-) -> Result<String, String> {
-    let token_secret =
-        get_token_from_headers(headers).map_err(|e| format!("Authentication required: {}", e))?;
-
-    let token_data = Claims::decode(token_secret.expose_secret(), decoding_key)
-        .map_err(|e| format!("Invalid token: {}", e))?;
-
-    Ok(token_data.claims.sub)
-}
-
 /// Validates access token from headers
 ///
 /// Returns user ID if valid
@@ -49,7 +33,7 @@ pub fn validate_user_from_headers(
     let claims = token_data.claims;
 
     // Validate token
-    claims.validate(&[])?;
+    claims.validate_access_token()?;
 
     // Note: We do not need a particular scope for access tokens
     Ok(claims.sub) // Return user ID

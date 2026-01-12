@@ -140,16 +140,22 @@ impl Claims {
         Ok(())
     }
 
-    /// Returns true if the token is valid
+    /// Returns whether token is valid
     ///
-    /// Does NOT validate scopes
+    /// Does not check for scopes.
+    /// Does not describe the error if any.
     pub fn is_valid(&self) -> bool {
         self.validate(&[]).is_ok()
     }
 
-    /// Returns true if the token is a valid refresh token
-    pub fn is_valid_refresh_token(&self) -> bool {
-        self.is_valid() && self.has_scope(&Scope::RefreshToken)
+    /// Returns nothing. Throws error if invalid access token.
+    pub fn validate_access_token(&self) -> Result<(), ClaimValidationError> {
+        self.validate(&[Scope::AccessToken])
+    }
+
+    /// Returns nothing. Throws error if invalid refresh token.
+    pub fn validate_refresh_token(&self) -> Result<(), ClaimValidationError> {
+        self.validate(&[Scope::RefreshToken])
     }
 
     /// Decode from a token string

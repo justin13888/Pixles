@@ -11,7 +11,7 @@ use crate::models::responses::{
     TotpVerifyEnrollmentResponses, TotpVerifyLoginResponses,
 };
 use crate::state::AppState;
-use crate::utils::headers::get_token_from_headers;
+
 use secrecy::ExposeSecret;
 
 /// Enroll in TOTP - generates secret and provisioning URI
@@ -20,17 +20,15 @@ pub async fn totp_enroll(req: &mut Request, depot: &mut Depot) -> TotpEnrollResp
     let state = depot.obtain::<AppState>().unwrap();
 
     // Get authenticated user from token
-    let token_string = match get_token_from_headers(req.headers()) {
-        Ok(t) => t,
+    let user_id = match crate::utils::headers::validate_user_from_headers(
+        req.headers(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
+        Ok(id) => id,
         Err(e) => return e.into(),
     };
 
-    let claims = match state.auth_service.get_claims(token_string.expose_secret()) {
-        Ok(c) => c,
-        Err(e) => return e.into(),
-    };
-
-    let user_id = &claims.sub;
+    let user_id = &user_id;
 
     match state.totp_service.enroll(user_id).await {
         Ok(provisioning_uri) => {
@@ -51,17 +49,15 @@ pub async fn totp_verify_enrollment(
     let request = body.into_inner();
 
     // Get authenticated user
-    let token_string = match get_token_from_headers(req.headers()) {
-        Ok(t) => t,
+    let user_id = match crate::utils::headers::validate_user_from_headers(
+        req.headers(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
+        Ok(id) => id,
         Err(e) => return TotpVerifyEnrollmentResponses::Unauthorized(e),
     };
 
-    let claims = match state.auth_service.get_claims(token_string.expose_secret()) {
-        Ok(c) => c,
-        Err(e) => return TotpVerifyEnrollmentResponses::Unauthorized(e),
-    };
-
-    let user_id = &claims.sub;
+    let user_id = &user_id;
 
     // Verify enrollment
     match state
@@ -91,21 +87,17 @@ pub async fn totp_disable(
     let DisableTotpRequest { totp_code } = request;
 
     // Get authenticated user
-    let token_string = match get_token_from_headers(req.headers()) {
-        Ok(t) => t,
+    let user_id = match crate::utils::headers::validate_user_from_headers(
+        req.headers(),
+        &state.config.jwt_eddsa_decoding_key,
+    ) {
+        Ok(id) => id,
         Err(e) => return TotpDisableResponses::Unauthorized(e),
     };
-
-    let claims = match state.auth_service.get_claims(token_string.expose_secret()) {
-        Ok(c) => c,
-        Err(e) => return TotpDisableResponses::Unauthorized(e),
-    };
-
-    let user_id = &claims.sub;
 
     state
         .totp_service
-        .clear_enrollment(user_id, &totp_code)
+        .clear_enrollment(&user_id, &totp_code)
         .await
         .into()
 }

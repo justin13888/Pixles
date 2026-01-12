@@ -108,10 +108,16 @@ pub async fn validate_token(req: &mut Request, depot: &mut Depot) -> ValidateTok
     };
 
     // Validate token
-    state
-        .auth_service
-        .get_claims(token_string.expose_secret())
-        .into()
+    let claims = match state.auth_service.get_claims(token_string.expose_secret()) {
+        Ok(claims) => claims,
+        Err(e) => return e.into(),
+    };
+
+    if let Err(e) = claims.validate_access_token() {
+        return e.into();
+    }
+
+    Ok(claims).into()
 }
 
 /// Logout user and invalidate tokens
@@ -131,6 +137,10 @@ pub async fn logout(req: &mut Request, depot: &mut Depot) -> LogoutResponses {
         Ok(claims) => claims,
         Err(e) => return e.into(),
     };
+
+    if let Err(e) = claims.validate_access_token() {
+        return e.into();
+    }
 
     // If it has a session ID, revoke it
     if let Some(sid) = claims.sid

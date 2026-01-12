@@ -13,6 +13,8 @@ use service::storage::{StorageConfig, StorageService};
 use std::str::FromStr;
 use uuid::Uuid;
 
+// TODO: authorization via access token for asset routes
+
 // ============================================================================
 // Request/Response Types
 // ============================================================================

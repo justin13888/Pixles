@@ -902,12 +902,13 @@ impl From<Passkey> for PasskeyModel {
     }
 }
 
-#[derive(From, Debug)]
+#[derive(Debug)]
 pub enum PasskeyRegistrationStartResponses {
     Success(serde_json::Value),
     UserNotFound,
     AlreadyExists,
     RegistrationFailed(String),
+    Unauthorized(String),
     InternalServerError(InternalServerError),
 }
 
@@ -938,6 +939,12 @@ impl From<PasskeyRegistrationError> for PasskeyRegistrationStartResponses {
     }
 }
 
+impl From<InternalServerError> for PasskeyRegistrationStartResponses {
+    fn from(e: InternalServerError) -> Self {
+        Self::InternalServerError(e)
+    }
+}
+
 #[async_trait]
 impl Writer for PasskeyRegistrationStartResponses {
     async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
@@ -958,6 +965,10 @@ impl Writer for PasskeyRegistrationStartResponses {
                 res.status_code(StatusCode::BAD_REQUEST);
                 res.render(Json(ApiError::new(msg)));
             }
+            Self::Unauthorized(msg) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(msg)));
+            }
             Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
@@ -974,16 +985,21 @@ impl EndpointOutRegister for PasskeyRegistrationStartResponses {
             ),
         );
         operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
+        );
+        operation.responses.insert(
             String::from("500"),
             salvo::oapi::Response::new("Internal server error"),
         );
     }
 }
 
-#[derive(From, Debug)]
+#[derive(Debug)]
 pub enum PasskeyRegistrationFinishResponses {
     Success,
     RegistrationFailed(String),
+    Unauthorized(String),
     InternalServerError(InternalServerError),
 }
 
@@ -1016,6 +1032,12 @@ impl From<PasskeyRegistrationError> for PasskeyRegistrationFinishResponses {
     }
 }
 
+impl From<InternalServerError> for PasskeyRegistrationFinishResponses {
+    fn from(e: InternalServerError) -> Self {
+        Self::InternalServerError(e)
+    }
+}
+
 #[async_trait]
 impl Writer for PasskeyRegistrationFinishResponses {
     async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
@@ -1026,6 +1048,10 @@ impl Writer for PasskeyRegistrationFinishResponses {
             }
             Self::RegistrationFailed(msg) => {
                 res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Json(ApiError::new(msg)));
+            }
+            Self::Unauthorized(msg) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Json(ApiError::new(msg)));
             }
             Self::InternalServerError(e) => e.write(req, depot, res).await,
@@ -1042,6 +1068,10 @@ impl EndpointOutRegister for PasskeyRegistrationFinishResponses {
         operation.responses.insert(
             String::from("400"),
             salvo::oapi::Response::new("Registration failed"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
         );
         operation.responses.insert(
             String::from("500"),
@@ -1181,6 +1211,7 @@ impl EndpointOutRegister for PasskeyAuthFinishResponses {
 pub enum PasskeyListResponses {
     Success(Vec<PasskeyModel>),
     NotFound,
+    Unauthorized(String),
     InternalServerError(InternalServerError),
 }
 
@@ -1207,6 +1238,10 @@ impl Writer for PasskeyListResponses {
                 res.status_code(StatusCode::NOT_FOUND);
                 res.render(Json(ApiError::new("User not found")));
             }
+            Self::Unauthorized(msg) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(msg)));
+            }
             Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
@@ -1222,6 +1257,10 @@ impl EndpointOutRegister for PasskeyListResponses {
             ),
         );
         operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
+        );
+        operation.responses.insert(
             String::from("500"),
             salvo::oapi::Response::new("Internal server error"),
         );
@@ -1232,6 +1271,7 @@ impl EndpointOutRegister for PasskeyListResponses {
 pub enum PasskeyManageResponses {
     Success,
     NotFound,
+    Unauthorized(String),
     InternalServerError(InternalServerError),
 }
 
@@ -1267,6 +1307,10 @@ impl Writer for PasskeyManageResponses {
                 res.status_code(StatusCode::NOT_FOUND);
                 res.render(Json(ApiError::new("Passkey or User not found")));
             }
+            Self::Unauthorized(msg) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(msg)));
+            }
             Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
@@ -1281,6 +1325,10 @@ impl EndpointOutRegister for PasskeyManageResponses {
         operation.responses.insert(
             String::from("404"),
             salvo::oapi::Response::new("Resource not found"),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
         );
         operation.responses.insert(
             String::from("500"),

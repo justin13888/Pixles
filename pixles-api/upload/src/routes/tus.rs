@@ -5,7 +5,7 @@ use crate::models::responses::{
 };
 use crate::models::session::UploadSessionStatus;
 use crate::state::AppState;
-use auth::utils::headers::get_user_id_from_headers;
+use auth::utils::headers::validate_user_from_headers;
 use salvo::oapi::extract::{JsonBody, PathParam};
 use salvo::prelude::*;
 
@@ -42,9 +42,9 @@ pub async fn create_upload(
 
     // Authenticate User
     let user_id =
-        match get_user_id_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
             Ok(id) => id,
-            Err(e) => return CreateUploadResponses::Unauthorized(e),
+            Err(e) => return CreateUploadResponses::Unauthorized(e.to_string()),
         };
 
     // Use user_id as owner_id if not specified
@@ -105,9 +105,9 @@ pub async fn head_upload(
 
     // Authenticate User
     let user_id =
-        match get_user_id_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
             Ok(id) => id,
-            Err(e) => return HeadUploadResponses::Unauthorized(e),
+            Err(e) => return HeadUploadResponses::Unauthorized(e.to_string()),
         };
 
     match state.upload_service.get_session(&id).await {
@@ -147,9 +147,9 @@ pub async fn patch_upload(
 
     // Authenticate User
     let user_id =
-        match get_user_id_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
             Ok(id) => id,
-            Err(e) => return PatchUploadResponses::Unauthorized(e),
+            Err(e) => return PatchUploadResponses::Unauthorized(e.to_string()),
         };
 
     // Verify ownership - only the uploader can append chunks
@@ -261,9 +261,9 @@ pub async fn delete_upload(
 
     // Authenticate User
     let user_id =
-        match get_user_id_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
             Ok(id) => id,
-            Err(e) => return DeleteUploadResponses::Unauthorized(e),
+            Err(e) => return DeleteUploadResponses::Unauthorized(e.to_string()),
         };
 
     // Verify ownership - only the uploader or owner can delete
@@ -300,9 +300,9 @@ pub async fn list_sessions(req: &mut Request, dep: &mut Depot) -> ListSessionsRe
 
     // Authenticate User
     let user_id =
-        match get_user_id_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
             Ok(id) => id,
-            Err(e) => return ListSessionsResponses::Unauthorized(e),
+            Err(e) => return ListSessionsResponses::Unauthorized(e.to_string()),
         };
 
     // Parse query parameters

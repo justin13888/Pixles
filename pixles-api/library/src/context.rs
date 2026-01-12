@@ -23,28 +23,15 @@ pub struct UserContext {
 }
 
 impl UserContext {
-    /// Extract token from headers
-    fn get_token_from_headers(headers: &HeaderMap) -> Result<SecretString, ClaimValidationError> {
-        let auth_header = headers
-            .get("authorization")
-            .and_then(|v| v.to_str().ok())
-            .ok_or(ClaimValidationError::TokenMissing)?;
-
-        let token = auth_header
-            .strip_prefix("Bearer ")
-            .ok_or(ClaimValidationError::UnexpectedHeaderFormat)?;
-
-        Ok(SecretString::from(token.to_string()))
-    }
-
     pub fn from_salvo_headers(
         headers: &HeaderMap,
         auth_service: &AuthService,
     ) -> Result<Self, UserContextError> {
         let mut scopes = None;
-        let user_type: UserType = match Self::get_token_from_headers(headers) {
+        let user_type: UserType = match auth::utils::headers::get_token_from_headers(headers) {
             Ok(token) => {
                 let claims = auth_service.get_claims(token.expose_secret())?;
+                claims.validate_access_token()?;
 
                 scopes = Some(claims.scopes);
 

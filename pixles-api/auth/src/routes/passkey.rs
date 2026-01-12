@@ -1,23 +1,10 @@
-use crate::claims::Claims;
 use crate::models::responses::*;
 use crate::state::AppState;
-use crate::utils::headers::get_token_from_headers;
+use crate::utils::headers::validate_user_from_headers;
 use salvo::http::cookie::{Cookie, SameSite};
 use salvo::prelude::*;
-use secrecy::ExposeSecret;
-use std::time::Duration;
 
-// Helper function to validate user
-pub async fn validate_user(req: &mut Request, state: &AppState) -> Result<String, String> {
-    let headers = req.headers();
-    let token_string = get_token_from_headers(headers).map_err(|e| e.to_string())?;
-    let token = Claims::decode(
-        token_string.expose_secret(),
-        &state.config.jwt_eddsa_decoding_key,
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(token.claims.sub)
-}
+use std::time::Duration;
 
 #[handler]
 pub async fn start_registration(
@@ -31,9 +18,15 @@ pub async fn start_registration(
         )
     })?;
 
-    let user_id = validate_user(req, state)
-        .await
-        .map_err(|_| PasskeyRegistrationStartResponses::UserNotFound)?;
+    let user_id =
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+            Ok(id) => id,
+            Err(e) => {
+                return Err(PasskeyRegistrationStartResponses::Unauthorized(
+                    e.to_string(),
+                ));
+            }
+        };
 
     let user = service::user::Query::find_user_by_id(&state.conn, &user_id)
         .await
@@ -85,9 +78,15 @@ pub async fn finish_registration(
         )
     })?;
 
-    let user_id = validate_user(req, state).await.map_err(|_| {
-        PasskeyRegistrationFinishResponses::RegistrationFailed("Unauthorized".into())
-    })?;
+    let user_id =
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+            Ok(id) => id,
+            Err(e) => {
+                return Err(PasskeyRegistrationFinishResponses::Unauthorized(
+                    e.to_string(),
+                ));
+            }
+        };
 
     // Get challenge ID from cookie
     let challenge_id = req
@@ -243,9 +242,11 @@ pub async fn list_credentials(
     let state = depot.obtain::<AppState>().map_err(|_| {
         PasskeyListResponses::InternalServerError(eyre::eyre!("State not found").into())
     })?;
-    let user_id = validate_user(req, state)
-        .await
-        .map_err(|_| PasskeyListResponses::NotFound)?;
+    let user_id =
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+            Ok(id) => id,
+            Err(e) => return Err(PasskeyListResponses::Unauthorized(e.to_string())),
+        };
 
     let credentials = state.passkey_service.list_credentials(user_id).await?;
     Ok(PasskeyListResponses::Success(
@@ -261,9 +262,11 @@ pub async fn delete_credential(
     let state = depot.obtain::<AppState>().map_err(|_| {
         PasskeyManageResponses::InternalServerError(eyre::eyre!("State not found").into())
     })?;
-    let user_id = validate_user(req, state)
-        .await
-        .map_err(|_| PasskeyManageResponses::NotFound)?;
+    let user_id =
+        match validate_user_from_headers(req.headers(), &state.config.jwt_eddsa_decoding_key) {
+            Ok(id) => id,
+            Err(e) => return Err(PasskeyManageResponses::Unauthorized(e.to_string())),
+        };
 
     let cred_id = req.param::<String>("cred_id").unwrap_or_default();
 
