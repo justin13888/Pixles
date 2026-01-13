@@ -11,6 +11,7 @@ use crate::schema::asset::{AssetMutation, AssetQuery, AssetSubscription};
 use crate::schema::memory::{MemoryMutation, MemoryQuery};
 use crate::schema::person::{PersonMutation, PersonQuery};
 use crate::schema::share::{ShareMutation, ShareQuery};
+use crate::schema::stack::{StackMutation, StackQuery};
 use crate::schema::user::{UserMutation, UserQuery};
 pub mod activity;
 pub mod album;
@@ -19,6 +20,7 @@ pub mod memory;
 pub mod person;
 pub mod share;
 pub mod smart_tag;
+pub mod stack;
 mod types;
 pub mod user;
 
@@ -33,6 +35,7 @@ pub struct QueryRoot {
     pub person: PersonQuery,
     pub share: ShareQuery,
     pub memory: MemoryQuery,
+    pub stack: StackQuery,
 }
 
 pub struct MutationRoot {
@@ -42,6 +45,7 @@ pub struct MutationRoot {
     pub person: PersonMutation,
     pub share: ShareMutation,
     pub memory: MemoryMutation,
+    pub stack: StackMutation,
 }
 
 #[Object]
@@ -73,6 +77,10 @@ impl QueryRoot {
     async fn memory(&self) -> &MemoryQuery {
         &self.memory
     }
+
+    async fn stack(&self) -> &StackQuery {
+        &self.stack
+    }
 }
 
 #[Object]
@@ -96,6 +104,10 @@ impl MutationRoot {
     async fn memory(&self) -> &MemoryMutation {
         &self.memory
     }
+
+    async fn stack(&self) -> &StackMutation {
+        &self.stack
+    }
 }
 
 #[derive(MergedSubscription, Default)]
@@ -115,6 +127,7 @@ pub fn create_schema(loaders: Loaders) -> AppSchema {
             person: PersonQuery,
             share: ShareQuery,
             memory: MemoryQuery,
+            stack: StackQuery,
         },
         MutationRoot {
             user: UserMutation,
@@ -123,6 +136,7 @@ pub fn create_schema(loaders: Loaders) -> AppSchema {
             person: PersonMutation,
             share: ShareMutation,
             memory: MemoryMutation,
+            stack: StackMutation,
         },
         SubscriptionRoot::default(),
     );

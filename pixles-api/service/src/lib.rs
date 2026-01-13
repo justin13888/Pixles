@@ -1,6 +1,7 @@
 pub mod album;
 pub mod asset;
 pub mod friendship;
+pub mod stack;
 pub mod storage;
 pub mod user;
 

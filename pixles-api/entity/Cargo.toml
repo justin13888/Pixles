@@ -16,3 +16,4 @@ sea-orm = { workspace = true, features = [
     "runtime-tokio-rustls",
     "debug-print",
 ] }
+serde_json = { workspace = true }

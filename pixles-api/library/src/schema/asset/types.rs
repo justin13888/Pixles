@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use entity::asset::Model as AssetModel;
 use model::asset::AssetType as ModelAssetType;
 
+use crate::schema::stack::AssetStack;
 use crate::schema::{Tag, user::User};
 
 #[derive(Enum, Clone, Copy, Eq, PartialEq)]
@@ -156,6 +157,25 @@ impl AssetMetadata {
     async fn exif(&self) -> Option<ExifData> {
         // TODO: Resolve from external metadata store
         None
+    }
+
+    // ===== Stack Membership =====
+
+    /// If this asset belongs to a stack, return the stack
+    async fn stack(&self, ctx: &Context<'_>) -> Result<Option<AssetStack>> {
+        if let Some(stack_id) = &self.model.stack_id {
+            // TODO: Use Dataloader for efficiency
+            let db = ctx.data::<sea_orm::DatabaseConnection>()?;
+            let stack = service::stack::Query::find_by_id(db, stack_id).await?;
+            Ok(stack.map(|model| AssetStack { model }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Whether this asset should be hidden in main grid (because it's buried in a stack)
+    async fn is_stack_hidden(&self) -> bool {
+        self.model.is_stack_hidden
     }
 
     // ===== Timestamps (renamed date → capturedAt) =====

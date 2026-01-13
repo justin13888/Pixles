@@ -53,6 +53,17 @@ pub struct Model {
     #[sea_orm(default_value = "false", indexed)]
     pub is_favorite: bool,
 
+    // ===== Stack membership (new) =====
+    /// If part of a stack, the stack ID (for fast lookup)
+    /// An asset can only belong to one stack at a time
+    #[sea_orm(nullable, indexed)]
+    pub stack_id: Option<String>,
+
+    /// Whether this asset is hidden when viewing the parent stack collapsed
+    /// Primary asset has this = false, alternates have this = true
+    #[sea_orm(default_value = "false")]
+    pub is_stack_hidden: bool,
+
     // ===== Timestamps =====
     /// Date when the asset was captured/taken (from EXIF DateTimeOriginal)
     #[sea_orm(indexed)]
@@ -113,6 +124,12 @@ pub enum Relation {
         to = "super::user::Column::Id"
     )]
     UploadUser,
+    #[sea_orm(
+        belongs_to = "super::asset_stack::Entity",
+        from = "Column::StackId",
+        to = "super::asset_stack::Column::Id"
+    )]
+    Stack,
 }
 
 impl Related<super::owner::Entity> for Entity {
@@ -130,6 +147,12 @@ impl Related<super::album::Entity> for Entity {
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::UploadUser.def()
+    }
+}
+
+impl Related<super::asset_stack::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Stack.def()
     }
 }
 

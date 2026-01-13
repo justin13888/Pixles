@@ -13,6 +13,7 @@ pixles-api-entity = { path = "../entity" }
 pixles-api-model = { path = "../model" }
 pixles-core = { path = "../../pixles-core-rust" }
 serde = { workspace = true }
+serde_json = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 data-encoding = { workspace = true }
