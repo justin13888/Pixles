@@ -4,14 +4,11 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tabs } from '@/components/ui/tabs';
-import { graphql } from '@/gql';
-import { type AssetListSearchQueryQuery, AssetType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { Link, createLazyFileRoute } from '@tanstack/react-router';
+import { createLazyFileRoute } from '@tanstack/react-router';
 import {
     type SortingState,
     createColumnHelper,
@@ -21,59 +18,67 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { filesize } from 'filesize';
-import {
-    AppWindow,
-    ChevronDown,
-    ChevronUp,
-    FileText,
-    FileVideo,
-    HelpCircle,
-    Image,
-    Mail,
-    RefreshCw,
-    Trash2,
-} from 'lucide-react';
+import { FileText, FileVideo, Image, RefreshCw, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
-import { useQuery } from 'urql';
 
 export const Route = createLazyFileRoute('/storage')({
     component: () => <Storage />,
 });
 
-const StorageQuery = graphql(`
-  query StorageQuery {
-    user {
-      statistics {
-        totalPhotos
-        totalAlbums
-        usedStorage
-        usedStoragePhotos
-        usedStorageVideos
-        usedStorageSidecar
-        totalStorage
-        usedStorageTrash
-        usedStorageSimilarAssets
-        usedStorageLargeFiles
-      }
-    }
-  }
-`);
+// Mock AssetType Enum
+enum AssetType {
+    Photo = 'PHOTO',
+    Video = 'VIDEO',
+    Sidecar = 'SIDECAR',
+}
 
-const AssetListSearchQuery = graphql(`
-  query AssetListSearchQuery($albumIds: [ID!], $filter: AssetFilter, $sort: AssetSort, $sortDirection: SortDirection) {
-    asset {
-      search(albumIds: $albumIds, filter: $filter, sort: $sort, sortDirection: $sortDirection) {
-        id
-        type
-        fileName
-        path
-        size
-        date
-        thumbnail
-      }
-    }
-  }
-`);
+// Mock Data Types
+type StorageStats = {
+    totalPhotos: number;
+    totalAlbums: number;
+    usedStorage: number;
+    usedStoragePhotos: number;
+    usedStorageVideos: number;
+    usedStorageSidecar: number;
+    totalStorage: number;
+    usedStorageTrash: number;
+    usedStorageSimilarAssets: number;
+    usedStorageLargeFiles: number;
+};
+
+// Asset type definition
+type Asset = {
+    id: string;
+    type: AssetType;
+    fileName: string;
+    path: string;
+    size: number;
+    date: Date;
+    thumbnail?: string;
+};
+
+const mockStats: StorageStats = {
+    totalPhotos: 1234,
+    totalAlbums: 42,
+    usedStorage: 45000000000, // 45 GB
+    usedStoragePhotos: 25000000000, // 25 GB
+    usedStorageVideos: 15000000000, // 15 GB
+    usedStorageSidecar: 500000000, // 500 MB
+    totalStorage: 100000000000, // 100 GB
+    usedStorageTrash: 2000000000, // 2 GB
+    usedStorageSimilarAssets: 1500000000, // 1.5 GB
+    usedStorageLargeFiles: 3000000000, // 3 GB
+};
+
+const mockStorageAssets: Asset[] = Array.from({ length: 20 }).map((_, i) => ({
+    id: `asset-${i}`,
+    type: i % 3 === 0 ? AssetType.Video : AssetType.Photo,
+    fileName: `IMG_${20230000 + i}.${i % 3 === 0 ? 'mp4' : 'jpg'}`,
+    path: `/DCIM/100CANON/IMG_${20230000 + i}.${i % 3 === 0 ? 'mp4' : 'jpg'}`,
+    size: i % 3 === 0 ? 50000000 + i * 1000 : 4000000 + i * 1000,
+    date: new Date(2023, 5, i + 1),
+    thumbnail: `https://picsum.photos/seed/${i}/100/100`,
+}));
 
 function formatFileSize(size: number) {
     return filesize(size, {
@@ -85,10 +90,10 @@ function formatFileSize(size: number) {
 type Suggestion = 'trash-files' | 'similar-assets' | 'large-files';
 
 function Storage() {
-    const [{ data, fetching, error }, reexecuteQuery] = useQuery({
-        query: StorageQuery,
-    });
-    const stats = data?.user.statistics;
+    // Mocking useQuery
+    const fetching = false;
+    const error = null;
+    const stats = mockStats;
 
     const [activeTab, setActiveTab] = useState<Suggestion>('trash-files');
 
@@ -295,20 +300,12 @@ function Storage() {
                                             </TabsList>
                                             {storageData.cleanupSuggestions.map(
                                                 (suggestion) => {
-                                                    const [
-                                                        {
-                                                            data: assetData,
-                                                            fetching:
-                                                                assetFetching,
-                                                            error: assetError,
-                                                        },
-                                                        reexecuteAssetQuery,
-                                                    ] = useQuery({
-                                                        query: AssetListSearchQuery,
-                                                        pause:
-                                                            activeTab !==
-                                                            suggestion.id,
-                                                    });
+                                                    // Mock asset fetching
+                                                    const assetFetching = false;
+                                                    const assetError = null;
+                                                    const assetData =
+                                                        mockStorageAssets;
+
                                                     return (
                                                         <TabsContent
                                                             key={suggestion.id}
@@ -323,17 +320,13 @@ function Storage() {
                                                                     </div>
                                                                 ) : assetError ? (
                                                                     <div>
-                                                                        Error:{' '}
-                                                                        {
-                                                                            assetError.message
-                                                                        }
+                                                                        Error
+                                                                        (Mock)
                                                                     </div>
                                                                 ) : assetData ? (
                                                                     <AssetList
                                                                         assets={
                                                                             assetData
-                                                                                .asset
-                                                                                .search
                                                                         }
                                                                     />
                                                                 ) : (
@@ -345,11 +338,8 @@ function Storage() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() =>
-                                                                            reexecuteAssetQuery(
-                                                                                {
-                                                                                    requestPolicy:
-                                                                                        'network-only',
-                                                                                },
+                                                                            console.log(
+                                                                                'Refresh',
                                                                             )
                                                                         }
                                                                         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -384,21 +374,8 @@ function Storage() {
     );
 }
 
-// Asset type definition
-type Asset = {
-    id: string;
-    type: AssetType;
-    fileName: string;
-    path: string;
-    size: number;
-    date: Date;
-    thumbnail?: string;
-};
-
 // AssetList component
-function AssetList({
-    assets,
-}: { assets: AssetListSearchQueryQuery['asset']['search'] }) {
+function AssetList({ assets }: { assets: Asset[] }) {
     if (assets.length === 0) {
         return <div>Empty asset list</div>;
     }
@@ -437,15 +414,7 @@ function AssetList({
                                     className="size-6 text-purple-500"
                                     aria-label={`Sidecar file: ${info.row.original.fileName}`}
                                 />
-                            ) : (
-                                // This exhaustive check ensures all AssetType values are handled
-                                (() => {
-                                    // @ts-expect-error: This is an exhaustive check
-                                    const _exhaustiveCheck: never =
-                                        info.row.original.type;
-                                    return null;
-                                })()
-                            )}
+                            ) : null}
                         </div>
                     )}
                 </div>

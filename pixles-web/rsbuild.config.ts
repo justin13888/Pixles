@@ -48,6 +48,11 @@ export default defineConfig({
     //   lazyCompilation: true, // Breaks UI
     // },
     html: {
+        meta: {
+            'theme-color': '#000000',
+        },
+        title: 'Pixles',
+        // favicon: './src/assets/favicon.ico', // TODO
         appIcon: {
             name: 'Pixles',
             filename: 'manifest.json',
@@ -55,9 +60,6 @@ export default defineConfig({
                 { src: './src/assets/icon-192.png', size: 192 },
                 { src: './src/assets/icon-512.png', size: 512 },
             ],
-        },
-        meta: {
-            'theme-color': '#000000',
         },
     },
     server: {
