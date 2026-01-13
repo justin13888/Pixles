@@ -21,9 +21,10 @@ pub mod person;
 pub mod share;
 pub mod smart_tag;
 pub mod stack;
-mod types;
+pub mod storage;
 pub mod user;
 
+mod types;
 pub use types::*;
 use user::statistics::UserStatisticsQuery;
 

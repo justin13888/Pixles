@@ -43,6 +43,16 @@ impl AssetMutation {
         todo!("Implement update_asset")
     }
 
+    /// Set favorite status of an asset
+    /// Returns true if the favorite status was changed successfully
+    async fn set_favorite(&self, ctx: &Context<'_>, id: ID, is_favorite: bool) -> Result<bool> {
+        let db = ctx.data::<DatabaseConnection>()?;
+        let _user = ctx.data::<UserContext>()?;
+        // TODO: Check ownership/permissions
+
+        todo!("Implement set_favorite")
+    }
+
     /// Delete an asset (Soft delete / Move to trash)
     async fn delete_asset(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
         let db = ctx.data::<DatabaseConnection>()?;

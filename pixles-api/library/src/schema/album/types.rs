@@ -7,9 +7,9 @@ use crate::schema::user::User;
 
 #[derive(SimpleObject)]
 pub struct Album {
-    id: ID,
-    owner: User,
-    name: String,
+    pub id: ID,
+    pub owner: User,
+    pub name: String,
 }
 
 #[derive(InputObject)]
@@ -40,4 +40,12 @@ pub struct AlbumFilter {
     pub created_at_max: Option<DateTime<Utc>>,
     /// Minimum modified at date
     pub modified_at_min: Option<DateTime<Utc>>,
+}
+
+// TODO: Use this
+#[derive(Enum, Clone, Copy, Eq, PartialEq)]
+pub enum AlbumRole {
+    Owner,
+    Contributor,
+    Viewer,
 }

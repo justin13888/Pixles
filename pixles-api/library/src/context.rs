@@ -49,6 +49,12 @@ impl UserContext {
             scopes: scopes.map_or_else(HashSet::new, |scopes| scopes.into_iter().collect()),
         })
     }
+    pub fn user_id(&self) -> Result<&String, Error> {
+        match &self.user_type {
+            UserType::User(id) | UserType::Admin(id) => Ok(id),
+            UserType::Guest => Err(Error::new("Unauthorized: Login required")),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
