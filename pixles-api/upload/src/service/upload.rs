@@ -24,6 +24,7 @@ pub struct UploadService {
     conn: DatabaseConnection,
 }
 
+// TODO: Update all methods to use more explicit error types
 impl UploadService {
     pub fn new(
         config: UploadServerConfig,

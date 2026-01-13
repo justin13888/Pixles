@@ -85,7 +85,7 @@ pub async fn create_upload(
                 suggested_chunk_size,
             })
         }
-        Err(e) => CreateUploadResponses::InternalServerError(eyre::eyre!(e).into()),
+        Err(e) => CreateUploadResponses::InternalServerError(eyre::eyre!(e).into()), // TODO: It swallows all UploadError including duplicate.
     }
 }
 
