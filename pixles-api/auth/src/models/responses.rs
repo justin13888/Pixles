@@ -14,6 +14,15 @@ use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, ToSchema, Debug)]
+pub struct Device {
+    pub id: String,
+    pub created_at: i64,
+    pub user_agent: Option<String>,
+    pub ip_address: Option<String>,
+    pub is_current: bool,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct TokenResponse {
     #[salvo(schema(value_type = String))]
     #[serde(serialize_with = "crate::models::serialize_secret")]
@@ -864,6 +873,50 @@ impl EndpointOutRegister for TotpDisableResponses {
         operation.responses.insert(
             String::from("401"),
             salvo::oapi::Response::new("Invalid or expired MFA token"),
+        );
+        operation.responses.insert(
+            String::from("500"),
+            salvo::oapi::Response::new("Internal server error"),
+        );
+    }
+}
+
+#[derive(From, Debug)]
+pub enum GetDevicesResponses {
+    Success(Vec<Device>),
+    Unauthorized(ClaimValidationError),
+    InternalServerError(InternalServerError),
+}
+
+#[async_trait]
+impl Writer for GetDevicesResponses {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            Self::Success(devices) => {
+                res.status_code(StatusCode::OK);
+                res.render(Json(devices));
+            }
+            Self::Unauthorized(e) => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Json(ApiError::new(e.to_string())));
+            }
+            Self::InternalServerError(e) => e.write(req, depot, res).await,
+        }
+    }
+}
+
+impl EndpointOutRegister for GetDevicesResponses {
+    fn register(components: &mut salvo::oapi::Components, operation: &mut salvo::oapi::Operation) {
+        operation.responses.insert(
+            String::from("200"),
+            salvo::oapi::Response::new("Success - returns list of active sessions").add_content(
+                "application/json",
+                salvo::oapi::Content::new(Vec::<Device>::to_schema(components)),
+            ),
+        );
+        operation.responses.insert(
+            String::from("401"),
+            salvo::oapi::Response::new("Unauthorized"),
         );
         operation.responses.insert(
             String::from("500"),

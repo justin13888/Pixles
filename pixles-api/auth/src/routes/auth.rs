@@ -6,8 +6,8 @@ use crate::claims::Claims;
 use crate::errors::ClaimValidationError;
 use crate::models::requests::{LoginRequest, RefreshTokenRequest, RegisterRequest};
 use crate::models::responses::{
-    LoginResponses, LogoutResponses, RefreshTokenResponses, RegisterUserResponses,
-    ValidateTokenResponses,
+    GetDevicesResponses, LoginResponses, LogoutResponses, RefreshTokenResponses,
+    RegisterUserResponses, ValidateTokenResponses,
 };
 use crate::state::AppState;
 use crate::utils::headers::get_token_from_headers;
@@ -150,4 +150,10 @@ pub async fn logout(req: &mut Request, depot: &mut Depot) -> LogoutResponses {
     }
 
     LogoutResponses::Success
+}
+
+/// Get all active devices (sessions)
+#[endpoint(operation_id = "get_devices", tags("auth"), security(("bearer" = [])))]
+pub async fn get_devices(req: &mut Request, depot: &mut Depot) -> GetDevicesResponses {
+    todo!("Implement get_devices")
 }

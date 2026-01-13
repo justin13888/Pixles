@@ -12,8 +12,6 @@ use serde::Serialize;
 pub struct SharedContentResponse {
     /// Type of shared content
     pub content_type: String,
-    /// Whether password is required
-    pub password_required: bool,
     /// Expiry timestamp
     pub expires_at: Option<String>,
 }

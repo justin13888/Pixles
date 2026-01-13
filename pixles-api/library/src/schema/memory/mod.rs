@@ -82,3 +82,6 @@ impl MemoryMutation {
         todo!("Implement hide memory")
     }
 }
+
+// TODO: Besides memory, add timeline feature
+// timelines can be grouped by date (anniversaries, "x years ago"), highlight detection (best photos from trips/events), event clustering (group of photos by time/location)

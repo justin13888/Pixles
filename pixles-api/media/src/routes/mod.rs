@@ -4,6 +4,7 @@ use crate::state::AppState;
 
 mod assets;
 mod share;
+mod exports;
 
 pub fn get_router(state: AppState) -> Router {
     Router::new()
