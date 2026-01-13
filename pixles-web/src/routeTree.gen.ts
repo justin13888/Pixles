@@ -19,8 +19,15 @@ import { Route as AlbumsIdImport } from './routes/albums/$id'
 // Create Virtual Routes
 
 const StorageLazyImport = createFileRoute('/storage')()
+const SharingLazyImport = createFileRoute('/sharing')()
+const PhotosLazyImport = createFileRoute('/photos')()
+const LoginLazyImport = createFileRoute('/login')()
+const ExploreLazyImport = createFileRoute('/explore')()
 const DashboardLazyImport = createFileRoute('/dashboard')()
 const IndexLazyImport = createFileRoute('/')()
+const LibraryTrashLazyImport = createFileRoute('/library/trash')()
+const LibraryFavoritesLazyImport = createFileRoute('/library/favorites')()
+const LibraryArchiveLazyImport = createFileRoute('/library/archive')()
 
 // Create/Update Routes
 
@@ -29,6 +36,30 @@ const StorageLazyRoute = StorageLazyImport.update({
   path: '/storage',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/storage.lazy').then((d) => d.Route))
+
+const SharingLazyRoute = SharingLazyImport.update({
+  id: '/sharing',
+  path: '/sharing',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/sharing.lazy').then((d) => d.Route))
+
+const PhotosLazyRoute = PhotosLazyImport.update({
+  id: '/photos',
+  path: '/photos',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/photos.lazy').then((d) => d.Route))
+
+const LoginLazyRoute = LoginLazyImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
+
+const ExploreLazyRoute = ExploreLazyImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/explore.lazy').then((d) => d.Route))
 
 const DashboardLazyRoute = DashboardLazyImport.update({
   id: '/dashboard',
@@ -47,6 +78,28 @@ const AlbumsIndexRoute = AlbumsIndexImport.update({
   path: '/albums/',
   getParentRoute: () => rootRoute,
 } as any)
+
+const LibraryTrashLazyRoute = LibraryTrashLazyImport.update({
+  id: '/library/trash',
+  path: '/library/trash',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/library/trash.lazy').then((d) => d.Route))
+
+const LibraryFavoritesLazyRoute = LibraryFavoritesLazyImport.update({
+  id: '/library/favorites',
+  path: '/library/favorites',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() =>
+  import('./routes/library/favorites.lazy').then((d) => d.Route),
+)
+
+const LibraryArchiveLazyRoute = LibraryArchiveLazyImport.update({
+  id: '/library/archive',
+  path: '/library/archive',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() =>
+  import('./routes/library/archive.lazy').then((d) => d.Route),
+)
 
 const AlbumsIdRoute = AlbumsIdImport.update({
   id: '/albums/$id',
@@ -72,6 +125,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardLazyImport
       parentRoute: typeof rootRoute
     }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/photos': {
+      id: '/photos'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/sharing': {
+      id: '/sharing'
+      path: '/sharing'
+      fullPath: '/sharing'
+      preLoaderRoute: typeof SharingLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/storage': {
       id: '/storage'
       path: '/storage'
@@ -84,6 +165,27 @@ declare module '@tanstack/react-router' {
       path: '/albums/$id'
       fullPath: '/albums/$id'
       preLoaderRoute: typeof AlbumsIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/library/archive': {
+      id: '/library/archive'
+      path: '/library/archive'
+      fullPath: '/library/archive'
+      preLoaderRoute: typeof LibraryArchiveLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/library/favorites': {
+      id: '/library/favorites'
+      path: '/library/favorites'
+      fullPath: '/library/favorites'
+      preLoaderRoute: typeof LibraryFavoritesLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/library/trash': {
+      id: '/library/trash'
+      path: '/library/trash'
+      fullPath: '/library/trash'
+      preLoaderRoute: typeof LibraryTrashLazyImport
       parentRoute: typeof rootRoute
     }
     '/albums/': {
@@ -101,16 +203,30 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
+  '/explore': typeof ExploreLazyRoute
+  '/login': typeof LoginLazyRoute
+  '/photos': typeof PhotosLazyRoute
+  '/sharing': typeof SharingLazyRoute
   '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
+  '/library/archive': typeof LibraryArchiveLazyRoute
+  '/library/favorites': typeof LibraryFavoritesLazyRoute
+  '/library/trash': typeof LibraryTrashLazyRoute
   '/albums': typeof AlbumsIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
+  '/explore': typeof ExploreLazyRoute
+  '/login': typeof LoginLazyRoute
+  '/photos': typeof PhotosLazyRoute
+  '/sharing': typeof SharingLazyRoute
   '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
+  '/library/archive': typeof LibraryArchiveLazyRoute
+  '/library/favorites': typeof LibraryFavoritesLazyRoute
+  '/library/trash': typeof LibraryTrashLazyRoute
   '/albums': typeof AlbumsIndexRoute
 }
 
@@ -118,33 +234,91 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
+  '/explore': typeof ExploreLazyRoute
+  '/login': typeof LoginLazyRoute
+  '/photos': typeof PhotosLazyRoute
+  '/sharing': typeof SharingLazyRoute
   '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
+  '/library/archive': typeof LibraryArchiveLazyRoute
+  '/library/favorites': typeof LibraryFavoritesLazyRoute
+  '/library/trash': typeof LibraryTrashLazyRoute
   '/albums/': typeof AlbumsIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/storage' | '/albums/$id' | '/albums'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/explore'
+    | '/login'
+    | '/photos'
+    | '/sharing'
+    | '/storage'
+    | '/albums/$id'
+    | '/library/archive'
+    | '/library/favorites'
+    | '/library/trash'
+    | '/albums'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/storage' | '/albums/$id' | '/albums'
-  id: '__root__' | '/' | '/dashboard' | '/storage' | '/albums/$id' | '/albums/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/explore'
+    | '/login'
+    | '/photos'
+    | '/sharing'
+    | '/storage'
+    | '/albums/$id'
+    | '/library/archive'
+    | '/library/favorites'
+    | '/library/trash'
+    | '/albums'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/explore'
+    | '/login'
+    | '/photos'
+    | '/sharing'
+    | '/storage'
+    | '/albums/$id'
+    | '/library/archive'
+    | '/library/favorites'
+    | '/library/trash'
+    | '/albums/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   DashboardLazyRoute: typeof DashboardLazyRoute
+  ExploreLazyRoute: typeof ExploreLazyRoute
+  LoginLazyRoute: typeof LoginLazyRoute
+  PhotosLazyRoute: typeof PhotosLazyRoute
+  SharingLazyRoute: typeof SharingLazyRoute
   StorageLazyRoute: typeof StorageLazyRoute
   AlbumsIdRoute: typeof AlbumsIdRoute
+  LibraryArchiveLazyRoute: typeof LibraryArchiveLazyRoute
+  LibraryFavoritesLazyRoute: typeof LibraryFavoritesLazyRoute
+  LibraryTrashLazyRoute: typeof LibraryTrashLazyRoute
   AlbumsIndexRoute: typeof AlbumsIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   DashboardLazyRoute: DashboardLazyRoute,
+  ExploreLazyRoute: ExploreLazyRoute,
+  LoginLazyRoute: LoginLazyRoute,
+  PhotosLazyRoute: PhotosLazyRoute,
+  SharingLazyRoute: SharingLazyRoute,
   StorageLazyRoute: StorageLazyRoute,
   AlbumsIdRoute: AlbumsIdRoute,
+  LibraryArchiveLazyRoute: LibraryArchiveLazyRoute,
+  LibraryFavoritesLazyRoute: LibraryFavoritesLazyRoute,
+  LibraryTrashLazyRoute: LibraryTrashLazyRoute,
   AlbumsIndexRoute: AlbumsIndexRoute,
 }
 
@@ -160,8 +334,15 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/dashboard",
+        "/explore",
+        "/login",
+        "/photos",
+        "/sharing",
         "/storage",
         "/albums/$id",
+        "/library/archive",
+        "/library/favorites",
+        "/library/trash",
         "/albums/"
       ]
     },
@@ -171,11 +352,32 @@ export const routeTree = rootRoute
     "/dashboard": {
       "filePath": "dashboard.lazy.tsx"
     },
+    "/explore": {
+      "filePath": "explore.lazy.tsx"
+    },
+    "/login": {
+      "filePath": "login.lazy.tsx"
+    },
+    "/photos": {
+      "filePath": "photos.lazy.tsx"
+    },
+    "/sharing": {
+      "filePath": "sharing.lazy.tsx"
+    },
     "/storage": {
       "filePath": "storage.lazy.tsx"
     },
     "/albums/$id": {
       "filePath": "albums/$id.tsx"
+    },
+    "/library/archive": {
+      "filePath": "library/archive.lazy.tsx"
+    },
+    "/library/favorites": {
+      "filePath": "library/favorites.lazy.tsx"
+    },
+    "/library/trash": {
+      "filePath": "library/trash.lazy.tsx"
     },
     "/albums/": {
       "filePath": "albums/index.tsx"
