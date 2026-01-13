@@ -6,8 +6,12 @@ use strum_macros::EnumIter;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, EnumIter, Hash)]
 pub enum Scope {
+    #[serde(rename = "token:access")]
+    AccessToken,
     #[serde(rename = "token:refresh")]
     RefreshToken,
+    #[serde(rename = "token:mfa")]
+    MfaToken,
     #[serde(rename = "read:user")]
     ReadUser,
     #[serde(rename = "write:user")]
@@ -17,7 +21,9 @@ pub enum Scope {
 impl From<&Scope> for String {
     fn from(scope: &Scope) -> Self {
         match scope {
+            Scope::AccessToken => "token:access".to_string(),
             Scope::RefreshToken => "token:refresh".to_string(),
+            Scope::MfaToken => "token:mfa".to_string(),
             Scope::ReadUser => "read:user".to_string(),
             Scope::WriteUser => "write:user".to_string(),
         }
@@ -35,7 +41,9 @@ impl FromStr for Scope {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "token:access" => Ok(Scope::AccessToken),
             "token:refresh" => Ok(Scope::RefreshToken),
+            "token:mfa" => Ok(Scope::MfaToken),
             "read:user" => Ok(Scope::ReadUser),
             "write:user" => Ok(Scope::WriteUser),
             _ => Err(format!("Invalid scope: {s}")),

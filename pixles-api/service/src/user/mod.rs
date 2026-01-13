@@ -1,46 +1,45 @@
-mod mutation;
-mod query;
+pub mod mutation;
+pub mod query;
 
-pub use mutation::*;
-pub use query::*;
+use serde::{Deserialize, Serialize};
 
-/// Returns true if username follows username rules
+// Re-export specific structs that consumers expect under service::user::X
+pub use mutation::Mutation;
+pub use query::Query;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateUserArgs {
+    pub username: String,
+    pub name: String,
+    pub email: String,
+    pub password_hash: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateUserArgs {
+    pub username: Option<String>,
+    pub name: Option<String>,
+    pub email: Option<String>,
+    pub password_hash: Option<String>,
+}
+
+// Validation Helpers (Restored)
 pub fn is_valid_username(username: &str) -> bool {
-    // Users cannot be "admin", "root", "pixles", "admin*", etc.
-    if username.eq_ignore_ascii_case("admin")
-        || username.eq_ignore_ascii_case("root")
-        || username.eq_ignore_ascii_case("pixles")
-    {
-        return false;
-    }
-
-    if username.to_ascii_lowercase().starts_with("admin") {
-        return false;
-    }
-
-    true
+    let len = username.len();
+    // Allow alphanumeric + underscore/dash. 3-30 chars.
+    (3..=30).contains(&len)
+        && username
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
 }
 
-/// Returns true if email is valid
+/// Returns true if the string is a valid email address
 pub fn is_valid_email(email: &str) -> bool {
-    email.contains('@') // TODO: Add more validation rules
+    // TODO: Replace this incomplete check
+    email.contains('@') && email.contains('.')
 }
 
-/// Returns true if password is valid
-pub fn is_valid_password(password: &str) -> Result<(), String> {
-    if password.len() < 8 {
-        return Err("Password must be at least 8 characters long".to_string());
-    }
-
-    Ok(())
+pub fn is_valid_password(password: &str) -> bool {
+    // TODO: Replace this incomplete check
+    password.len() >= 8
 }
-
-// // Returns normalized username
-// pub fn normalize_username(username: &str) -> String {
-//     username.to_ascii_lowercase() // TODO: Check if it is needed since db could index normalized version
-// }
-
-// Returns normalized email
-pub fn normalize_email(email: &str) -> String {
-    email.trim().to_ascii_lowercase()
-} // TODO: Check this is what we want

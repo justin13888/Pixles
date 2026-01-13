@@ -1,32 +1,38 @@
-use crate::claims::{Claims, Scope};
-use crate::errors::AuthError;
+use crate::claims::Claims;
 use jsonwebtoken::EncodingKey;
+use model::errors::InternalServerError;
 
+/// Token service creates JWT tokens for authentication
 pub struct TokenService;
 
 impl TokenService {
+    /// Creates a new access token
+    ///
+    /// Returns the token and the expiration time
     pub fn create_access_token(
         user_id: &str,
-        scopes: Vec<Scope>,
         sid: Option<String>,
         encoding_key: &EncodingKey,
-    ) -> Result<(String, u64), AuthError> {
-        let claims = Claims::new_access_token(user_id.to_string(), scopes, sid);
+    ) -> Result<(String, u64), InternalServerError> {
+        let claims = Claims::new_access_token(user_id.to_string(), sid);
         let token = claims
             .encode(encoding_key)
-            .map_err(|e| AuthError::InternalServerError(e.into()))?;
+            .map_err(InternalServerError::from)?;
         Ok((token, claims.exp))
     }
 
+    /// Creates a new refresh token
+    ///
+    /// Returns the token
     pub fn create_refresh_token(
         user_id: &str,
         sid: String,
         encoding_key: &EncodingKey,
-    ) -> Result<String, AuthError> {
+    ) -> Result<String, InternalServerError> {
         let claims = Claims::new_refresh_token(user_id.to_string(), sid);
         claims
             .encode(encoding_key)
-            .map_err(|e| AuthError::InternalServerError(e.into()))
+            .map_err(InternalServerError::from)
     }
 }
 
@@ -54,15 +60,12 @@ mod tests {
     fn test_create_access_token() {
         let (encoding_key, decoding_key) = get_test_keys();
         let user_id = "user123";
-        let scopes = vec![Scope::ReadUser];
 
-        let (token, exp) =
-            TokenService::create_access_token(user_id, scopes.clone(), None, &encoding_key)
-                .unwrap();
+        let (token, exp) = TokenService::create_access_token(user_id, None, &encoding_key).unwrap();
 
         let decoded = Claims::decode(&token, &decoding_key).unwrap();
         assert_eq!(decoded.claims.sub, user_id);
-        assert_eq!(decoded.claims.scopes, scopes);
+        assert_eq!(decoded.claims.scopes, vec![Scope::AccessToken]);
         assert_eq!(decoded.claims.exp, exp);
         assert!(decoded.claims.sid.is_none());
     }

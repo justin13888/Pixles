@@ -1,10 +1,9 @@
 use chrono::{DateTime, Utc};
 use nanoid::nanoid;
 use sea_orm::{Set, entity::prelude::*};
-use serde::{Deserialize, Serialize};
 
 // TODO: Check
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Char(Some(21))")]
@@ -25,6 +24,10 @@ pub struct Model {
     pub needs_onboarding: bool,
     #[sea_orm(unique, column_type = "String(StringLen::N(255))")]
     pub password_hash: String,
+    #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
+    pub totp_secret: Option<String>,
+    #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
+    pub totp_verified: Option<bool>,
     #[sea_orm(unique, column_type = "String(StringLen::N(255))", nullable)]
     pub password_reset_token: Option<String>,
     #[sea_orm(column_type = "TimestampWithTimeZone", nullable)]
@@ -53,20 +56,23 @@ pub struct Model {
 }
 
 // TODO: Add in related columns:
-// - password_reset_token, password_reset_expires_at
-// - Login activity: last_login_at, failed_login_attempts
-// - profile_image_url
 // - verification_token
+
+impl Model {
+    pub fn profile_image_url(&self) -> Option<String> {
+        self.profile_image_url.clone() // TODO: Need to process this properly to ensure access for public
+    }
+}
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::album::Entity")]
-    Albums,
+    #[sea_orm(has_many = "super::owner_member::Entity")]
+    OwnerMembers,
 }
 
-impl Related<super::album::Entity> for Entity {
+impl Related<super::owner_member::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Albums.def()
+        Relation::OwnerMembers.def()
     }
 }
 

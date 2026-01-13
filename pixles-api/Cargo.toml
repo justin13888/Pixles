@@ -7,13 +7,12 @@ default-run = "pixles-api"
 
 [dependencies]
 pixles-api-auth = { path = "./auth", optional = true }
-# TODO: Re-enable when graphql is production-ready
-# pixles-api-graphql = { path = "./graphql", optional = true }
+pixles-api-library = { path = "./library", optional = true }
+pixles-api-media = { path = "./media", optional = true }
 # TODO: Re-enable when upload is production-ready
-# pixles-api-upload = { path = "./upload", optional = true }
+pixles-api-upload = { path = "./upload", optional = true }
+pixles-api-sync = { path = "./sync", optional = true }
 pixles-api-environment = { path = "./environment" }
-# TODO: Re-enable when metadata is production-ready
-# pixles-api-metadata = { path = "./metadata", optional = true }
 pixles-api-migration = { path = "./migration" }
 salvo = { workspace = true }
 color-eyre = "0.6.3"
@@ -29,17 +28,15 @@ tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+clap = { version = "4.5.26", features = ["derive"] }
 
 [features]
-default = ["auth", "openapi"]
+default = ["full"]
+full = ["auth", "upload", "media", "library", "sync", "openapi"]
+h2c = ["salvo/http2-cleartext", "salvo/rustls"]
 auth = ["pixles-api-auth", "pixles-api-environment/auth"]
-# TODO: Re-enable when graphql is production-ready
-# graphql = ["pixles-api-graphql", "pixles-api-environment/graphql"]
-# TODO: Re-enable when metadata is production-ready
-# metadata = ["pixles-api-metadata", "pixles-api-environment/metadata"]
-# TODO: Re-enable when upload is production-ready
-# upload = [
-#     "pixles-api-upload",
-#     "pixles-api-environment/upload",
-# ]
+library = ["pixles-api-library", "pixles-api-environment/graphql"]
+upload = ["pixles-api-upload", "pixles-api-environment/upload"]
+media = ["pixles-api-media", "pixles-api-environment/media"]
+sync = ["pixles-api-sync", "pixles-api-environment/sync", "h2c"]
 openapi = []

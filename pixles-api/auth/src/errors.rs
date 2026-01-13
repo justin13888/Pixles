@@ -1,47 +1,105 @@
-//! Public error types for auth library
-
 use salvo::http::StatusCode;
 use salvo::prelude::*;
 use thiserror::Error;
 
 use crate::models::errors::BadRegisterUserRequestError;
+use model::errors::InternalServerError;
 
-/// Authentication error
-#[derive(Error, Debug)]
-pub enum AuthError {
-    #[error("User not found or invalid credentials")]
-    InvalidCredentials,
-    #[error("User already exists")]
+/// Register user error
+#[derive(Debug)]
+pub enum RegisterError {
     UserAlreadyExists,
-    #[error("Unauthorized")]
-    Unauthorized,
-    #[error("Bad request")]
     BadRequest(BadRegisterUserRequestError),
-    #[error("Invalid token")]
-    InvalidToken(#[from] ClaimValidationError),
-    #[error("Internal server error")]
-    InternalServerError(#[from] eyre::Report),
+    Unexpected(InternalServerError),
+}
+
+impl std::fmt::Display for RegisterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UserAlreadyExists => write!(f, "User already exists"),
+            Self::BadRequest(e) => write!(f, "Bad request: {}", e),
+            Self::Unexpected(e) => write!(f, "Internal server error: {}", e),
+        }
+    }
+}
+
+impl From<BadRegisterUserRequestError> for RegisterError {
+    fn from(err: BadRegisterUserRequestError) -> Self {
+        Self::BadRequest(err)
+    }
+}
+
+impl From<InternalServerError> for RegisterError {
+    fn from(err: InternalServerError) -> Self {
+        Self::Unexpected(err)
+    }
 }
 
 #[async_trait]
-impl Writer for AuthError {
-    async fn write(self, _req: &mut Request, _depot: &mut Depot, res: &mut Response) {
-        let (status, error_message) = match self {
-            AuthError::InvalidCredentials => (StatusCode::NOT_FOUND, "User not found".to_string()),
-            AuthError::UserAlreadyExists => {
-                (StatusCode::CONFLICT, "User already exists".to_string())
+impl Writer for RegisterError {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            RegisterError::UserAlreadyExists => {
+                res.status_code(StatusCode::CONFLICT);
+                res.render(Text::Plain("User already exists"));
             }
-            AuthError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
-            AuthError::BadRequest(e) => (StatusCode::BAD_REQUEST, e.to_string()),
-            AuthError::InvalidToken(e) => (StatusCode::UNAUTHORIZED, e.to_string()),
-            AuthError::InternalServerError(_e) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal server error".to_string(),
-            ),
-        };
+            RegisterError::BadRequest(e) => {
+                res.status_code(StatusCode::BAD_REQUEST);
+                res.render(Text::Plain(e.to_string()));
+            }
+            RegisterError::Unexpected(e) => {
+                e.write(req, depot, res).await;
+            }
+        }
+    }
+}
 
-        res.status_code(status);
-        res.render(Text::Plain(error_message));
+/// Login error
+#[derive(Debug)]
+pub enum LoginError {
+    InvalidCredentials,
+    AccountNotVerified,
+    Unexpected(InternalServerError),
+}
+
+impl std::fmt::Display for LoginError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidCredentials => write!(f, "User not found or invalid credentials"),
+            Self::AccountNotVerified => write!(f, "Account not verified"),
+            Self::Unexpected(e) => write!(f, "Internal server error: {}", e),
+        }
+    }
+}
+
+impl From<InternalServerError> for LoginError {
+    fn from(err: InternalServerError) -> Self {
+        Self::Unexpected(err)
+    }
+}
+
+impl From<sea_orm::DbErr> for LoginError {
+    fn from(err: sea_orm::DbErr) -> Self {
+        InternalServerError::from(err).into()
+    }
+}
+
+#[async_trait]
+impl Writer for LoginError {
+    async fn write(self, req: &mut Request, depot: &mut Depot, res: &mut Response) {
+        match self {
+            LoginError::InvalidCredentials => {
+                res.status_code(StatusCode::UNAUTHORIZED);
+                res.render(Text::Plain("Invalid credentials"));
+            }
+            LoginError::AccountNotVerified => {
+                res.status_code(StatusCode::FORBIDDEN);
+                res.render(Text::Plain("Account not verified"));
+            }
+            LoginError::Unexpected(e) => {
+                e.write(req, depot, res).await;
+            }
+        }
     }
 }
 
@@ -89,4 +147,77 @@ impl Writer for ClaimValidationError {
         res.status_code(status);
         res.render(Text::Plain(error_message));
     }
+}
+
+/// TOTP enrollment error
+#[derive(Debug, Error)]
+pub enum TotpEnrollError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("TOTP is already enabled")]
+    AlreadyEnabled,
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// TOTP verification error
+#[derive(Debug, Error)]
+pub enum TotpVerificationError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("TOTP is not enabled")]
+    NotEnabled,
+    #[error("Invalid code")]
+    InvalidCode,
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// Passkey registration error
+#[derive(Debug, Error)]
+pub enum PasskeyRegistrationError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("Passkey already exists")]
+    AlreadyExists,
+    #[error("Registration failed: {0}")]
+    RegistrationFailed(String),
+    #[error("Invalid challenge")]
+    InvalidChallenge,
+    #[error("Limit reached: {0}")]
+    LimitReached(String),
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// Passkey authentication error
+#[derive(Debug, Error)]
+pub enum PasskeyAuthenticationError {
+    #[error("User not found")]
+    UserNotFound, // Used for start_authentication
+    #[error("Constraint violation: {0}")]
+    ConstraintViolation(String), // e.g. user verification failed
+    #[error("Invalid credential")]
+    InvalidCredential, // Used for finish_authentication
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
+}
+
+/// Passkey management error
+#[derive(Debug, Error)]
+pub enum PasskeyManagementError {
+    #[error("User not found")]
+    UserNotFound,
+    #[error("Passkey not found")]
+    NotFound,
+    #[error("Database error: {0}")]
+    Db(#[from] sea_orm::DbErr),
+    #[error("Unexpected error: {0}")]
+    Unexpected(#[from] eyre::Report),
 }

@@ -15,7 +15,7 @@ use crate::jwt::convert_ed25519_der_to_jwt_keys;
 
 pub mod constants;
 mod jwt;
-mod wrapper;
+pub mod wrapper;
 
 #[derive(Debug, Error)]
 pub enum EnvironmentError {
@@ -44,9 +44,9 @@ pub struct ServerConfig {
     #[cfg(feature = "auth")]
     /// EdDSA encoding key
     pub jwt_eddsa_encoding_key: SecretKeyWrapper<EncodingKey>,
-    #[cfg(feature = "auth")]
+    // Decoding key is used by all servers so it is not feature gated
     /// EdDSA decoding key
-    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>, // TODO: Might need this for other components like graphql
+    pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>,
     #[cfg(feature = "auth")]
     /// JWT refresh token duration in seconds
     pub jwt_refresh_token_duration_seconds: u64,
@@ -54,7 +54,7 @@ pub struct ServerConfig {
     /// JWT access token duration in seconds
     pub jwt_access_token_duration_seconds: u64,
 
-    #[cfg(feature = "upload")]
+    #[cfg(any(feature = "upload", feature = "media", feature = "sync"))]
     /// Upload directory
     pub upload_dir: PathBuf,
     #[cfg(feature = "upload")]
@@ -67,7 +67,7 @@ pub struct ServerConfig {
     /// Sled database directory
     pub sled_db_dir: PathBuf,
 
-    #[cfg(feature = "auth")]
+    #[cfg(any(feature = "auth", feature = "upload"))]
     /// Valkey URL (e.g. "redis://127.0.0.1:6379")
     pub valkey_url: String,
 }
@@ -147,8 +147,7 @@ impl Environment {
                 domain: load_env("SERVER_DOMAIN").unwrap_or("localhost".to_string()),
                 #[cfg(feature = "auth")]
                 jwt_eddsa_encoding_key: SecretKeyWrapper::from(jwt_eddsa_encoding_key),
-                #[cfg(feature = "auth")]
-                jwt_eddsa_decoding_key: SecretKeyWrapper::from(jwt_eddsa_decoding_key),
+                jwt_eddsa_decoding_key: SecretKeyWrapper::from(jwt_eddsa_decoding_key.clone()),
                 #[cfg(feature = "auth")]
                 jwt_refresh_token_duration_seconds: load_env_u64(
                     "JWT_REFRESH_TOKEN_DURATION_SECONDS",
@@ -159,7 +158,7 @@ impl Environment {
                     "JWT_ACCESS_TOKEN_DURATION_SECONDS",
                 )
                 .unwrap_or(ACCESS_TOKEN_EXPIRY),
-                #[cfg(feature = "upload")]
+                #[cfg(any(feature = "upload", feature = "media", feature = "sync"))]
                 upload_dir: load_env("UPLOAD_DIR")
                     .unwrap_or(String::from("./uploads"))
                     .into(),
@@ -170,8 +169,8 @@ impl Environment {
                 #[cfg(feature = "upload")]
                 sled_db_dir: load_env("SLED_DB_DIR")
                     .unwrap_or(String::from("./.metadata"))
-                    .into(),
-                #[cfg(feature = "auth")]
+                    .into(), // TODO: If this is still used
+                #[cfg(any(feature = "auth", feature = "upload"))]
                 valkey_url: load_env("VALKEY_URL")?,
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {

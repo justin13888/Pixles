@@ -1,13 +1,13 @@
+use super::{CreateUserArgs, UpdateUserArgs};
 use ::entity::{user, user::Entity as User};
-use model::user::{CreateUser, UpdateUser};
 use sea_orm::*;
 
 pub struct Mutation;
 
 impl Mutation {
     /// Creates a new user
-    pub async fn create_user(db: &DbConn, user: CreateUser) -> Result<user::Model, DbErr> {
-        let CreateUser {
+    pub async fn create_user(db: &DbConn, user: CreateUserArgs) -> Result<user::Model, DbErr> {
+        let CreateUserArgs {
             username,
             name,
             email,
@@ -28,10 +28,10 @@ impl Mutation {
     /// Updates an existing user
     pub async fn update_user(
         db: &DbConn,
-        id: String,
-        user: UpdateUser,
+        id: &str,
+        user: UpdateUserArgs,
     ) -> Result<user::Model, DbErr> {
-        let UpdateUser {
+        let UpdateUserArgs {
             username,
             name,
             email,
@@ -63,7 +63,7 @@ impl Mutation {
     }
 
     /// Tracks a successful login for a user
-    pub async fn track_login_success(db: &DbConn, id: String) -> Result<user::Model, DbErr> {
+    pub async fn track_login_success(db: &DbConn, id: &str) -> Result<user::Model, DbErr> {
         let user_model = User::find_by_id(id)
             .one(db)
             .await?
@@ -77,7 +77,7 @@ impl Mutation {
     }
 
     /// Tracks a failed login attempt for a user
-    pub async fn track_login_failure(db: &DbConn, id: String) -> Result<user::Model, DbErr> {
+    pub async fn track_login_failure(db: &DbConn, id: &str) -> Result<user::Model, DbErr> {
         let user_model = User::find_by_id(id)
             .one(db)
             .await?
@@ -94,8 +94,8 @@ impl Mutation {
     /// Updates a user's password reset token
     pub async fn update_password_reset_token(
         db: &DbConn,
-        id: String,
-        token: String,
+        id: &str,
+        token: &str,
         expires_at: chrono::DateTime<chrono::Utc>,
     ) -> Result<user::Model, DbErr> {
         let user_model = User::find_by_id(id)
@@ -104,7 +104,7 @@ impl Mutation {
             .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
 
         let mut user: user::ActiveModel = user_model.into();
-        user.password_reset_token = Set(Some(token));
+        user.password_reset_token = Set(Some(token.to_string()));
         user.password_reset_expires_at = Set(Some(expires_at));
 
         user.update(db).await
@@ -113,8 +113,8 @@ impl Mutation {
     /// Confirms a password reset for a user
     pub async fn confirm_password_reset(
         db: &DbConn,
-        id: String,
-        new_password_hash: String,
+        id: &str,
+        new_password_hash: &str,
     ) -> Result<user::Model, DbErr> {
         let user_model = User::find_by_id(id)
             .one(db)
@@ -122,10 +122,65 @@ impl Mutation {
             .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
 
         let mut user: user::ActiveModel = user_model.into();
-        user.password_hash = Set(new_password_hash);
+        user.password_hash = Set(new_password_hash.to_string());
         user.password_reset_token = Set(None);
         user.password_reset_expires_at = Set(None);
 
         user.update(db).await
+    }
+
+    /// Set TOTP fields. If verified is None, it will not be updated.
+    ///
+    /// Returns true if the fields were set successfully
+    pub async fn set_totp(
+        db: &DbConn,
+        id: &str,
+        secret: Option<String>,
+        verified: Option<bool>,
+    ) -> Result<bool, DbErr> {
+        let user_model = match User::find_by_id(id).one(db).await? {
+            Some(m) => m,
+            None => return Ok(false),
+        };
+
+        let mut user: user::ActiveModel = user_model.into();
+        user.totp_secret = Set(secret);
+        if let Some(verified) = verified {
+            user.totp_verified = Set(Some(verified));
+        }
+
+        user.update(db).await?;
+
+        Ok(true)
+    }
+    /// Set TOTP fields
+    /// Returns true if the secret was set successfully
+    pub async fn set_totp_secret(
+        db: &DbConn,
+        id: &str,
+        secret: Option<String>,
+    ) -> Result<bool, DbErr> {
+        Self::set_totp(db, id, secret, None).await
+    }
+
+    /// Set TOTP secret as verified
+    /// Returns true if the secret was set successfully
+    pub async fn set_totp_verified(db: &DbConn, id: &str, verified: bool) -> Result<bool, DbErr> {
+        let user_model = match User::find_by_id(id).one(db).await? {
+            Some(m) => m,
+            None => return Ok(false),
+        };
+
+        let mut user: user::ActiveModel = user_model.into();
+        user.totp_verified = Set(Some(verified));
+
+        user.update(db).await?;
+
+        Ok(true)
+    }
+
+    /// Clears a user's TOTP secret and verification status
+    pub async fn clear_totp_secret(db: &DbConn, id: &str) -> Result<bool, DbErr> {
+        Self::set_totp(db, id, None, Some(false)).await
     }
 }

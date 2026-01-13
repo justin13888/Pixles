@@ -9,16 +9,19 @@ name = "auth"
 path = "src/lib.rs"
 
 [dependencies]
-pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment", features = ["auth"] }
 pixles-api-model = { path = "../model" }
-pixles-api-service = { path = "../service" }
-salvo = { workspace = true }
+pixles-api-service = { path = "../service", features = ["auth"] }
 argon2 = { workspace = true }
+bb8 = { workspace = true }
+bb8-redis = { workspace = true }
 chrono = { workspace = true }
+derive_more = { workspace = true, features = ["from"] }
 eyre = { workspace = true }
 jsonwebtoken = { workspace = true }
 nanoid = { workspace = true }
+redis = { workspace = true }
+salvo = { workspace = true }
 sea-orm = { workspace = true, features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
@@ -30,15 +33,16 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v4", "v5"] }
 ring = { workspace = true }
 base64 = { workspace = true }
 strum = { version = "0.27.1", features = ["derive"] }
 strum_macros = "0.27.1"
-redis = { version = "1.0.1", features = ["tokio-comp", "connection-manager"] }
-bb8-redis = "0.26.0"
-bb8 = "0.9.1"
 async-trait = "0.1.89"
+totp-rs = { version = "5.7.0", features = ["gen_secret"] }
+webauthn-rs = { version = "0.5", features = [
+    "danger-allow-state-serialisation",
+] }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }

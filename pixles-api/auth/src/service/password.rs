@@ -1,6 +1,6 @@
 use super::email::EmailService;
-use crate::errors::AuthError;
 use chrono::{Duration, Utc};
+use model::errors::InternalServerError;
 use sea_orm::DatabaseConnection;
 use service::user as UserService;
 use std::time::Instant;
@@ -21,7 +21,7 @@ impl PasswordService {
         conn: &DatabaseConnection,
         email_service: &EmailService,
         email: &str,
-    ) -> Result<(), AuthError> {
+    ) -> Result<(), InternalServerError> {
         let start = Instant::now();
 
         // Find user by email
@@ -35,10 +35,7 @@ impl PasswordService {
 
                 // Update user with token
                 match UserService::Mutation::update_password_reset_token(
-                    conn,
-                    user.id.clone(),
-                    token.clone(),
-                    expires_at,
+                    conn, &user.id, &token, expires_at,
                 )
                 .await
                 {
@@ -47,16 +44,16 @@ impl PasswordService {
                         email_service
                             .send_password_reset_email(&user.email, &token)
                             .await
-                            .map_err(AuthError::InternalServerError)
+                            .map_err(InternalServerError::from)
                     }
-                    Err(e) => Err(AuthError::InternalServerError(e.into())),
+                    Err(e) => Err(InternalServerError::from(e)),
                 }
             }
             Ok(None) => {
                 // User not found - pretend success
                 Ok(())
             }
-            Err(e) => Err(AuthError::InternalServerError(e.into())),
+            Err(e) => Err(InternalServerError::from(e)),
         };
 
         // Ensure minimum time elapsed

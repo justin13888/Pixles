@@ -4,10 +4,11 @@ This is API service for all Pixles clients, written in Rust.
 
 There are multiple servable components (built together for development but separately for production):
 
-- [`auth`](auth/README.md): Federated authentication and user management
-- [`graphql`](graphql/README.md): GraphQL API
-- [`upload`](upload/README.md): High-performance, asynchronous upload/ingress server
-- [`metadata`](metadata/README.md): gRPC-based API for high-volume metadata fetching
+- [`auth`](auth/README.md): Federated authentication and user management (REST)
+- [`library`](library/README.md): Client library operations - assets, albums, search (GraphQL)
+- [`media`](media/README.md): High-performance media serving (REST)
+- [`upload`](upload/README.md): High-performance, resumable upload server (REST+TUS)
+- [`sync`](sync/README.md): Bulk library sync for mobile/desktop clients (gRPC)
 - **OpenAPI**: Integrated OpenAPI spec and docs (Scalar UI, Swagger UI) - enable with `openapi` feature flag
 
 They can be packaged together or separately (recommended for production).
@@ -16,7 +17,7 @@ They can be packaged together or separately (recommended for production).
 
 ### Prerequisites
 
-_We assume Linux-based systems for this service._
+_We assume Linux-based systems for this service due to use of platform-specific features. There are many tools to get a Linux environment on other OSes._
 
 - Rustup toolchain
 - Populate `.env` file based on `.env.example`
@@ -42,6 +43,14 @@ _We assume Linux-based systems for this service._
   brew install protobuf
   ```
 
+### Generating API specifications
+
+There are three API specifications that programatically describe the API:
+
+- `openapi.json`: OpenAPI specification for REST APIs. Run `cargo run --bin gen_openapi --features=full -- ./openapi.json` to generate.
+- `schema.graphql`: GraphQL schema for library GraphQL API. Run `cargo run --bin gen_graphql_schema > schema.graphql` in [library](./library/) to generate.
+- `metadata.proto`: Protocol Buffers schema for the sync gRPC API. See [sync/proto](./sync/proto/) for the definitions.
+
 ### Testing
 
 Most tests are written to require minimal system dependencies. However, some are still required:
@@ -63,10 +72,11 @@ Most tests are written to require minimal system dependencies. However, some are
   - _Append feature flags to enable specific parts of server_
 - The following endpoints should be up:
   - Auth: <http://localhost:3000/v1/auth>
-  - GraphQL: <http://localhost:3000/v1/graphql>
-    - GraphiQL (debug build only): <http://localhost:3000/v1/graphql/playground>
+  - Library (GraphQL): <http://localhost:3000/v1/library>
+    - GraphiQL (debug build only): <http://localhost:3000/v1/library/playground>
+  - Media: <http://localhost:3000/v1/media>
   - Upload: <http://localhost:3000/v1/upload>
-  - Metadata: <http://localhost:3000/v1/metadata>
+  - Sync (gRPC): <http://localhost:3000/v1/sync> (requires H2C/gRPC client)
 
   - OpenAPI Docs (Scalar): <http://localhost:3000/openapi>
   - OpenAPI Docs (Swagger UI): <http://localhost:3000/swagger-ui>

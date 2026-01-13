@@ -5,44 +5,91 @@ pub struct Query;
 
 impl Query {
     /// Returns user by ID
-    pub async fn find_user_by_id(db: &DbConn, id: String) -> Result<Option<user::Model>, DbErr> {
-        User::find_by_id(id).one(db).await
+    pub async fn find_user_by_id(
+        db: &DbConn,
+        id: &str,
+    ) -> Result<Option<model::user::User>, DbErr> {
+        let user = User::find_by_id(id).one(db).await?;
+        Ok(user.map(Into::into))
     }
 
     /// Returns user by email
     pub async fn find_user_by_email(
         db: &DbConn,
         email: &str,
-    ) -> Result<Option<user::Model>, DbErr> {
-        User::find()
+    ) -> Result<Option<model::user::User>, DbErr> {
+        let user = User::find()
             .filter(user::Column::Email.eq(email))
             .one(db)
-            .await
+            .await?;
+        Ok(user.map(Into::into))
     }
 
     /// Returns user by username
     pub async fn find_user_by_username(
         db: &DbConn,
         username: &str,
-    ) -> Result<Option<user::Model>, DbErr> {
-        User::find()
+    ) -> Result<Option<model::user::User>, DbErr> {
+        let user = User::find()
             .filter(user::Column::Username.eq(username))
             .one(db)
-            .await
+            .await?;
+        Ok(user.map(Into::into))
     }
 
-    /// Returns hashed password by email
-    pub async fn get_password_hash_by_email(
+    /// Returns email by ID
+    /// Returns None if user not found
+    pub async fn get_email_by_id(db: &DbConn, id: &str) -> Result<Option<String>, DbErr> {
+        let user = User::find_by_id(id)
+            .select_only()
+            .column(user::Column::Email)
+            .one(db)
+            .await?;
+        Ok(user.map(|u| u.email))
+    }
+
+    /// Returns account verification status of user by ID
+    /// Returns None if user not found
+    pub async fn get_account_verification_status_by_id(
         db: &DbConn,
-        email: &str,
-    ) -> Result<Option<String>, DbErr> {
-        let user = User::find_by_email(email)
+        id: &str,
+    ) -> Result<Option<bool>, DbErr> {
+        let user = User::find_by_id(id)
+            .select_only()
+            .column(user::Column::AccountVerified)
+            .one(db)
+            .await?;
+
+        let status = user.map(|u| u.account_verified);
+        Ok(status)
+    }
+
+    /// Returns hashed password by ID
+    #[cfg(feature = "auth")]
+    pub async fn get_password_hash_by_id(db: &DbConn, id: &str) -> Result<Option<String>, DbErr> {
+        let user = User::find_by_id(id)
             .select_only()
             .column(user::Column::PasswordHash)
             .one(db)
             .await?
             .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
         Ok(Some(user.password_hash))
+    }
+
+    /// Returns TOTP secret by ID
+    /// Returns None if user not found
+    /// Returns Some(None) if user has no TOTP secret
+    #[cfg(feature = "auth")]
+    pub async fn get_totp_secret_by_id(
+        db: &DbConn,
+        id: &str,
+    ) -> Result<Option<Option<String>>, DbErr> {
+        let user = User::find_by_id(id)
+            .select_only()
+            .column(user::Column::TotpSecret)
+            .one(db)
+            .await?;
+        Ok(user.map(|u| u.totp_secret))
     }
 
     // /// If ok, returns (user models, num pages).
@@ -64,6 +111,7 @@ impl Query {
     // }
 
     /// Returns user by password reset token
+    #[cfg(feature = "auth")]
     pub async fn find_user_by_reset_token(
         db: &DbConn,
         token: &str,

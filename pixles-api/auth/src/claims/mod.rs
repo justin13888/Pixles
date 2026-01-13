@@ -7,6 +7,7 @@ use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, TokenData, Validation, d
 use serde::{Deserialize, Serialize};
 
 use crate::constants::ISSUER;
+use crate::errors::ClaimValidationError;
 use crate::roles::UserRole;
 
 pub mod issuer;
@@ -74,12 +75,12 @@ impl Claims {
     }
 
     /// Returns new access token claims
-    pub fn new_access_token(user_id: String, scopes: Vec<Scope>, sid: Option<String>) -> Self {
+    pub fn new_access_token(user_id: String, sid: Option<String>) -> Self {
         Self::new(
             user_id,
             UserRole::User,
             Duration::from_secs(ACCESS_TOKEN_EXPIRY),
-            scopes,
+            vec![Scope::AccessToken],
             sid,
         )
     }
@@ -95,14 +96,66 @@ impl Claims {
         )
     }
 
-    /// Returns true if the token is still valid
-    pub fn is_valid(&self) -> bool {
+    /// Returns new MFA token claims (for TOTP verification)
+    /// These tokens have a short TTL (3 minutes) and no authorization scopes
+    pub fn new_mfa_token(user_id: String) -> Self {
+        Self::new(
+            user_id,
+            UserRole::User,
+            Duration::from_secs(180), // 3 minutes
+            vec![Scope::MfaToken],    // No scopes - cannot be used for authorization
+            None,                     // No session ID
+        )
+    }
+
+    /// Returns true if the token has not expired
+    pub fn has_expired(&self) -> bool {
         self.exp > Utc::now().timestamp() as u64
     }
 
-    /// Checks if a specific scope is present
-    pub fn has_scope(&self, scope: &str) -> bool {
-        self.scopes.iter().any(|s| String::from(s) == scope)
+    /// Returns true if the token has valid issuer
+    pub fn has_valid_issuer(&self) -> bool {
+        self.iss == ISSUER
+    }
+
+    /// Validates the token
+    pub fn validate(&self, required_scopes: &[Scope]) -> Result<(), ClaimValidationError> {
+        if self.has_expired() {
+            return Err(ClaimValidationError::TokenExpired);
+        }
+
+        if !self.has_valid_issuer() {
+            return Err(ClaimValidationError::TokenInvalid(format!(
+                "Invalid issuer. Expected {ISSUER}"
+            )));
+        }
+
+        if !self.has_scopes(required_scopes) {
+            return Err(ClaimValidationError::TokenInvalid(format!(
+                "Invalid scopes. Expected {:?}, got {:?}",
+                required_scopes, self.scopes
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Returns whether token is valid
+    ///
+    /// Does not check for scopes.
+    /// Does not describe the error if any.
+    pub fn is_valid(&self) -> bool {
+        self.validate(&[]).is_ok()
+    }
+
+    /// Returns nothing. Throws error if invalid access token.
+    pub fn validate_access_token(&self) -> Result<(), ClaimValidationError> {
+        self.validate(&[Scope::AccessToken])
+    }
+
+    /// Returns nothing. Throws error if invalid refresh token.
+    pub fn validate_refresh_token(&self) -> Result<(), ClaimValidationError> {
+        self.validate(&[Scope::RefreshToken])
     }
 
     /// Decode from a token string
@@ -125,6 +178,11 @@ impl Claims {
         required_scopes
             .iter()
             .all(|scope| self.scopes.contains(scope))
+    }
+
+    /// Checks if a specific scope is present
+    pub fn has_scope(&self, scope: &Scope) -> bool {
+        self.has_scopes(&[*scope])
     }
 }
 // TODO: Test ^^

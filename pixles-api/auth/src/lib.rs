@@ -1,5 +1,4 @@
 use config::AuthConfig;
-use eyre::Result;
 use salvo::cors::Cors;
 use salvo::http::Method;
 use salvo::prelude::*;
@@ -29,17 +28,27 @@ pub mod validation;
 pub async fn get_router<C: Into<AuthConfig>>(
     conn: DatabaseConnection,
     config: C,
-) -> Result<Router> {
+) -> eyre::Result<Router> {
     let config = config.into();
 
     let session_manager = session::SessionManager::new(
         config.valkey_url.clone(),
         std::time::Duration::from_secs(config.jwt_refresh_token_duration_seconds),
     )
-    .await?;
+    .await
+    .map_err(|e| e.0)?;
 
     // Initialize Email Service
     let email_service = service::EmailService::new();
+
+    // Initialize Passkey Service
+    let rp_id = config.domain.clone();
+    let rp_origin = webauthn_rs::prelude::Url::parse(&format!("https://{}", config.domain))?;
+
+    let builder = webauthn_rs::prelude::WebauthnBuilder::new(&rp_id, &rp_origin)
+        .map_err(|e| eyre::eyre!(e))?;
+    let webauthn = std::sync::Arc::new(builder.build().map_err(|e| eyre::eyre!(e))?);
+    let passkey_service = service::PasskeyService::new(conn.clone(), webauthn);
 
     // CORS configuration - TODO: Restrict later
     let cors = Cors::new()
@@ -54,7 +63,13 @@ pub async fn get_router<C: Into<AuthConfig>>(
         .allow_headers("*")
         .into_handler();
 
-    let state = AppState::new(conn, config, session_manager, email_service);
+    let state = AppState::new(
+        conn,
+        config,
+        session_manager,
+        email_service,
+        passkey_service,
+    );
 
     let router = routes::get_router(state);
 

@@ -22,7 +22,7 @@ pub async fn reset_password_request(
         .request_reset(&state.conn, &state.email_service, &email)
         .await
     {
-        return ResetPasswordRequestResponses::InternalServerError(e.into());
+        return ResetPasswordRequestResponses::InternalServerError(eyre::eyre!(e).into());
     }
 
     ResetPasswordRequestResponses::Success
@@ -44,7 +44,7 @@ pub async fn reset_password(
     // Find user by token
     let user = match UserService::Query::find_user_by_reset_token(&state.conn, &token).await {
         Ok(user) => user,
-        Err(e) => return PasswordResetResponses::InternalServerError(e.into()),
+        Err(e) => return PasswordResetResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     let user = match user {
@@ -53,32 +53,30 @@ pub async fn reset_password(
     };
 
     // Check expiry
-    if let Some(expires_at) = user.password_reset_expires_at {
-        if expires_at < chrono::Utc::now() {
-            return PasswordResetResponses::InvalidToken;
-        }
-    } else {
+    if user
+        .password_reset_expires_at
+        .is_none_or(|exp| exp < chrono::Utc::now())
+    {
         return PasswordResetResponses::InvalidToken;
     }
 
     // Validate new password strength
-    if let Err(e) = UserService::is_valid_password(&new_password) {
-        trace!("Invalid password during reset for user {}: {}", user.id, e);
+    if !UserService::is_valid_password(&new_password) {
+        trace!("Invalid password during reset for user {}", user.id);
         return PasswordResetResponses::InvalidNewPassword;
     }
 
     // Hash password
     let password_hash = match hash_password(&new_password) {
         Ok(hash) => hash,
-        Err(e) => return PasswordResetResponses::InternalServerError(e.into()),
+        Err(e) => return PasswordResetResponses::InternalServerError(eyre::eyre!(e).into()),
     };
 
     // Confirm reset
     if let Err(e) =
-        UserService::Mutation::confirm_password_reset(&state.conn, user.id.clone(), password_hash)
-            .await
+        UserService::Mutation::confirm_password_reset(&state.conn, &user.id, &password_hash).await
     {
-        return PasswordResetResponses::InternalServerError(e.into());
+        return PasswordResetResponses::InternalServerError(eyre::eyre!(e).into());
     }
 
     // Revoke all existing sessions for security

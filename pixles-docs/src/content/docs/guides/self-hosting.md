@@ -13,9 +13,13 @@ Unlike other open-source projects, Pixles makes some assumptions about your envi
 
 ## Hardware
 
+*For single-node deployment. For Kubernetes, you may adjust to your requirements.*
+
 - Operating System: Some modern GNU/Linux distribution capable of running containers (Docker or some Kubernetes distribution)
-- CPU: Both x86 and arm64 (AES-NI should be enabled, Intel QAT would help with TLS) (minimum requirements TBD)
-- Memory: (minimum requirements TBD)
+- CPU: Most modern x86 and arm64 chips should work. AES-NI should be enabled. Intel QAT is not necessary for TLS (`rustls`).
+- RAM:
+  - Minimum: 2 GB
+  - Recommended: 4 GB
 - Storage: (minimum requirements TBD)
 
 ## Software

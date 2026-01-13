@@ -10,3 +10,15 @@ path = "src/lib.rs"
 
 [dependencies]
 pixles-api-entity = { path = "../entity" }
+argon2 = { workspace = true }
+chrono = { workspace = true }
+jsonwebtoken = { workspace = true }
+salvo = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+sea-orm = { workspace = true }
+redis = { workspace = true }
+eyre = { workspace = true }
+uuid = { workspace = true }
