@@ -4,6 +4,8 @@ Open Asset Management Scaled to Millions.
 
 > Disclaimer: This project continues to be in active development. Star this repo to get the latest updates!
 
+> Alpha status: The `master` branch is the main development branch. Releases on GitHub will be made once: 1. Features/APIs have been stabilized internally; 2. Internal testing group have tested sufficiently.
+
 ## Features
 
 - **Cross-platform**: Pixles is available on all common desktop and mobile platforms. They're fast on all.
@@ -49,6 +51,14 @@ Pixles is available on all common platforms. We expect the smoothest possible ex
 Pixles is open-source and designed to be friendly to self-host. See this [guide](#) for more information. -->
 
 <!-- TODO -->
+
+### Features Relevant to New Users
+
+*Note: This section is being updated on the development branch.*
+
+- Official tools for bulk imports: Pixles was built to support massive (TB+) imports on the fly. It handles deduplication, bulk organization, etc. for you. (For existing libraries, it is recommended that you use the CLI though.)
+- Native clients with native features: Sometimes you want to backup your content on particular platforms that require platform-specific APIs (e.g. iOS). If we have a native client for you, it will be using the latest APIs available in that ecosystem.
+- Performance-oriented architecture: Pixles is focused on providing a robust and secure backend to store your most important data, and you can be sure whatever big collection you have will be processed with all the hardware you give.
 
 ## Development
 
