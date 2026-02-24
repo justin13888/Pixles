@@ -119,6 +119,12 @@ Setup in the following order:
 
 <!-- TODO: Add internationalization note -->
 
+## Issue Reporting
+
+GitHub Issues is the only accepted method of technical issue reporting. For assistance on setup, we recommend opening a GitHub Discussion (for visibility).
+
+> Note on third-party clients and scripts: This is outside the scope of the project but if there is missing functionality that led to resorting to external solutions, we highly encourage you to submit a feature request!
+
 ## FAQ
 
 **Q: Why may Pixles be more suitable than other open-source solutions?**
