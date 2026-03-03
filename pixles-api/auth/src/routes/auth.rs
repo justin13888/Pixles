@@ -1,3 +1,7 @@
+use environment::constants::{
+    RATE_LIMIT_LOGIN_MAX, RATE_LIMIT_LOGIN_WINDOW_SECS, RATE_LIMIT_REGISTER_MAX,
+    RATE_LIMIT_REGISTER_WINDOW_SECS,
+};
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 use secrecy::ExposeSecret;
@@ -12,15 +16,48 @@ use crate::models::responses::{
 use crate::state::AppState;
 use crate::utils::headers::get_token_from_headers;
 
+fn get_client_ip(req: &Request) -> String {
+    req.headers()
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .map(|s| s.trim().to_string())
+        .or_else(|| {
+            req.headers()
+                .get("x-real-ip")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
 /// Register a new user
 #[endpoint(operation_id = "register_user", tags("auth"))]
 pub async fn register_user(
+    req: &mut Request,
     depot: &mut Depot,
     body: JsonBody<RegisterRequest>,
 ) -> RegisterUserResponses {
     let state = depot.obtain::<AppState>().unwrap();
-    let request = body.into_inner();
 
+    // Per-IP rate limit
+    let ip = get_client_ip(req);
+    let rl_key = format!("register:{}", ip);
+    match state
+        .session_manager
+        .check_rate_limit(&rl_key, RATE_LIMIT_REGISTER_MAX, RATE_LIMIT_REGISTER_WINDOW_SECS)
+        .await
+    {
+        Ok(result) if result.count > RATE_LIMIT_REGISTER_MAX => {
+            return RegisterUserResponses::RateLimited(result.window_ttl_secs);
+        }
+        Err(e) => {
+            tracing::warn!("Rate limit check failed: {}", e);
+        }
+        _ => {}
+    }
+
+    let request = body.into_inner();
     state
         .auth_service
         .register_user(&state.session_manager, request)
@@ -30,10 +67,31 @@ pub async fn register_user(
 
 /// Login a user
 #[endpoint(operation_id = "login_user", tags("auth"))]
-pub async fn login_user(depot: &mut Depot, body: JsonBody<LoginRequest>) -> LoginResponses {
+pub async fn login_user(
+    req: &mut Request,
+    depot: &mut Depot,
+    body: JsonBody<LoginRequest>,
+) -> LoginResponses {
     let state = depot.obtain::<AppState>().unwrap();
-    let LoginRequest { email, password } = body.into_inner();
 
+    // Per-IP rate limit
+    let ip = get_client_ip(req);
+    let rl_key = format!("login:{}", ip);
+    match state
+        .session_manager
+        .check_rate_limit(&rl_key, RATE_LIMIT_LOGIN_MAX, RATE_LIMIT_LOGIN_WINDOW_SECS)
+        .await
+    {
+        Ok(result) if result.count > RATE_LIMIT_LOGIN_MAX => {
+            return LoginResponses::RateLimited(result.window_ttl_secs);
+        }
+        Err(e) => {
+            tracing::warn!("Rate limit check failed: {}", e);
+        }
+        _ => {}
+    }
+
+    let LoginRequest { email, password } = body.into_inner();
     state
         .auth_service
         .authenticate_user(&state.session_manager, &email, &password)

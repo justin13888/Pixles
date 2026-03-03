@@ -1,4 +1,5 @@
 // use crate::models::{CreateUser, UpdateUser};
+use environment::constants::MAX_FAILED_LOGIN_ATTEMPTS;
 use sea_orm::DatabaseConnection;
 use service::user as UserService;
 
@@ -107,6 +108,15 @@ impl AuthService {
 
         if let Some(user) = user {
             tracing::info!("User found: {}", user.id);
+
+            // Check account lockout
+            let failed_attempts = UserService::Query::get_failed_login_attempts(&self.conn, &user.id)
+                .await
+                .map_err(|e| LoginError::Unexpected(e.into()))?
+                .unwrap_or(0);
+            if failed_attempts >= MAX_FAILED_LOGIN_ATTEMPTS {
+                return Err(LoginError::AccountLocked);
+            }
 
             let password_hash = UserService::Query::get_password_hash_by_id(&self.conn, &user.id)
                 .await?

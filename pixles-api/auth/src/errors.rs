@@ -58,6 +58,8 @@ impl Writer for RegisterError {
 #[derive(Debug)]
 pub enum LoginError {
     InvalidCredentials,
+    AccountLocked,
+    RateLimited(u64),
     Unexpected(InternalServerError),
 }
 
@@ -65,6 +67,8 @@ impl std::fmt::Display for LoginError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidCredentials => write!(f, "User not found or invalid credentials"),
+            Self::AccountLocked => write!(f, "Account temporarily locked due to too many failed login attempts"),
+            Self::RateLimited(retry_after) => write!(f, "Too many requests. Retry after {} seconds", retry_after),
             Self::Unexpected(e) => write!(f, "Internal server error: {}", e),
         }
     }
@@ -89,6 +93,18 @@ impl Writer for LoginError {
             LoginError::InvalidCredentials => {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Text::Plain("Invalid credentials"));
+            }
+            LoginError::AccountLocked => {
+                res.status_code(StatusCode::LOCKED);
+                res.render(Text::Plain("Account locked due to too many failed login attempts"));
+            }
+            LoginError::RateLimited(retry_after) => {
+                res.status_code(StatusCode::TOO_MANY_REQUESTS);
+                res.headers_mut().insert(
+                    salvo::http::header::RETRY_AFTER,
+                    retry_after.to_string().parse().unwrap(),
+                );
+                res.render(Text::Plain("Too many requests"));
             }
             LoginError::Unexpected(e) => {
                 e.write(req, depot, res).await;

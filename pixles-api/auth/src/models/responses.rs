@@ -42,6 +42,7 @@ pub enum RegisterUserResponses {
     Success(TokenResponse),
     BadRequest(BadRegisterUserRequestError),
     UserAlreadyExists,
+    RateLimited(u64),
     InternalServerError(InternalServerError),
 }
 
@@ -80,6 +81,14 @@ impl Writer for RegisterUserResponses {
                 res.status_code(StatusCode::CONFLICT);
                 res.render(Json(ApiError::new("User already exists")));
             }
+            Self::RateLimited(retry_after) => {
+                res.status_code(StatusCode::TOO_MANY_REQUESTS);
+                res.headers_mut().insert(
+                    salvo::http::header::RETRY_AFTER,
+                    retry_after.to_string().parse().unwrap(),
+                );
+                res.render(Json(ApiError::new("Too many requests")));
+            }
             Self::InternalServerError(e) => e.write(req, depot, res).await,
         }
     }
@@ -115,6 +124,8 @@ pub enum LoginResponses {
     Success(TokenResponse),
     BadRequest,
     InvalidCredentials,
+    AccountLocked,
+    RateLimited(u64),
     InternalServerError(InternalServerError),
 }
 
@@ -131,6 +142,8 @@ impl From<LoginError> for LoginResponses {
     fn from(e: LoginError) -> Self {
         match e {
             LoginError::InvalidCredentials => Self::InvalidCredentials,
+            LoginError::AccountLocked => Self::AccountLocked,
+            LoginError::RateLimited(r) => Self::RateLimited(r),
             LoginError::Unexpected(e) => Self::InternalServerError(e),
         }
     }
@@ -152,9 +165,20 @@ impl Writer for LoginResponses {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Json(ApiError::new("Invalid credentials")));
             }
+            Self::AccountLocked => {
+                res.status_code(StatusCode::LOCKED);
+                res.render(Json(ApiError::new("Account locked due to too many failed login attempts")));
+            }
+            Self::RateLimited(retry_after) => {
+                res.status_code(StatusCode::TOO_MANY_REQUESTS);
+                res.headers_mut().insert(
+                    salvo::http::header::RETRY_AFTER,
+                    retry_after.to_string().parse().unwrap(),
+                );
+                res.render(Json(ApiError::new("Too many requests")));
+            }
             Self::InternalServerError(e) => {
                 e.write(_req, _depot, res).await;
-                return;
             }
         }
     }
@@ -294,6 +318,7 @@ impl EndpointOutRegister for ValidateTokenResponses {
 pub enum ResetPasswordRequestResponses {
     Success,
     BadRequest,
+    RateLimited(u64),
     InternalServerError(InternalServerError),
 }
 
@@ -308,6 +333,14 @@ impl Writer for ResetPasswordRequestResponses {
             Self::BadRequest => {
                 res.status_code(StatusCode::BAD_REQUEST);
                 res.render(Json(ApiError::new("Invalid request")));
+            }
+            Self::RateLimited(retry_after) => {
+                res.status_code(StatusCode::TOO_MANY_REQUESTS);
+                res.headers_mut().insert(
+                    salvo::http::header::RETRY_AFTER,
+                    retry_after.to_string().parse().unwrap(),
+                );
+                res.render(Json(ApiError::new("Too many requests")));
             }
             Self::InternalServerError(e) => e.write(req, depot, res).await,
         }

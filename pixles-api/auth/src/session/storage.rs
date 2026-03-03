@@ -4,10 +4,16 @@ use bb8_redis::bb8::Pool;
 use redis::AsyncCommands;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
 
 use model::errors::InternalServerError;
+
+/// Result of a rate limit check: count of requests in current window and remaining TTL (secs).
+pub struct RateLimitResult {
+    pub count: i64,
+    pub window_ttl_secs: u64,
+}
 
 #[async_trait::async_trait]
 pub trait SessionStorage: Send + Sync {
@@ -114,6 +120,14 @@ pub trait SessionStorage: Send + Sync {
     /// # Returns
     /// Returns `Ok(())` on success, or an `InternalServerError` if the operation fails.
     async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError>;
+
+    /// Increments a rate-limit counter for `key` and returns current count + window TTL.
+    /// Uses a fixed window of `window_secs`. On first request in the window, sets expiry.
+    async fn increment_rate_limit(
+        &self,
+        key: &str,
+        window_secs: u64,
+    ) -> Result<RateLimitResult, InternalServerError>;
 
     // Ephemeral/Temporary data storage (for flows like Passkey)
     async fn save_temp_data(
@@ -288,6 +302,37 @@ impl SessionStorage for RedisSessionStorage {
         Ok(())
     }
 
+    async fn increment_rate_limit(
+        &self,
+        key: &str,
+        window_secs: u64,
+    ) -> Result<RateLimitResult, InternalServerError> {
+        let mut con = self
+            .client
+            .get()
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        let redis_key = format!("pixles:rate_limit:{}", key);
+        let count: i64 = con
+            .incr(&redis_key, 1)
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        if count == 1 {
+            let _: () = con
+                .expire(&redis_key, window_secs as i64)
+                .await
+                .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        }
+        let ttl: i64 = con
+            .ttl(&redis_key)
+            .await
+            .map_err(|e| InternalServerError::from(eyre::eyre!(e)))?;
+        Ok(RateLimitResult {
+            count,
+            window_ttl_secs: ttl.max(0) as u64,
+        })
+    }
+
     async fn save_temp_data(
         &self,
         key: &str,
@@ -336,11 +381,15 @@ impl SessionStorage for RedisSessionStorage {
     }
 }
 
+/// (count, reset_at_unix_secs)
+type RateLimitEntry = (i64, u64);
+
 pub struct InMemorySessionStorage {
     sessions: Arc<RwLock<HashMap<String, String>>>,
     user_sessions: Arc<RwLock<HashMap<String, Vec<String>>>>,
     mfa_attempts: Arc<RwLock<HashMap<String, i32>>>,
     temp_data: Arc<RwLock<HashMap<String, String>>>,
+    rate_limits: Arc<RwLock<HashMap<String, RateLimitEntry>>>,
 }
 
 impl Default for InMemorySessionStorage {
@@ -357,6 +406,7 @@ impl InMemorySessionStorage {
             user_sessions: Arc::new(RwLock::new(HashMap::new())),
             mfa_attempts: Arc::new(RwLock::new(HashMap::new())),
             temp_data: Arc::new(RwLock::new(HashMap::new())),
+            rate_limits: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
@@ -433,6 +483,30 @@ impl SessionStorage for InMemorySessionStorage {
     async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError> {
         self.mfa_attempts.write().await.remove(mfa_token_jti);
         Ok(())
+    }
+
+    async fn increment_rate_limit(
+        &self,
+        key: &str,
+        window_secs: u64,
+    ) -> Result<RateLimitResult, InternalServerError> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let mut map = self.rate_limits.write().await;
+        let entry = map.entry(key.to_string()).or_insert((0, now + window_secs));
+        if now >= entry.1 {
+            // Window expired — reset
+            *entry = (1, now + window_secs);
+        } else {
+            entry.0 += 1;
+        }
+        let (count, reset_at) = *entry;
+        Ok(RateLimitResult {
+            count,
+            window_ttl_secs: reset_at.saturating_sub(now),
+        })
     }
 
     async fn save_temp_data(

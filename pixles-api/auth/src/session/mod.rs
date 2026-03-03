@@ -7,7 +7,7 @@ use std::time::Duration;
 use model::errors::InternalServerError;
 
 pub mod storage;
-pub use self::storage::{InMemorySessionStorage, RedisSessionStorage, SessionStorage};
+pub use self::storage::{InMemorySessionStorage, RateLimitResult, RedisSessionStorage, SessionStorage};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Session {
@@ -135,6 +135,17 @@ impl SessionManager {
 
     pub async fn clear_mfa_attempts(&self, mfa_token_jti: &str) -> Result<(), InternalServerError> {
         self.storage.clear_mfa_attempts(mfa_token_jti).await
+    }
+
+    // Rate limiting
+    pub async fn check_rate_limit(
+        &self,
+        key: &str,
+        max_requests: i64,
+        window_secs: u64,
+    ) -> Result<RateLimitResult, InternalServerError> {
+        let result = self.storage.increment_rate_limit(key, window_secs).await?;
+        Ok(result)
     }
 
     // Ephemeral data (Passkeys, etc)
