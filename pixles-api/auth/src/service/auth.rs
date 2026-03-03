@@ -71,7 +71,6 @@ impl AuthService {
         let password_hash = hash_password(password.expose_secret())
             .map_err(|e| RegisterError::Unexpected(eyre::eyre!(e).into()))?;
 
-        // TODO: Handle unique constraint violation from DB if race condition occurs
         let user = UserService::Mutation::create_user(
             &self.conn,
             service::user::CreateUserArgs {
@@ -83,7 +82,13 @@ impl AuthService {
             },
         )
         .await
-        .map_err(|e| RegisterError::Unexpected(e.into()))?;
+        .map_err(|e| {
+            if let Some(sea_orm::error::SqlErr::UniqueConstraintViolation(_)) = e.sql_err() {
+                RegisterError::UserAlreadyExists
+            } else {
+                RegisterError::Unexpected(e.into())
+            }
+        })?;
 
         self.generate_token_pair(&user.id, session_manager)
             .await
