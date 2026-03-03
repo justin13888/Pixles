@@ -22,6 +22,8 @@ pub struct AuthConfig {
 
     /// Valkey URL
     pub valkey_url: String,
+    /// TOTP issuer string shown in authenticator apps
+    pub totp_issuer: String,
 }
 
 impl From<&ServerConfig> for AuthConfig {
@@ -35,6 +37,7 @@ impl From<&ServerConfig> for AuthConfig {
             jwt_refresh_token_duration_seconds: config.jwt_refresh_token_duration_seconds,
             jwt_access_token_duration_seconds: config.jwt_access_token_duration_seconds,
             valkey_url: config.valkey_url.clone(),
+            totp_issuer: config.totp_issuer.clone(),
         }
     }
 }

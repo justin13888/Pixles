@@ -93,6 +93,7 @@ pub async fn setup() -> TestContext {
         jwt_refresh_token_duration_seconds: 3600,
         jwt_access_token_duration_seconds: 300,
         valkey_url: valkey_url.clone(),
+        totp_issuer: "Pixles-Test".to_string(),
     };
 
     let session_manager = SessionManager::new(valkey_url, std::time::Duration::from_secs(3600))

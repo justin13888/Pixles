@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use environment::constants::TOTP_ISSUER;
 use sea_orm::DatabaseConnection;
 
 use crate::config::AuthConfig;
@@ -31,7 +30,7 @@ impl AppState {
     ) -> Self {
         let auth_service = AuthService::new(conn.clone(), config.clone());
         let password_service = PasswordService::new(1000); // 1s minimum
-        let totp_service = TotpService::new(conn.clone(), TOTP_ISSUER);
+        let totp_service = TotpService::new(conn.clone(), &config.totp_issuer);
 
         Self {
             inner: Arc::new(AppStateInner {

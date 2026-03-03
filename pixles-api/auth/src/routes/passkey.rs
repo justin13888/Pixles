@@ -96,20 +96,28 @@ pub async fn finish_registration(
             "Missing registration session".into(),
         ))?;
 
-    // Parse body manually
-    let body = req
-        .parse_json::<serde_json::Value>()
+    // Parse body: credential fields + optional `name`
+    #[derive(serde::Deserialize)]
+    struct FinishRegBody {
+        name: Option<String>,
+        #[serde(flatten)]
+        rest: serde_json::Value,
+    }
+    let parsed = req
+        .parse_json::<FinishRegBody>()
         .await
         .map_err(|e| PasskeyRegistrationFinishResponses::RegistrationFailed(e.to_string()))?;
-    let reg: webauthn_rs::prelude::RegisterPublicKeyCredential = serde_json::from_value(body)
-        .map_err(|e| PasskeyRegistrationFinishResponses::RegistrationFailed(e.to_string()))?;
+    let passkey_name = parsed.name.unwrap_or_else(|| "My Passkey".to_string());
+    let reg: webauthn_rs::prelude::RegisterPublicKeyCredential =
+        serde_json::from_value(parsed.rest)
+            .map_err(|e| PasskeyRegistrationFinishResponses::RegistrationFailed(e.to_string()))?;
 
     // Retrieve state
     let reg_state: webauthn_rs::prelude::PasskeyRegistration = state
         .session_manager
         .get_temp_data(&format!("passkey_reg:{}", challenge_id))
         .await
-        .map_err(|e| PasskeyRegistrationFinishResponses::InternalServerError(e))?
+        .map_err(PasskeyRegistrationFinishResponses::InternalServerError)?
         .ok_or(PasskeyRegistrationFinishResponses::RegistrationFailed(
             "Registration session expired".into(),
         ))?;
@@ -120,11 +128,9 @@ pub async fn finish_registration(
         .delete_temp_data(&format!("passkey_reg:{}", challenge_id))
         .await;
 
-    let name = "My Passkey".to_string(); // TODO: get from request if possible
-
     state
         .passkey_service
-        .finish_registration(user_id, reg_state, reg, name)
+        .finish_registration(user_id, reg_state, reg, passkey_name)
         .await?;
 
     Ok(PasskeyRegistrationFinishResponses::Success)

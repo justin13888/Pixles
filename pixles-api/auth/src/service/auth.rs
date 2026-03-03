@@ -220,6 +220,7 @@ mod tests {
             jwt_refresh_token_duration_seconds: 3600,
             jwt_access_token_duration_seconds: 300,
             valkey_url: "redis://localhost:6379".to_string(),
+            totp_issuer: "Pixles".to_string(),
         };
         AuthService::new(conn, config)
     }
