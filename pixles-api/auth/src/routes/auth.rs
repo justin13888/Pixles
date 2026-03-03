@@ -6,7 +6,7 @@ use crate::claims::Claims;
 use crate::errors::ClaimValidationError;
 use crate::models::requests::{LoginRequest, RefreshTokenRequest, RegisterRequest};
 use crate::models::responses::{
-    GetDevicesResponses, LoginResponses, LogoutResponses, RefreshTokenResponses,
+    Device, GetDevicesResponses, LoginResponses, LogoutResponses, RefreshTokenResponses,
     RegisterUserResponses, ValidateTokenResponses,
 };
 use crate::state::AppState;
@@ -155,5 +155,53 @@ pub async fn logout(req: &mut Request, depot: &mut Depot) -> LogoutResponses {
 /// Get all active devices (sessions)
 #[endpoint(operation_id = "get_devices", tags("auth"), security(("bearer" = [])))]
 pub async fn get_devices(req: &mut Request, depot: &mut Depot) -> GetDevicesResponses {
-    todo!("Implement get_devices")
+    let state = depot.obtain::<AppState>().unwrap();
+    let headers = req.headers();
+
+    let token_string = match get_token_from_headers(headers) {
+        Ok(token_string) => token_string,
+        Err(e) => return e.into(),
+    };
+
+    let claims = match state.auth_service.get_claims(token_string.expose_secret()) {
+        Ok(claims) => claims,
+        Err(e) => return e.into(),
+    };
+
+    if let Err(e) = claims.validate_access_token() {
+        return e.into();
+    }
+
+    let current_sid = claims.sid.clone();
+
+    let sessions = match state
+        .session_manager
+        .get_sessions_for_user(&claims.sub)
+        .await
+    {
+        Ok(sessions) => sessions,
+        Err(e) => return e.into(),
+    };
+
+    let devices: Vec<Device> = sessions
+        .into_iter()
+        .map(|(sid, session)| {
+            let is_current = current_sid.as_deref() == Some(sid.as_str());
+            let last_active_at = if session.last_active_at == 0 {
+                session.created_at
+            } else {
+                session.last_active_at
+            };
+            Device {
+                id: sid,
+                created_at: session.created_at,
+                last_active_at,
+                user_agent: session.user_agent,
+                ip_address: session.ip_address,
+                is_current,
+            }
+        })
+        .collect();
+
+    GetDevicesResponses::Success(devices)
 }

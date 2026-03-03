@@ -15,6 +15,8 @@ pub struct Session {
     pub created_at: i64,
     pub user_agent: Option<String>,
     pub ip_address: Option<String>,
+    #[serde(default)]
+    pub last_active_at: i64,
 }
 
 #[derive(Clone)]
@@ -53,11 +55,13 @@ impl SessionManager {
         ip_address: Option<String>,
     ) -> Result<String, InternalServerError> {
         let sid = nanoid::nanoid!();
+        let now = chrono::Utc::now().timestamp();
         let session = Session {
             user_id: user_id.clone(),
-            created_at: chrono::Utc::now().timestamp(),
+            created_at: now,
             user_agent,
             ip_address,
+            last_active_at: now,
         };
 
         let session_data = serde_json::to_string(&session).map_err(InternalServerError::from)?;
@@ -87,6 +91,22 @@ impl SessionManager {
 
     pub async fn revoke_session(&self, sid: &str) -> Result<(), InternalServerError> {
         self.storage.delete_session(sid).await
+    }
+
+    /// Returns all active sessions for a user as (session_id, Session) pairs.
+    /// Sessions that have expired (not found in storage) are silently skipped.
+    pub async fn get_sessions_for_user(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<(String, Session)>, InternalServerError> {
+        let session_ids = self.storage.get_user_sessions(user_id).await?;
+        let mut sessions = Vec::new();
+        for sid in session_ids {
+            if let Some(session) = self.get_session(&sid).await? {
+                sessions.push((sid, session));
+            }
+        }
+        Ok(sessions)
     }
 
     pub async fn revoke_all_for_user(&self, user_id: &str) -> Result<(), InternalServerError> {

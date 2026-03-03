@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 pub struct Device {
     pub id: String,
     pub created_at: i64,
+    pub last_active_at: i64,
     pub user_agent: Option<String>,
     pub ip_address: Option<String>,
     pub is_current: bool,
