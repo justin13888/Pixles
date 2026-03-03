@@ -114,7 +114,6 @@ pub enum LoginResponses {
     Success(TokenResponse),
     BadRequest,
     InvalidCredentials,
-    AccountNotVerified,
     InternalServerError(InternalServerError),
 }
 
@@ -131,7 +130,6 @@ impl From<LoginError> for LoginResponses {
     fn from(e: LoginError) -> Self {
         match e {
             LoginError::InvalidCredentials => Self::InvalidCredentials,
-            LoginError::AccountNotVerified => Self::AccountNotVerified,
             LoginError::Unexpected(e) => Self::InternalServerError(e),
         }
     }
@@ -152,10 +150,6 @@ impl Writer for LoginResponses {
             Self::InvalidCredentials => {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Json(ApiError::new("Invalid credentials")));
-            }
-            Self::AccountNotVerified => {
-                res.status_code(StatusCode::FORBIDDEN);
-                res.render(Json(ApiError::new("Account not verified")));
             }
             Self::InternalServerError(e) => {
                 e.write(_req, _depot, res).await;

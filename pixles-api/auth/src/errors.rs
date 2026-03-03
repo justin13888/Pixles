@@ -58,7 +58,6 @@ impl Writer for RegisterError {
 #[derive(Debug)]
 pub enum LoginError {
     InvalidCredentials,
-    AccountNotVerified,
     Unexpected(InternalServerError),
 }
 
@@ -66,7 +65,6 @@ impl std::fmt::Display for LoginError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidCredentials => write!(f, "User not found or invalid credentials"),
-            Self::AccountNotVerified => write!(f, "Account not verified"),
             Self::Unexpected(e) => write!(f, "Internal server error: {}", e),
         }
     }
@@ -91,10 +89,6 @@ impl Writer for LoginError {
             LoginError::InvalidCredentials => {
                 res.status_code(StatusCode::UNAUTHORIZED);
                 res.render(Text::Plain("Invalid credentials"));
-            }
-            LoginError::AccountNotVerified => {
-                res.status_code(StatusCode::FORBIDDEN);
-                res.render(Text::Plain("Account not verified"));
             }
             LoginError::Unexpected(e) => {
                 e.write(req, depot, res).await;

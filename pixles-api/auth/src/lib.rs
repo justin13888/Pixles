@@ -38,9 +38,6 @@ pub async fn get_router<C: Into<AuthConfig>>(
     .await
     .map_err(|e| e.0)?;
 
-    // Initialize Email Service
-    let email_service = service::EmailService::new();
-
     // Initialize Passkey Service
     let rp_id = config.domain.clone();
     let rp_origin = webauthn_rs::prelude::Url::parse(&format!("https://{}", config.domain))?;
@@ -63,13 +60,7 @@ pub async fn get_router<C: Into<AuthConfig>>(
         .allow_headers("*")
         .into_handler();
 
-    let state = AppState::new(
-        conn,
-        config,
-        session_manager,
-        email_service,
-        passkey_service,
-    );
+    let state = AppState::new(conn, config, session_manager, passkey_service);
 
     let router = routes::get_router(state);
 
