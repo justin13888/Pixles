@@ -51,6 +51,9 @@ pub struct User {
 
     /// Timestamp of when the user was soft-deleted. If None, the user is active.
     pub deleted_at: Option<DateTime<Utc>>,
+
+    /// How the account was created (e.g. 'invitation'); None for seeded/legacy/unknown.
+    pub registered_via: Option<String>,
 }
 
 impl From<entity::user::Model> for User {
@@ -75,6 +78,7 @@ impl From<entity::user::Model> for User {
             created_at,
             modified_at,
             deleted_at,
+            registered_via,
         } = model;
 
         User {
@@ -88,6 +92,7 @@ impl From<entity::user::Model> for User {
             created_at,
             modified_at,
             deleted_at,
+            registered_via,
         }
     }
 }

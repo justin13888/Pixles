@@ -53,6 +53,9 @@ pub struct Model {
     /// Date when the user was deleted if not NULL
     #[sea_orm(column_type = "TimestampWithTimeZone", nullable, indexed)]
     pub deleted_at: Option<DateTime<Utc>>,
+    /// How the account was created (e.g. 'invitation'); NULL for seeded/legacy/unknown
+    #[sea_orm(column_type = "String(StringLen::N(32))", nullable)]
+    pub registered_via: Option<String>,
 }
 
 // TODO: Add in related columns:

@@ -79,6 +79,7 @@ impl AuthService {
                 name,
                 email,
                 password_hash,
+                registered_via: None,
             },
         )
         .await
