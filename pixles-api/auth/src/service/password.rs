@@ -1,4 +1,3 @@
-use super::email::EmailService;
 use chrono::{Duration, Utc};
 use model::errors::InternalServerError;
 use sea_orm::DatabaseConnection;
@@ -19,7 +18,6 @@ impl PasswordService {
     pub async fn request_reset(
         &self,
         conn: &DatabaseConnection,
-        email_service: &EmailService,
         email: &str,
     ) -> Result<(), InternalServerError> {
         let start = Instant::now();
@@ -34,20 +32,10 @@ impl PasswordService {
                 let expires_at = Utc::now() + Duration::hours(1);
 
                 // Update user with token
-                match UserService::Mutation::update_password_reset_token(
-                    conn, &user.id, &token, expires_at,
-                )
-                .await
-                {
-                    Ok(_) => {
-                        // Send email
-                        email_service
-                            .send_password_reset_email(&user.email, &token)
-                            .await
-                            .map_err(InternalServerError::from)
-                    }
-                    Err(e) => Err(InternalServerError::from(e)),
-                }
+                UserService::Mutation::update_password_reset_token(conn, &user.id, &token, expires_at)
+                    .await
+                    .map(|_| ())
+                    .map_err(InternalServerError::from)
             }
             Ok(None) => {
                 // User not found - pretend success

@@ -58,9 +58,6 @@ pub struct Model {
     pub registered_via: Option<String>,
 }
 
-// TODO: Add in related columns:
-// - verification_token
-
 impl Model {
     pub fn profile_image_url(&self) -> Option<String> {
         self.profile_image_url.clone() // TODO: Need to process this properly to ensure access for public

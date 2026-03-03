@@ -119,9 +119,16 @@ pub async fn setup() -> TestContext {
             .await
             .expect("Failed to create session manager");
 
-    let email_service = auth::service::EmailService::new();
+    let rp_origin = webauthn_rs::prelude::Url::parse("https://localhost").expect("valid URL");
+    let webauthn = std::sync::Arc::new(
+        webauthn_rs::prelude::WebauthnBuilder::new("localhost", &rp_origin)
+            .expect("valid builder")
+            .build()
+            .expect("valid webauthn"),
+    );
+    let passkey_service = auth::service::PasskeyService::new(db.clone(), webauthn);
 
-    let app_state = AppState::new(db.clone(), config, session_manager, email_service);
+    let app_state = AppState::new(db.clone(), config, session_manager, passkey_service);
 
     TestContext {
         post: postgres_container,

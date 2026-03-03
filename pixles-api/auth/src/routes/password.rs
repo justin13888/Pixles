@@ -19,7 +19,7 @@ pub async fn reset_password_request(
 
     if let Err(e) = state
         .password_service
-        .request_reset(&state.conn, &state.email_service, &email)
+        .request_reset(&state.conn, &email)
         .await
     {
         return ResetPasswordRequestResponses::InternalServerError(eyre::eyre!(e).into());
