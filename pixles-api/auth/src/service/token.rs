@@ -39,7 +39,7 @@ impl TokenService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::claims::Claims;
+    use crate::claims::{Claims, Scope};
     use base64::Engine;
     use jsonwebtoken::DecodingKey;
     use ring::signature::Ed25519KeyPair;

@@ -24,6 +24,12 @@ pub mod utils;
 #[cfg(feature = "server")]
 pub mod validation;
 
+/// Build a router from an existing `AppState` (useful for testing).
+#[cfg(feature = "server")]
+pub fn get_router_with_state(state: AppState) -> Router {
+    routes::get_router(state)
+}
+
 #[cfg(feature = "server")]
 pub async fn get_router<C: Into<AuthConfig>>(
     conn: DatabaseConnection,

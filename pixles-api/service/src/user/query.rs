@@ -135,4 +135,19 @@ impl Query {
             .await?;
         Ok(user.map(|u| u.failed_login_attempts))
     }
+
+    /// Returns the password reset token for a user by email (used in tests / admin flows)
+    #[cfg(feature = "auth")]
+    pub async fn get_password_reset_token_by_email(
+        db: &DbConn,
+        email: &str,
+    ) -> Result<Option<Option<String>>, DbErr> {
+        let user = User::find()
+            .filter(user::Column::Email.eq(email))
+            .select_only()
+            .column(user::Column::PasswordResetToken)
+            .one(db)
+            .await?;
+        Ok(user.map(|u| u.password_reset_token))
+    }
 }
