@@ -12,6 +12,7 @@ impl Mutation {
             name,
             email,
             password_hash,
+            registered_via,
         } = user;
 
         user::ActiveModel {
@@ -19,6 +20,7 @@ impl Mutation {
             name: Set(name),
             email: Set(email),
             password_hash: Set(password_hash),
+            registered_via: Set(registered_via),
             ..Default::default()
         }
         .insert(db)

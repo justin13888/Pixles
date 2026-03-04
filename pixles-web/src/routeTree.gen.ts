@@ -13,6 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as ResetPasswordImport } from './routes/reset-password'
 import { Route as AlbumsIndexImport } from './routes/albums/index'
 import { Route as AlbumsIdImport } from './routes/albums/$id'
 
@@ -20,8 +21,11 @@ import { Route as AlbumsIdImport } from './routes/albums/$id'
 
 const StorageLazyImport = createFileRoute('/storage')()
 const SharingLazyImport = createFileRoute('/sharing')()
+const SettingsSecurityLazyImport = createFileRoute('/settings/security')()
+const SettingsLazyImport = createFileRoute('/settings')()
 const PhotosLazyImport = createFileRoute('/photos')()
 const LoginLazyImport = createFileRoute('/login')()
+const ForgotPasswordLazyImport = createFileRoute('/forgot-password')()
 const ExploreLazyImport = createFileRoute('/explore')()
 const DashboardLazyImport = createFileRoute('/dashboard')()
 const IndexLazyImport = createFileRoute('/')()
@@ -43,6 +47,18 @@ const SharingLazyRoute = SharingLazyImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/sharing.lazy').then((d) => d.Route))
 
+const SettingsSecurityLazyRoute = SettingsSecurityLazyImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/settings/security.lazy').then((d) => d.Route))
+
+const SettingsLazyRoute = SettingsLazyImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/settings.lazy').then((d) => d.Route))
+
 const PhotosLazyRoute = PhotosLazyImport.update({
   id: '/photos',
   path: '/photos',
@@ -54,6 +70,12 @@ const LoginLazyRoute = LoginLazyImport.update({
   path: '/login',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
+
+const ForgotPasswordLazyRoute = ForgotPasswordLazyImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/forgot-password.lazy').then((d) => d.Route))
 
 const ExploreLazyRoute = ExploreLazyImport.update({
   id: '/explore',
@@ -72,6 +94,12 @@ const IndexLazyRoute = IndexLazyImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+
+const ResetPasswordRoute = ResetPasswordImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AlbumsIndexRoute = AlbumsIndexImport.update({
   id: '/albums/',
@@ -132,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExploreLazyImport
       parentRoute: typeof rootRoute
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -144,6 +179,27 @@ declare module '@tanstack/react-router' {
       path: '/photos'
       fullPath: '/photos'
       preLoaderRoute: typeof PhotosLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityLazyImport
       parentRoute: typeof rootRoute
     }
     '/sharing': {
@@ -204,8 +260,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
   '/explore': typeof ExploreLazyRoute
+  '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
   '/photos': typeof PhotosLazyRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsLazyRoute
+  '/settings/security': typeof SettingsSecurityLazyRoute
   '/sharing': typeof SharingLazyRoute
   '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
@@ -219,8 +279,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
   '/explore': typeof ExploreLazyRoute
+  '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
   '/photos': typeof PhotosLazyRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsLazyRoute
+  '/settings/security': typeof SettingsSecurityLazyRoute
   '/sharing': typeof SharingLazyRoute
   '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
@@ -235,8 +299,12 @@ export interface FileRoutesById {
   '/': typeof IndexLazyRoute
   '/dashboard': typeof DashboardLazyRoute
   '/explore': typeof ExploreLazyRoute
+  '/forgot-password': typeof ForgotPasswordLazyRoute
   '/login': typeof LoginLazyRoute
   '/photos': typeof PhotosLazyRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/settings': typeof SettingsLazyRoute
+  '/settings/security': typeof SettingsSecurityLazyRoute
   '/sharing': typeof SharingLazyRoute
   '/storage': typeof StorageLazyRoute
   '/albums/$id': typeof AlbumsIdRoute
@@ -252,8 +320,12 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/explore'
+    | '/forgot-password'
     | '/login'
     | '/photos'
+    | '/reset-password'
+    | '/settings'
+    | '/settings/security'
     | '/sharing'
     | '/storage'
     | '/albums/$id'
@@ -266,8 +338,12 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/explore'
+    | '/forgot-password'
     | '/login'
     | '/photos'
+    | '/reset-password'
+    | '/settings'
+    | '/settings/security'
     | '/sharing'
     | '/storage'
     | '/albums/$id'
@@ -280,8 +356,12 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/explore'
+    | '/forgot-password'
     | '/login'
     | '/photos'
+    | '/reset-password'
+    | '/settings'
+    | '/settings/security'
     | '/sharing'
     | '/storage'
     | '/albums/$id'
@@ -296,8 +376,12 @@ export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   DashboardLazyRoute: typeof DashboardLazyRoute
   ExploreLazyRoute: typeof ExploreLazyRoute
+  ForgotPasswordLazyRoute: typeof ForgotPasswordLazyRoute
   LoginLazyRoute: typeof LoginLazyRoute
   PhotosLazyRoute: typeof PhotosLazyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SettingsLazyRoute: typeof SettingsLazyRoute
+  SettingsSecurityLazyRoute: typeof SettingsSecurityLazyRoute
   SharingLazyRoute: typeof SharingLazyRoute
   StorageLazyRoute: typeof StorageLazyRoute
   AlbumsIdRoute: typeof AlbumsIdRoute
@@ -311,8 +395,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   DashboardLazyRoute: DashboardLazyRoute,
   ExploreLazyRoute: ExploreLazyRoute,
+  ForgotPasswordLazyRoute: ForgotPasswordLazyRoute,
   LoginLazyRoute: LoginLazyRoute,
   PhotosLazyRoute: PhotosLazyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SettingsLazyRoute: SettingsLazyRoute,
+  SettingsSecurityLazyRoute: SettingsSecurityLazyRoute,
   SharingLazyRoute: SharingLazyRoute,
   StorageLazyRoute: StorageLazyRoute,
   AlbumsIdRoute: AlbumsIdRoute,
@@ -335,8 +423,12 @@ export const routeTree = rootRoute
         "/",
         "/dashboard",
         "/explore",
+        "/forgot-password",
         "/login",
         "/photos",
+        "/reset-password",
+        "/settings",
+        "/settings/security",
         "/sharing",
         "/storage",
         "/albums/$id",
@@ -355,11 +447,23 @@ export const routeTree = rootRoute
     "/explore": {
       "filePath": "explore.lazy.tsx"
     },
+    "/forgot-password": {
+      "filePath": "forgot-password.lazy.tsx"
+    },
     "/login": {
       "filePath": "login.lazy.tsx"
     },
     "/photos": {
       "filePath": "photos.lazy.tsx"
+    },
+    "/reset-password": {
+      "filePath": "reset-password.tsx"
+    },
+    "/settings": {
+      "filePath": "settings.lazy.tsx"
+    },
+    "/settings/security": {
+      "filePath": "settings/security.lazy.tsx"
     },
     "/sharing": {
       "filePath": "sharing.lazy.tsx"

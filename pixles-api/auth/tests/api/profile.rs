@@ -1,151 +1,73 @@
-use crate::common::setup;
+use crate::common::{build_service, setup};
+use auth::models::responses::TokenResponse;
 use auth::models::UserProfile;
-
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-};
+use salvo::http::StatusCode;
+use salvo::test::{ResponseExt, TestClient};
 use secrecy::ExposeSecret;
-use tower::ServiceExt;
+
+async fn register_and_get_token(service: &salvo::Service) -> TokenResponse {
+    let mut res = TestClient::post("http://localhost/register")
+        .json(&serde_json::json!({
+            "username": "testuser",
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "password123"
+        }))
+        .send(service)
+        .await;
+    res.take_json().await.expect("Failed to parse tokens")
+}
 
 #[tokio::test]
 async fn get_user_profile_success() {
-    let context = setup().await;
-    let app = auth::get_router(context.db.clone(), context.app_state.config.clone())
-        .await
-        .expect("Failed to create router");
-    let app: axum::Router = app.into();
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+    let tokens = register_and_get_token(&service).await;
 
-    // Register
-    let _ = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/register")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "username": "testuser",
-                        "name": "Test User",
-                        "email": "test@example.com",
-                        "password": "password123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
+    let mut res = TestClient::get("http://localhost/profile")
+        .add_header(
+            "Authorization",
+            format!("Bearer {}", tokens.access_token.expose_secret()),
+            true,
         )
-        .await
-        .unwrap();
+        .send(&service)
+        .await;
 
-    // Login
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/login")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "email": "test@example.com",
-                        "password": "password123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    assert_eq!(res.status_code, Some(StatusCode::OK));
 
-    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let tokens: auth::models::responses::TokenResponse =
-        serde_json::from_slice(&body_bytes).unwrap();
-    let token = tokens.access_token;
-
-    // Get Profile
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/profile")
-                .method("GET")
-                .header("Authorization", format!("Bearer {}", token.expose_secret()))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), StatusCode::OK);
-
-    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let profile: UserProfile = serde_json::from_slice(&body_bytes).unwrap();
-
+    let profile: UserProfile = res.take_json().await.expect("Failed to parse profile");
     assert_eq!(profile.username, "testuser");
     assert_eq!(profile.email, "test@example.com");
 }
 
 #[tokio::test]
+async fn get_profile_without_auth_fails() {
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+
+    let res = TestClient::get("http://localhost/profile").send(&service).await;
+    assert_eq!(res.status_code, Some(StatusCode::UNAUTHORIZED));
+}
+
+#[tokio::test]
 async fn update_user_profile_success() {
-    let context = setup().await;
-    let app = auth::get_router(context.db.clone(), context.app_state.config.clone())
-        .await
-        .expect("Failed to create router");
-    let app: axum::Router = app.into();
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+    let tokens = register_and_get_token(&service).await;
 
-    // Register & Login setup (simplified for brevity, should use helper if possible but inline is fine)
-    // Register
-    let _ = app.clone()
-        .oneshot(
-            Request::builder()
-                .uri("/register")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(serde_json::to_vec(&serde_json::json!({
-                    "username": "testuser", "name": "Test User", "email": "test@example.com", "password": "password123"
-                })).unwrap()))
-                .unwrap(),
+    let res = TestClient::post("http://localhost/profile")
+        .add_header(
+            "Authorization",
+            format!("Bearer {}", tokens.access_token.expose_secret()),
+            true,
         )
-        .await.unwrap();
+        .json(&serde_json::json!({"username": "newusername"}))
+        .send(&service)
+        .await;
 
-    // Login
-    let resp = app.clone().oneshot(
-        Request::builder().uri("/login").method("POST").header("Content-Type", "application/json")
-            .body(Body::from(serde_json::to_vec(&serde_json::json!({"email": "test@example.com", "password": "password123"})).unwrap())).unwrap()
-    ).await.unwrap();
-    let body = axum::body::to_bytes(resp.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let tokens: auth::models::responses::TokenResponse = serde_json::from_slice(&body).unwrap();
-    let token = tokens.access_token;
+    assert_eq!(res.status_code, Some(StatusCode::OK));
 
-    // Update Profile
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/profile")
-                .method("POST")
-                .header("Authorization", format!("Bearer {}", token.expose_secret()))
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "username": "newusername"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), StatusCode::OK);
-
-    // Verify DB
-    let user = service::user::Query::find_user_by_email(&context.db, "test@example.com")
+    let user = service::user::Query::find_user_by_email(&ctx.db, "test@example.com")
         .await
         .unwrap()
         .unwrap();

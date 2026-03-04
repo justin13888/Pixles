@@ -16,6 +16,8 @@ pub struct User {
     pub created_at: DateTime<Utc>,
     pub modified_at: DateTime<Utc>,
     pub deleted_at: Option<DateTime<Utc>>,
+    /// How the account was created (e.g. 'invitation'); null for seeded/legacy/unknown
+    pub registered_via: Option<String>,
 }
 
 impl From<user::Model> for User {
@@ -31,6 +33,7 @@ impl From<user::Model> for User {
             created_at: user.created_at,
             modified_at: user.modified_at,
             deleted_at: user.deleted_at,
+            registered_via: user.registered_via,
         }
     }
 }

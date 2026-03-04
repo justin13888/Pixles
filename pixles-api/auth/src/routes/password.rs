@@ -1,3 +1,6 @@
+use environment::constants::{
+    RATE_LIMIT_PASSWORD_RESET_MAX, RATE_LIMIT_PASSWORD_RESET_WINDOW_SECS,
+};
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 use service::user as UserService;
@@ -8,18 +11,76 @@ use crate::models::{ResetPasswordPayload, ResetPasswordRequestPayload};
 use crate::state::AppState;
 use crate::utils::hash::hash_password;
 
+fn get_client_ip(req: &Request) -> String {
+    req.headers()
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.split(',').next())
+        .map(|s| s.trim().to_string())
+        .or_else(|| {
+            req.headers()
+                .get("x-real-ip")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| "unknown".to_string())
+}
+
 /// Request password reset
 #[endpoint(operation_id = "reset_password_request", tags("auth"))]
 pub async fn reset_password_request(
+    req: &mut Request,
     depot: &mut Depot,
     body: JsonBody<ResetPasswordRequestPayload>,
 ) -> ResetPasswordRequestResponses {
     let state = depot.obtain::<AppState>().unwrap();
-    let email = body.into_inner().email;
+    let payload = body.into_inner();
+    let email = payload.email;
+
+    // Per-email rate limit
+    let rl_key = format!("pwd_reset:{}", email.to_lowercase());
+    match state
+        .session_manager
+        .check_rate_limit(
+            &rl_key,
+            RATE_LIMIT_PASSWORD_RESET_MAX,
+            RATE_LIMIT_PASSWORD_RESET_WINDOW_SECS,
+        )
+        .await
+    {
+        Ok(result) if result.count > RATE_LIMIT_PASSWORD_RESET_MAX => {
+            return ResetPasswordRequestResponses::RateLimited(result.window_ttl_secs);
+        }
+        Err(e) => {
+            tracing::warn!("Rate limit check failed: {}", e);
+        }
+        _ => {}
+    }
+
+    // Per-IP rate limit as secondary guard
+    let ip = get_client_ip(req);
+    let ip_rl_key = format!("pwd_reset_ip:{}", ip);
+    match state
+        .session_manager
+        .check_rate_limit(
+            &ip_rl_key,
+            RATE_LIMIT_PASSWORD_RESET_MAX,
+            RATE_LIMIT_PASSWORD_RESET_WINDOW_SECS,
+        )
+        .await
+    {
+        Ok(result) if result.count > RATE_LIMIT_PASSWORD_RESET_MAX => {
+            return ResetPasswordRequestResponses::RateLimited(result.window_ttl_secs);
+        }
+        Err(e) => {
+            tracing::warn!("Rate limit check failed: {}", e);
+        }
+        _ => {}
+    }
 
     if let Err(e) = state
         .password_service
-        .request_reset(&state.conn, &state.email_service, &email)
+        .request_reset(&state.conn, &email)
         .await
     {
         return ResetPasswordRequestResponses::InternalServerError(eyre::eyre!(e).into());

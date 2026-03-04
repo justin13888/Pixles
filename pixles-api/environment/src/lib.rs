@@ -8,7 +8,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
 #[cfg(feature = "auth")]
-use crate::constants::{ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY};
+use crate::constants::{ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY, TOTP_ISSUER};
 #[cfg(feature = "upload")]
 use crate::constants::{MAX_CACHE_SIZE, MAX_FILE_SIZE};
 use crate::jwt::convert_ed25519_der_to_jwt_keys;
@@ -53,6 +53,9 @@ pub struct ServerConfig {
     #[cfg(feature = "auth")]
     /// JWT access token duration in seconds
     pub jwt_access_token_duration_seconds: u64,
+    #[cfg(feature = "auth")]
+    /// TOTP issuer string shown in authenticator apps
+    pub totp_issuer: String,
 
     #[cfg(any(feature = "upload", feature = "media", feature = "sync"))]
     /// Upload directory
@@ -70,6 +73,10 @@ pub struct ServerConfig {
     #[cfg(any(feature = "auth", feature = "upload"))]
     /// Valkey URL (e.g. "redis://127.0.0.1:6379")
     pub valkey_url: String,
+
+    #[cfg(any(feature = "auth", feature = "upload"))]
+    /// Allowed CORS origins. Use `["*"]` to allow all origins (development only).
+    pub allowed_origins: Vec<String>,
 }
 // TODO: Separate out these configs into environment variables struct ^^
 
@@ -158,6 +165,8 @@ impl Environment {
                     "JWT_ACCESS_TOKEN_DURATION_SECONDS",
                 )
                 .unwrap_or(ACCESS_TOKEN_EXPIRY),
+                #[cfg(feature = "auth")]
+                totp_issuer: load_env("TOTP_ISSUER").unwrap_or(TOTP_ISSUER.to_string()),
                 #[cfg(any(feature = "upload", feature = "media", feature = "sync"))]
                 upload_dir: load_env("UPLOAD_DIR")
                     .unwrap_or(String::from("./uploads"))
@@ -172,6 +181,16 @@ impl Environment {
                     .into(), // TODO: If this is still used
                 #[cfg(any(feature = "auth", feature = "upload"))]
                 valkey_url: load_env("VALKEY_URL")?,
+                #[cfg(any(feature = "auth", feature = "upload"))]
+                allowed_origins: load_env("ALLOWED_ORIGINS")
+                    .map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+                    .unwrap_or_else(|_| {
+                        if cfg!(debug_assertions) {
+                            vec!["*".to_string()]
+                        } else {
+                            vec![]
+                        }
+                    }),
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {
                 LevelFilter::TRACE

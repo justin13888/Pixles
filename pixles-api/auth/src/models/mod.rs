@@ -73,6 +73,8 @@ pub struct UserProfile {
     pub is_admin: bool,
     pub created_at: String,
     pub updated_at: String,
+    /// How the account was created (e.g. 'invitation'); null for seeded/legacy/unknown
+    pub registered_via: Option<String>,
 }
 
 impl From<User> for UserProfile {
@@ -88,6 +90,7 @@ impl From<User> for UserProfile {
             created_at,
             modified_at,
             deleted_at: _,
+            registered_via,
         } = user;
         Self {
             user_id: id,
@@ -97,6 +100,7 @@ impl From<User> for UserProfile {
             is_admin,
             created_at: created_at.to_rfc3339(),
             updated_at: modified_at.to_rfc3339(),
+            registered_via,
         }
     }
 }

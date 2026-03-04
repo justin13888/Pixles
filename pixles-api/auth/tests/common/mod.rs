@@ -1,4 +1,6 @@
 use auth::config::AuthConfig;
+use auth::service::PasskeyService;
+use auth::session::SessionManager;
 use auth::state::AppState;
 use migration::Migrator;
 use sea_orm::{Database, DatabaseConnection};
@@ -11,8 +13,8 @@ use testcontainers_modules::postgres::Postgres;
 static TRACING: Once = Once::new();
 
 pub struct TestContext {
-    pub post: Option<ContainerAsync<Postgres>>,
-    pub valkey: Option<ContainerAsync<GenericImage>>,
+    pub _postgres: Option<ContainerAsync<Postgres>>,
+    pub _valkey: Option<ContainerAsync<GenericImage>>,
     pub app_state: AppState,
     pub db: DatabaseConnection,
 }
@@ -25,7 +27,6 @@ pub async fn setup() -> TestContext {
             .init();
     });
 
-    // Start Postgres or use external
     let (postgres_container, connection_string) =
         if let Ok(url) = std::env::var("TEST_DATABASE_URL") {
             (None, url)
@@ -45,17 +46,14 @@ pub async fn setup() -> TestContext {
             )
         };
 
-    // Connect and Migrate
     let db = Database::connect(&connection_string)
         .await
         .expect("Failed to connect to database");
-
-    // Use refresh to ensure clean state for tests
     Migrator::refresh(&db)
         .await
         .expect("Failed to run migrations");
 
-    // Start Valkey or use external
+    // Start Valkey container or use external
     let (valkey_container, valkey_url) = if let Ok(url) = std::env::var("TEST_VALKEY_URL") {
         (None, url)
     } else {
@@ -74,25 +72,8 @@ pub async fn setup() -> TestContext {
         (Some(container), format!("redis://127.0.0.1:{}", port))
     };
 
-    // Create AppState
-    // We need keys. For tests we can generate random ones or use fixed ones.
-    // Since AuthConfig expects EncodingKey/DecodingKey which need keys.
-    // Let's generate ephemeral keys.
-
-    // NOTE: This part requires `ring` or similar to generate keys if we want to mimic real setup
-    // Or we can just load dummy ones.
-    // AuthConfig::from(&ServerConfig) logic uses loaded config.
-    // We'll construct AuthConfig manually or via a helper.
-
-    // For simplicity, let's create a minimal config.
-    // BUT AuthConfig structs fields are pub, so we can instantiate directly.
-    // Generate ephemeral keys provided by user history or just static for tests.
-    // Private: MC4CAQAwBQYDK2VwBCIEIN6eTvXEL7xMZWHY8rTk7VbQSGSuRkle5MVfiiYUStLF
-    // Public: MCowBQYDK2VwAyEA66iVaMz1x2ogToGm5Hw34aITBLLqz0iEonbwjK57pWU=
-
     use base64::Engine;
     let engine = base64::engine::general_purpose::STANDARD;
-
     let priv_bytes = engine
         .decode("MC4CAQAwBQYDK2VwBCIEIN6eTvXEL7xMZWHY8rTk7VbQSGSuRkle5MVfiiYUStLF")
         .expect("Failed to decode priv key");
@@ -109,24 +90,37 @@ pub async fn setup() -> TestContext {
         domain: "localhost".to_string(),
         jwt_eddsa_encoding_key: enc_key,
         jwt_eddsa_decoding_key: dec_key,
-        jwt_refresh_token_duration_seconds: 60,
-        jwt_access_token_duration_seconds: 10,
+        jwt_refresh_token_duration_seconds: 3600,
+        jwt_access_token_duration_seconds: 300,
         valkey_url: valkey_url.clone(),
+        totp_issuer: "Pixles-Test".to_string(),
+        allowed_origins: vec!["*".to_string()],
     };
 
-    let session_manager =
-        auth::session::SessionManager::new(valkey_url.clone(), std::time::Duration::from_secs(60))
-            .await
-            .expect("Failed to create session manager");
+    let session_manager = SessionManager::new(valkey_url, std::time::Duration::from_secs(3600))
+        .await
+        .expect("Failed to create session manager");
 
-    let email_service = auth::service::EmailService::new();
-
-    let app_state = AppState::new(db.clone(), config, session_manager, email_service);
+    let rp_origin = webauthn_rs::prelude::Url::parse("https://localhost").expect("valid URL");
+    let webauthn = std::sync::Arc::new(
+        webauthn_rs::prelude::WebauthnBuilder::new("localhost", &rp_origin)
+            .expect("valid builder")
+            .build()
+            .expect("valid webauthn"),
+    );
+    let passkey_service = PasskeyService::new(db.clone(), webauthn);
+    let app_state = AppState::new(db.clone(), config, session_manager, passkey_service);
 
     TestContext {
-        post: postgres_container,
-        valkey: valkey_container,
+        _postgres: postgres_container,
+        _valkey: valkey_container,
         app_state,
         db,
     }
+}
+
+/// Build a salvo Service from a TestContext for integration testing.
+pub fn build_service(ctx: &TestContext) -> salvo::Service {
+    let router = auth::get_router_with_state(ctx.app_state.clone());
+    salvo::Service::new(router)
 }

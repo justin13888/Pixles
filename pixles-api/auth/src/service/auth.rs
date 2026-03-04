@@ -1,4 +1,5 @@
 // use crate::models::{CreateUser, UpdateUser};
+use environment::constants::MAX_FAILED_LOGIN_ATTEMPTS;
 use sea_orm::DatabaseConnection;
 use service::user as UserService;
 
@@ -71,7 +72,6 @@ impl AuthService {
         let password_hash = hash_password(password.expose_secret())
             .map_err(|e| RegisterError::Unexpected(eyre::eyre!(e).into()))?;
 
-        // TODO: Handle unique constraint violation from DB if race condition occurs
         let user = UserService::Mutation::create_user(
             &self.conn,
             service::user::CreateUserArgs {
@@ -79,10 +79,17 @@ impl AuthService {
                 name,
                 email,
                 password_hash,
+                registered_via: None,
             },
         )
         .await
-        .map_err(|e| RegisterError::Unexpected(e.into()))?;
+        .map_err(|e| {
+            if let Some(sea_orm::error::SqlErr::UniqueConstraintViolation(_)) = e.sql_err() {
+                RegisterError::UserAlreadyExists
+            } else {
+                RegisterError::Unexpected(e.into())
+            }
+        })?;
 
         self.generate_token_pair(&user.id, session_manager)
             .await
@@ -102,12 +109,13 @@ impl AuthService {
         if let Some(user) = user {
             tracing::info!("User found: {}", user.id);
 
-            match UserService::Query::get_account_verification_status_by_id(&self.conn, &user.id)
-                .await?
-            {
-                Some(true) => {}                                           // User is verified
-                Some(false) => return Err(LoginError::AccountNotVerified), // User is not verified
-                None => return Err(LoginError::Unexpected(eyre::eyre!("User not found").into())), // User not found
+            // Check account lockout
+            let failed_attempts = UserService::Query::get_failed_login_attempts(&self.conn, &user.id)
+                .await
+                .map_err(|e| LoginError::Unexpected(e.into()))?
+                .unwrap_or(0);
+            if failed_attempts >= MAX_FAILED_LOGIN_ATTEMPTS {
+                return Err(LoginError::AccountLocked);
             }
 
             let password_hash = UserService::Query::get_password_hash_by_id(&self.conn, &user.id)
@@ -212,6 +220,8 @@ mod tests {
             jwt_refresh_token_duration_seconds: 3600,
             jwt_access_token_duration_seconds: 300,
             valkey_url: "redis://localhost:6379".to_string(),
+            totp_issuer: "Pixles".to_string(),
+            allowed_origins: vec!["*".to_string()],
         };
         AuthService::new(conn, config)
     }

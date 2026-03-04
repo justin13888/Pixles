@@ -66,3 +66,4 @@ tracing-subscriber = { workspace = true }
 base64 = "0.22.1"
 sea-orm-migration = { workspace = true }
 salvo = { workspace = true, features = ["test"] }
+totp-rs = { version = "5.7.0", features = ["gen_secret", "otpauth"] }

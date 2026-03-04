@@ -20,6 +20,7 @@ impl UserQuery {
             created_at: Utc::now(),
             modified_at: Utc::now(),
             deleted_at: None,
+            registered_via: None,
         })
     }
 

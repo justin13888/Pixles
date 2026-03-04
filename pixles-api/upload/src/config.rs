@@ -20,6 +20,8 @@ pub struct UploadServerConfig {
     pub valkey_url: String,
     /// JWT Decoding Key
     pub jwt_eddsa_decoding_key: SecretKeyWrapper<DecodingKey>,
+    /// Allowed CORS origins. Use `["*"]` to allow all origins (development only).
+    pub allowed_origins: Vec<String>,
 }
 
 impl From<&ServerConfig> for UploadServerConfig {
@@ -33,6 +35,7 @@ impl From<&ServerConfig> for UploadServerConfig {
             max_cache_size: config.max_cache_size,
             valkey_url: config.valkey_url.clone(),
             jwt_eddsa_decoding_key: config.jwt_eddsa_decoding_key.clone(),
+            allowed_origins: config.allowed_origins.clone(),
         }
     }
 }

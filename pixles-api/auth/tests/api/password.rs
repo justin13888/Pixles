@@ -1,106 +1,95 @@
-use crate::common::setup;
-
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-};
-use tower::ServiceExt;
+use crate::common::{build_service, setup};
+use salvo::http::StatusCode;
+use salvo::test::TestClient;
 
 #[tokio::test]
 async fn password_reset_flow() {
-    let context = setup().await;
-    let app = auth::get_router(context.db.clone(), context.app_state.config.clone())
-        .await
-        .expect("Failed to create router");
-    let app: axum::Router = app.into();
+    let ctx = setup().await;
+    let service = build_service(&ctx);
 
-    // Register
-    let _ = app.clone()
-        .oneshot(
-            Request::builder()
-                .uri("/register")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(serde_json::to_vec(&serde_json::json!({
-                    "username": "resetuser", "name": "Reset User", "email": "reset@example.com", "password": "oldpassword"
-                })).unwrap()))
-                .unwrap(),
-        )
-        .await.unwrap();
+    // Register user
+    let _ = TestClient::post("http://localhost/register")
+        .json(&serde_json::json!({
+            "username": "resetuser",
+            "name": "Reset User",
+            "email": "reset@example.com",
+            "password": "oldpassword123"
+        }))
+        .send(&service)
+        .await;
 
-    // 1. Request Password Reset
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/password-reset-request")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "email": "reset@example.com"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), StatusCode::OK);
+    // Request password reset
+    let res = TestClient::post("http://localhost/password-reset-request")
+        .json(&serde_json::json!({"email": "reset@example.com"}))
+        .send(&service)
+        .await;
+    assert_eq!(res.status_code, Some(StatusCode::OK));
 
     // Retrieve token from DB
-    // We need to use `pixles_api_service` which might not be exposed as helper in `context` but we have `context.db`.
-    // I need `pixles_api_entity` to query. `pixles-api-auth` depends on it.
-    // I can use `pixles_api_service::UserService`.
-    let user = service::user::Query::find_user_by_email(&context.db, "reset@example.com")
-        .await
-        .expect("Failed to query user")
-        .expect("User should exist");
+    let reset_token = service::user::Query::get_password_reset_token_by_email(
+        &ctx.db,
+        "reset@example.com",
+    )
+    .await
+    .expect("DB query failed")
+    .flatten()
+    .expect("Should have reset token");
 
-    let reset_token = user.password_reset_token.expect("Should have reset token");
+    // Reset password
+    let res = TestClient::post("http://localhost/password-reset")
+        .json(&serde_json::json!({
+            "token": reset_token,
+            "new_password": "newpassword456"
+        }))
+        .send(&service)
+        .await;
+    assert_eq!(res.status_code, Some(StatusCode::OK));
 
-    // 2. Reset Password
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/password-reset")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "token": reset_token,
-                        "new_password": "newpassword123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    // Login with new password
+    let res = TestClient::post("http://localhost/login")
+        .json(&serde_json::json!({
+            "email": "reset@example.com",
+            "password": "newpassword456"
+        }))
+        .send(&service)
+        .await;
+    assert_eq!(res.status_code, Some(StatusCode::OK));
 
-    assert_eq!(response.status(), StatusCode::OK);
+    // Old password should no longer work
+    let res = TestClient::post("http://localhost/login")
+        .json(&serde_json::json!({
+            "email": "reset@example.com",
+            "password": "oldpassword123"
+        }))
+        .send(&service)
+        .await;
+    assert_eq!(res.status_code, Some(StatusCode::UNAUTHORIZED));
+}
 
-    // 3. Login with New Password
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/login")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "email": "reset@example.com",
-                        "password": "newpassword123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+#[tokio::test]
+async fn password_reset_request_nonexistent_email() {
+    let ctx = setup().await;
+    let service = build_service(&ctx);
 
-    assert_eq!(response.status(), StatusCode::OK);
+    // Should still return OK (to avoid user enumeration)
+    let res = TestClient::post("http://localhost/password-reset-request")
+        .json(&serde_json::json!({"email": "nobody@example.com"}))
+        .send(&service)
+        .await;
+    assert_eq!(res.status_code, Some(StatusCode::OK));
+}
+
+#[tokio::test]
+async fn password_reset_invalid_token() {
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+
+    let res = TestClient::post("http://localhost/password-reset")
+        .json(&serde_json::json!({
+            "token": "invalid-token-xyz",
+            "new_password": "newpassword456"
+        }))
+        .send(&service)
+        .await;
+    assert_eq!(res.status_code, Some(StatusCode::BAD_REQUEST));
 }

@@ -1,121 +1,72 @@
-use crate::common::setup;
-
-use axum::{
-    body::Body,
-    http::{Request, StatusCode},
-};
+use crate::common::{build_service, setup};
+use auth::models::responses::TokenResponse;
+use salvo::http::StatusCode;
+use salvo::test::{ResponseExt, TestClient};
 use secrecy::ExposeSecret;
-use tower::ServiceExt;
+
+async fn register_test_user(service: &salvo::Service) -> TokenResponse {
+    let mut res = TestClient::post("http://localhost/register")
+        .json(&serde_json::json!({
+            "username": "testuser",
+            "name": "Test User",
+            "email": "test@example.com",
+            "password": "password123"
+        }))
+        .send(service)
+        .await;
+    res.take_json().await.expect("Failed to parse tokens")
+}
 
 #[tokio::test]
 async fn login_user_success() {
-    let context = setup().await;
-    let app = auth::get_router(context.db.clone(), context.app_state.config.clone())
-        .await
-        .expect("Failed to create router");
-    let app: axum::Router = app.into();
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+    register_test_user(&service).await;
 
-    // Register user
-    let _ = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/register")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "username": "testuser",
-                        "name": "Test User",
-                        "email": "test@example.com",
-                        "password": "password123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    let mut res = TestClient::post("http://localhost/login")
+        .json(&serde_json::json!({
+            "email": "test@example.com",
+            "password": "password123"
+        }))
+        .send(&service)
+        .await;
 
-    // Login
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/login")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "email": "test@example.com",
-                        "password": "password123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    assert_eq!(res.status_code, Some(StatusCode::OK));
 
-    assert_eq!(response.status(), StatusCode::OK);
-
-    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let tokens: auth::models::responses::TokenResponse =
-        serde_json::from_slice(&body_bytes).unwrap();
+    let tokens: TokenResponse = res.take_json().await.expect("Failed to parse token response");
     assert!(!tokens.access_token.expose_secret().is_empty());
     assert!(!tokens.refresh_token.expose_secret().is_empty());
 }
 
 #[tokio::test]
 async fn login_user_wrong_password() {
-    let context = setup().await;
-    let app = auth::get_router(context.db.clone(), context.app_state.config.clone())
-        .await
-        .expect("Failed to create router");
-    let app: axum::Router = app.into();
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+    register_test_user(&service).await;
 
-    // Register user
-    let _ = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/register")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "username": "testuser",
-                        "name": "Test User",
-                        "email": "test@example.com",
-                        "password": "password123"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    let res = TestClient::post("http://localhost/login")
+        .json(&serde_json::json!({
+            "email": "test@example.com",
+            "password": "wrongpassword"
+        }))
+        .send(&service)
+        .await;
 
-    // Login wrong password
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/login")
-                .method("POST")
-                .header("Content-Type", "application/json")
-                .body(Body::from(
-                    serde_json::to_vec(&serde_json::json!({
-                        "email": "test@example.com",
-                        "password": "wrongpassword"
-                    }))
-                    .unwrap(),
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
+    assert_eq!(res.status_code, Some(StatusCode::UNAUTHORIZED));
+}
 
-    // Expect 401 Unauthorized
-    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+#[tokio::test]
+async fn login_nonexistent_user() {
+    let ctx = setup().await;
+    let service = build_service(&ctx);
+
+    let res = TestClient::post("http://localhost/login")
+        .json(&serde_json::json!({
+            "email": "nobody@example.com",
+            "password": "password123"
+        }))
+        .send(&service)
+        .await;
+
+    assert_eq!(res.status_code, Some(StatusCode::UNAUTHORIZED));
 }
