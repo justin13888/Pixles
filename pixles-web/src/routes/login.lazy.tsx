@@ -10,9 +10,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
-import { ApiError, login, verifyTotpLogin } from '@/lib/api';
+import {
+    ApiError,
+    login,
+    passkeyLoginFinish,
+    passkeyLoginStart,
+    verifyTotpLogin,
+} from '@/lib/api';
+import { authenticateWithPasskey } from '@/lib/webauthn';
 import { Link, createLazyFileRoute, useNavigate } from '@tanstack/react-router';
-import { MountainIcon } from 'lucide-react';
+import { KeyRoundIcon, MountainIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 export const Route = createLazyFileRoute('/login')({
@@ -25,13 +32,6 @@ function Login() {
     const { setTokens, isAuthenticated, isLoading } = useAuth();
     const navigate = useNavigate();
 
-    // Redirect already-authenticated users away from login
-    useEffect(() => {
-        if (!isLoading && isAuthenticated) {
-            navigate({ to: '/photos', replace: true });
-        }
-    }, [isLoading, isAuthenticated, navigate]);
-
     const [step, setStep] = useState<LoginStep>('credentials');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -39,6 +39,13 @@ function Login() {
     const [mfaToken, setMfaToken] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // Redirect already-authenticated users away from login
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            navigate({ to: '/photos', replace: true });
+        }
+    }, [isLoading, isAuthenticated, navigate]);
 
     async function handleCredentialsSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -54,11 +61,7 @@ function Login() {
                 navigate({ to: '/photos' });
             }
         } catch (err) {
-            if (err instanceof ApiError) {
-                setError(err.message);
-            } else {
-                setError('An unexpected error occurred.');
-            }
+            setError(err instanceof ApiError ? err.message : 'An unexpected error occurred.');
         } finally {
             setLoading(false);
         }
@@ -73,10 +76,28 @@ function Login() {
             setTokens(tokens);
             navigate({ to: '/photos' });
         } catch (err) {
+            setError(err instanceof ApiError ? err.message : 'An unexpected error occurred.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handlePasskeyLogin() {
+        setError(null);
+        setLoading(true);
+        try {
+            const options = await passkeyLoginStart(email || undefined);
+            const credential = await authenticateWithPasskey(options);
+            const tokens = await passkeyLoginFinish(credential);
+            setTokens(tokens);
+            navigate({ to: '/photos' });
+        } catch (err) {
             if (err instanceof ApiError) {
                 setError(err.message);
+            } else if (err instanceof Error && err.name === 'NotAllowedError') {
+                setError('Passkey authentication was cancelled.');
             } else {
-                setError('An unexpected error occurred.');
+                setError('Passkey authentication failed.');
             }
         } finally {
             setLoading(false);
@@ -127,9 +148,27 @@ function Login() {
                                 />
                             </div>
                         </CardContent>
-                        <CardFooter className="flex flex-col gap-4">
+                        <CardFooter className="flex flex-col gap-3">
                             <Button className="w-full" type="submit" disabled={loading}>
                                 {loading ? 'Signing in…' : 'Sign in'}
+                            </Button>
+                            <div className="relative w-full">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-card px-2 text-muted-foreground">or</span>
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                type="button"
+                                disabled={loading}
+                                onClick={handlePasskeyLogin}
+                            >
+                                <KeyRoundIcon className="mr-2 h-4 w-4" />
+                                Sign in with Passkey
                             </Button>
                             <p className="text-xs text-muted-foreground text-center">
                                 Don't have an account?{' '}
@@ -174,7 +213,7 @@ function Login() {
                                 />
                             </div>
                         </CardContent>
-                        <CardFooter className="flex flex-col gap-4">
+                        <CardFooter className="flex flex-col gap-3">
                             <Button className="w-full" type="submit" disabled={loading}>
                                 {loading ? 'Verifying…' : 'Verify'}
                             </Button>
@@ -182,7 +221,11 @@ function Login() {
                                 variant="ghost"
                                 className="w-full"
                                 type="button"
-                                onClick={() => { setStep('credentials'); setError(null); setTotpCode(''); }}
+                                onClick={() => {
+                                    setStep('credentials');
+                                    setError(null);
+                                    setTotpCode('');
+                                }}
                             >
                                 Back
                             </Button>
