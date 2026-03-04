@@ -4,12 +4,12 @@
  */
 
 import {
+    type TokenPair,
     clearTokens,
     getAccessToken,
     getRefreshToken,
     isAccessTokenValid,
     saveTokens,
-    type TokenPair,
 } from './auth';
 
 const API_BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -28,7 +28,10 @@ export class ApiError extends Error {
 async function parseError(res: Response): Promise<ApiError> {
     try {
         const body = await res.json();
-        return new ApiError(res.status, body.error ?? body.message ?? res.statusText);
+        return new ApiError(
+            res.status,
+            body.error ?? body.message ?? res.statusText,
+        );
     } catch {
         return new ApiError(res.status, res.statusText);
     }
@@ -75,10 +78,14 @@ export async function authFetch(
         }
     }
 
-    const token = getAccessToken()!;
+    const token = getAccessToken();
+    if (!token) throw new ApiError(401, 'Session expired');
     const headers = new Headers(init.headers);
     headers.set('Authorization', `Bearer ${token}`);
-    headers.set('Content-Type', headers.get('Content-Type') ?? 'application/json');
+    headers.set(
+        'Content-Type',
+        headers.get('Content-Type') ?? 'application/json',
+    );
 
     const res = await fetch(`${AUTH_BASE}${path}`, { ...init, headers });
 
@@ -103,7 +110,9 @@ export interface LoginMfaRequiredResponse {
     mfa_token: string;
 }
 
-export async function login(body: LoginRequest): Promise<TokenPair | LoginMfaRequiredResponse> {
+export async function login(
+    body: LoginRequest,
+): Promise<TokenPair | LoginMfaRequiredResponse> {
     const res = await fetch(`${AUTH_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,7 +149,10 @@ export async function logout(): Promise<void> {
 
 // ── TOTP endpoints ──────────────────────────────────────────────────────────
 
-export async function verifyTotpLogin(mfaToken: string, totpCode: string): Promise<TokenPair> {
+export async function verifyTotpLogin(
+    mfaToken: string,
+    totpCode: string,
+): Promise<TokenPair> {
     const res = await fetch(`${AUTH_BASE}/login/verify-totp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,7 +200,9 @@ export async function passkeyLoginStart(username?: string): Promise<unknown> {
     return res.json();
 }
 
-export async function passkeyLoginFinish(credential: unknown): Promise<TokenPair> {
+export async function passkeyLoginFinish(
+    credential: unknown,
+): Promise<TokenPair> {
     const res = await fetch(`${AUTH_BASE}/passkey/login/finish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -229,7 +243,9 @@ export async function listPasskeys(): Promise<PasskeyCredential[]> {
 }
 
 export async function deletePasskey(credId: string): Promise<void> {
-    const res = await authFetch(`/passkey/credentials/${credId}`, { method: 'DELETE' });
+    const res = await authFetch(`/passkey/credentials/${credId}`, {
+        method: 'DELETE',
+    });
     if (!res.ok) throw await parseError(res);
 }
 
@@ -258,7 +274,9 @@ export interface UpdateProfileRequest {
     new_password?: string;
 }
 
-export async function updateProfile(body: UpdateProfileRequest): Promise<UserProfile> {
+export async function updateProfile(
+    body: UpdateProfileRequest,
+): Promise<UserProfile> {
     const res = await authFetch('/profile', {
         method: 'POST',
         body: JSON.stringify(body),
@@ -295,7 +313,10 @@ export async function requestPasswordReset(email: string): Promise<void> {
     if (!res.ok) throw await parseError(res);
 }
 
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
+export async function resetPassword(
+    token: string,
+    newPassword: string,
+): Promise<void> {
     const res = await fetch(`${AUTH_BASE}/password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

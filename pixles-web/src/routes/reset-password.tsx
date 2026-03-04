@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { ApiError, resetPassword } from '@/lib/api';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { MountainIcon } from 'lucide-react';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 
 const resetPasswordSearchSchema = z.object({
@@ -43,7 +44,10 @@ function ResetPassword() {
                         </CardDescription>
                     </CardHeader>
                     <CardFooter>
-                        <Link to="/forgot-password" className="text-sm underline">
+                        <Link
+                            to="/forgot-password"
+                            className="text-sm underline"
+                        >
                             Request a new reset link
                         </Link>
                     </CardFooter>
@@ -89,39 +93,57 @@ function ResetPassword() {
                 <CardHeader>
                     <CardTitle className="text-2xl">Reset Password</CardTitle>
                     <CardDescription>
-                        {success ? 'Your password has been reset.' : 'Enter your new password.'}
+                        {success
+                            ? 'Your password has been reset.'
+                            : 'Enter your new password.'}
                     </CardDescription>
                 </CardHeader>
                 {!success ? (
                     <form onSubmit={handleSubmit}>
                         <CardContent className="grid gap-4">
-                            {error && <p className="text-sm text-destructive">{error}</p>}
+                            {error && (
+                                <p className="text-sm text-destructive">
+                                    {error}
+                                </p>
+                            )}
                             <div className="grid gap-2">
-                                <Label htmlFor="new-password">New Password</Label>
+                                <Label htmlFor="new-password">
+                                    New Password
+                                </Label>
                                 <Input
                                     id="new-password"
                                     type="password"
                                     required
                                     minLength={8}
                                     value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    onChange={(e) =>
+                                        setNewPassword(e.target.value)
+                                    }
                                     disabled={loading}
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="confirm-password">Confirm Password</Label>
+                                <Label htmlFor="confirm-password">
+                                    Confirm Password
+                                </Label>
                                 <Input
                                     id="confirm-password"
                                     type="password"
                                     required
                                     value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    onChange={(e) =>
+                                        setConfirmPassword(e.target.value)
+                                    }
                                     disabled={loading}
                                 />
                             </div>
                         </CardContent>
                         <CardFooter className="flex flex-col gap-3">
-                            <Button className="w-full" type="submit" disabled={loading}>
+                            <Button
+                                className="w-full"
+                                type="submit"
+                                disabled={loading}
+                            >
                                 {loading ? 'Resetting…' : 'Reset password'}
                             </Button>
                         </CardFooter>

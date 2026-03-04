@@ -78,10 +78,10 @@ export function LazyImage({
         >
             <img
                 src={loadedSrc || (placeholderUrl ?? '')}
-                alt={alt}
                 data-loaded={!!isLoaded}
                 className={`w-full h-full object-cover transition-opacity duration-500 ease-in-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
                 {...props}
+                alt={alt ?? ''}
             />
 
             {!isLoaded && (

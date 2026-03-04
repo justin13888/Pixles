@@ -9,8 +9,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 
-import { APP_NAME } from '@/lib/constant';
 import { useAuth } from '@/lib/auth-context';
+import { APP_NAME } from '@/lib/constant';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { BellIcon, MountainIcon, UploadIcon } from 'lucide-react';
 import { ModeToggle } from './ui/mode-toggle';
@@ -79,8 +79,12 @@ export const Header = () => {
                             <DropdownMenuContent align="end">
                                 {user && (
                                     <>
-                                        <div className="px-2 py-1.5 text-sm font-medium">{user.name}</div>
-                                        <div className="px-2 pb-1.5 text-xs text-muted-foreground">{user.email}</div>
+                                        <div className="px-2 py-1.5 text-sm font-medium">
+                                            {user.name}
+                                        </div>
+                                        <div className="px-2 pb-1.5 text-xs text-muted-foreground">
+                                            {user.email}
+                                        </div>
                                         <DropdownMenuSeparator />
                                     </>
                                 )}
@@ -88,7 +92,9 @@ export const Header = () => {
                                     <Link to="/settings">Profile</Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                    <Link to="/settings/security">Security</Link>
+                                    <Link to="/settings/security">
+                                        Security
+                                    </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

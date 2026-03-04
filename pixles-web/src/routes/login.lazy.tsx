@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/lib/auth-context';
 import {
     ApiError,
     login,
@@ -17,10 +16,12 @@ import {
     passkeyLoginStart,
     verifyTotpLogin,
 } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { authenticateWithPasskey } from '@/lib/webauthn';
 import { Link, createLazyFileRoute, useNavigate } from '@tanstack/react-router';
 import { KeyRoundIcon, MountainIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 export const Route = createLazyFileRoute('/login')({
     component: Login,
@@ -61,7 +62,11 @@ function Login() {
                 navigate({ to: '/photos' });
             }
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'An unexpected error occurred.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'An unexpected error occurred.',
+            );
         } finally {
             setLoading(false);
         }
@@ -76,7 +81,11 @@ function Login() {
             setTokens(tokens);
             navigate({ to: '/photos' });
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'An unexpected error occurred.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'An unexpected error occurred.',
+            );
         } finally {
             setLoading(false);
         }
@@ -122,7 +131,9 @@ function Login() {
                     <form onSubmit={handleCredentialsSubmit}>
                         <CardContent className="grid gap-4">
                             {error && (
-                                <p className="text-sm text-destructive">{error}</p>
+                                <p className="text-sm text-destructive">
+                                    {error}
+                                </p>
                             )}
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
@@ -143,13 +154,19 @@ function Login() {
                                     type="password"
                                     required
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
                                     disabled={loading}
                                 />
                             </div>
                         </CardContent>
                         <CardFooter className="flex flex-col gap-3">
-                            <Button className="w-full" type="submit" disabled={loading}>
+                            <Button
+                                className="w-full"
+                                type="submit"
+                                disabled={loading}
+                            >
                                 {loading ? 'Signing in…' : 'Sign in'}
                             </Button>
                             <div className="relative w-full">
@@ -157,7 +174,9 @@ function Login() {
                                     <span className="w-full border-t" />
                                 </div>
                                 <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-card px-2 text-muted-foreground">or</span>
+                                    <span className="bg-card px-2 text-muted-foreground">
+                                        or
+                                    </span>
                                 </div>
                             </div>
                             <Button
@@ -177,7 +196,10 @@ function Login() {
                                 </Link>
                             </p>
                             <p className="text-xs text-muted-foreground text-center">
-                                <Link to="/forgot-password" className="underline">
+                                <Link
+                                    to="/forgot-password"
+                                    className="underline"
+                                >
                                     Forgot password?
                                 </Link>
                             </p>
@@ -187,7 +209,9 @@ function Login() {
             ) : (
                 <Card className="w-full max-w-sm">
                     <CardHeader>
-                        <CardTitle className="text-2xl">Two-Factor Auth</CardTitle>
+                        <CardTitle className="text-2xl">
+                            Two-Factor Auth
+                        </CardTitle>
                         <CardDescription>
                             Enter the 6-digit code from your authenticator app.
                         </CardDescription>
@@ -195,7 +219,9 @@ function Login() {
                     <form onSubmit={handleTotpSubmit}>
                         <CardContent className="grid gap-4">
                             {error && (
-                                <p className="text-sm text-destructive">{error}</p>
+                                <p className="text-sm text-destructive">
+                                    {error}
+                                </p>
                             )}
                             <div className="grid gap-2">
                                 <Label htmlFor="totp">Authenticator Code</Label>
@@ -207,14 +233,20 @@ function Login() {
                                     maxLength={6}
                                     required
                                     value={totpCode}
-                                    onChange={(e) => setTotpCode(e.target.value)}
+                                    onChange={(e) =>
+                                        setTotpCode(e.target.value)
+                                    }
                                     disabled={loading}
                                     autoFocus
                                 />
                             </div>
                         </CardContent>
                         <CardFooter className="flex flex-col gap-3">
-                            <Button className="w-full" type="submit" disabled={loading}>
+                            <Button
+                                className="w-full"
+                                type="submit"
+                                disabled={loading}
+                            >
                                 {loading ? 'Verifying…' : 'Verify'}
                             </Button>
                             <Button

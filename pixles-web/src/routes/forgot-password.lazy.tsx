@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { ApiError, requestPasswordReset } from '@/lib/api';
 import { Link, createLazyFileRoute } from '@tanstack/react-router';
 import { MountainIcon } from 'lucide-react';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 
 export const Route = createLazyFileRoute('/forgot-password')({
     component: ForgotPassword,
@@ -61,7 +62,11 @@ function ForgotPassword() {
                 {!submitted ? (
                     <form onSubmit={handleSubmit}>
                         <CardContent className="grid gap-4">
-                            {error && <p className="text-sm text-destructive">{error}</p>}
+                            {error && (
+                                <p className="text-sm text-destructive">
+                                    {error}
+                                </p>
+                            )}
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -76,10 +81,17 @@ function ForgotPassword() {
                             </div>
                         </CardContent>
                         <CardFooter className="flex flex-col gap-3">
-                            <Button className="w-full" type="submit" disabled={loading}>
+                            <Button
+                                className="w-full"
+                                type="submit"
+                                disabled={loading}
+                            >
                                 {loading ? 'Sending…' : 'Send reset link'}
                             </Button>
-                            <Link to="/login" className="text-xs text-muted-foreground underline">
+                            <Link
+                                to="/login"
+                                className="text-xs text-muted-foreground underline"
+                            >
                                 Back to login
                             </Link>
                         </CardFooter>
@@ -87,10 +99,13 @@ function ForgotPassword() {
                 ) : (
                     <CardFooter className="flex flex-col gap-3 pt-4">
                         <p className="text-sm text-muted-foreground text-center">
-                            If an account with that email exists, you'll receive a reset link
-                            shortly.
+                            If an account with that email exists, you'll receive
+                            a reset link shortly.
                         </p>
-                        <Link to="/login" className="text-xs text-muted-foreground underline">
+                        <Link
+                            to="/login"
+                            className="text-xs text-muted-foreground underline"
+                        >
                             Back to login
                         </Link>
                     </CardFooter>

@@ -4,20 +4,21 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { createContext, useCallback, useContext, useEffect } from 'react';
+import type React from 'react';
+import { createContext, useCallback, useContext, useEffect } from 'react';
 import {
+    type UserProfile,
+    logout as apiLogout,
+    refreshAccessToken as apiRefresh,
+    getProfile,
+} from './api';
+import {
+    type TokenPair,
     clearTokens,
     getTokenExpiry,
     hasTokens,
     saveTokens,
-    type TokenPair,
 } from './auth';
-import {
-    getProfile,
-    logout as apiLogout,
-    refreshAccessToken as apiRefresh,
-    type UserProfile,
-} from './api';
 
 export interface AuthState {
     /** The currently authenticated user, or null if not logged in. */

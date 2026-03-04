@@ -1,4 +1,9 @@
-import { Outlet, createRootRoute, useNavigate, useRouterState } from '@tanstack/react-router';
+import {
+    Outlet,
+    createRootRoute,
+    useNavigate,
+    useRouterState,
+} from '@tanstack/react-router';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import { Header } from '@/components/header';
@@ -27,7 +32,12 @@ const ReactQueryDevtoolsProduction = React.lazy(() =>
 );
 
 /** Paths that do not require authentication */
-const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password'];
+const PUBLIC_PATHS = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+];
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
     const { isLoading, isAuthenticated } = useAuth();
@@ -35,7 +45,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const { location } = useRouterState();
     const pathname = location.pathname;
 
-    const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
+    const isPublic = PUBLIC_PATHS.some(
+        (p) => pathname === p || pathname.startsWith(`${p}/`),
+    );
 
     useEffect(() => {
         if (!isLoading && !isAuthenticated && !isPublic) {

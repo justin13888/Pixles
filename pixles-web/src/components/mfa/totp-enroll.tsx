@@ -36,7 +36,11 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
             setProvisioningUri(provisioning_uri);
             setStep('scan');
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Failed to start enrollment.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'Failed to start enrollment.',
+            );
         } finally {
             setLoading(false);
         }
@@ -50,7 +54,11 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
             await totpVerifyEnrollment(code);
             onSuccess();
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Invalid code. Please try again.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'Invalid code. Please try again.',
+            );
         } finally {
             setLoading(false);
         }
@@ -60,8 +68,8 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
         return (
             <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                    Use an authenticator app (e.g. Google Authenticator, Authy) to scan a QR code
-                    and generate one-time codes.
+                    Use an authenticator app (e.g. Google Authenticator, Authy)
+                    to scan a QR code and generate one-time codes.
                 </p>
                 <div className="flex gap-2">
                     <Button onClick={handleStart} disabled={loading}>
@@ -79,8 +87,8 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
         return (
             <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                    Scan this QR code with your authenticator app, then enter the 6-digit code to
-                    confirm.
+                    Scan this QR code with your authenticator app, then enter
+                    the 6-digit code to confirm.
                 </p>
                 <div className="flex justify-center p-4 bg-white rounded-md">
                     <QRCode value={provisioningUri} size={180} />
@@ -89,7 +97,9 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
                     <summary className="cursor-pointer select-none">
                         Can't scan? Show setup key
                     </summary>
-                    <p className="mt-1 break-all font-mono">{provisioningUri}</p>
+                    <p className="mt-1 break-all font-mono">
+                        {provisioningUri}
+                    </p>
                 </details>
                 <Button onClick={() => setStep('verify')} className="w-full">
                     I've scanned the code
@@ -101,7 +111,8 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
     return (
         <form onSubmit={handleVerify} className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Enter the 6-digit code from your authenticator app to complete setup.
+                Enter the 6-digit code from your authenticator app to complete
+                setup.
             </p>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="grid gap-2">
@@ -123,7 +134,11 @@ export function TotpEnroll({ onSuccess, onCancel }: TotpEnrollProps) {
                 <Button type="submit" disabled={loading}>
                     {loading ? 'Verifying…' : 'Confirm'}
                 </Button>
-                <Button variant="ghost" type="button" onClick={() => setStep('scan')}>
+                <Button
+                    variant="ghost"
+                    type="button"
+                    onClick={() => setStep('scan')}
+                >
                     Back
                 </Button>
             </div>

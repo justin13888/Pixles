@@ -8,7 +8,11 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ApiError, passkeyRegisterFinish, passkeyRegisterStart } from '@/lib/api';
+import {
+    ApiError,
+    passkeyRegisterFinish,
+    passkeyRegisterStart,
+} from '@/lib/api';
 import { registerPasskey } from '@/lib/webauthn';
 import { KeyRoundIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -37,7 +41,10 @@ export function PasskeyRegister({ onSuccess, onCancel }: PasskeyRegisterProps) {
                 setError(err.message);
             } else if (err instanceof Error && err.name === 'NotAllowedError') {
                 setError('Passkey registration was cancelled.');
-            } else if (err instanceof Error && err.name === 'InvalidStateError') {
+            } else if (
+                err instanceof Error &&
+                err.name === 'InvalidStateError'
+            ) {
                 setError('A passkey for this device is already registered.');
             } else {
                 setError('Passkey registration failed.');
@@ -50,8 +57,8 @@ export function PasskeyRegister({ onSuccess, onCancel }: PasskeyRegisterProps) {
     return (
         <form onSubmit={handleRegister} className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Passkeys use your device's biometrics or PIN to sign in securely without a
-                password.
+                Passkeys use your device's biometrics or PIN to sign in securely
+                without a password.
             </p>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="grid gap-2">

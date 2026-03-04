@@ -8,11 +8,12 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/lib/auth-context';
 import { ApiError, updateProfile } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, createLazyFileRoute } from '@tanstack/react-router';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 export const Route = createLazyFileRoute('/settings')({
     component: Settings,
@@ -48,7 +49,11 @@ function Settings() {
             queryClient.setQueryData(['auth', 'profile'], updated);
             setSuccess('Profile updated.');
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Failed to update profile.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'Failed to update profile.',
+            );
         } finally {
             setLoading(false);
         }
@@ -77,7 +82,11 @@ function Settings() {
             setNewPassword('');
             setConfirmPassword('');
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Failed to update password.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'Failed to update password.',
+            );
         } finally {
             setLoading(false);
         }
@@ -87,7 +96,10 @@ function Settings() {
         <div className="max-w-2xl mx-auto p-6 space-y-8">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Profile Settings</h1>
-                <Link to="/settings/security" className="text-sm underline text-muted-foreground">
+                <Link
+                    to="/settings/security"
+                    className="text-sm underline text-muted-foreground"
+                >
                     Security settings →
                 </Link>
             </div>
@@ -95,12 +107,18 @@ function Settings() {
             <Card>
                 <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>Update your username and email address.</CardDescription>
+                    <CardDescription>
+                        Update your username and email address.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleProfileSubmit} className="space-y-4">
-                        {error && <p className="text-sm text-destructive">{error}</p>}
-                        {success && <p className="text-sm text-green-600">{success}</p>}
+                        {error && (
+                            <p className="text-sm text-destructive">{error}</p>
+                        )}
+                        {success && (
+                            <p className="text-sm text-green-600">{success}</p>
+                        )}
                         <div className="grid gap-2">
                             <Label htmlFor="username">Username</Label>
                             <Input
@@ -130,18 +148,24 @@ function Settings() {
             <Card>
                 <CardHeader>
                     <CardTitle>Change Password</CardTitle>
-                    <CardDescription>Enter your current password to set a new one.</CardDescription>
+                    <CardDescription>
+                        Enter your current password to set a new one.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handlePasswordSubmit} className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="current-password">Current Password</Label>
+                            <Label htmlFor="current-password">
+                                Current Password
+                            </Label>
                             <Input
                                 id="current-password"
                                 type="password"
                                 required
                                 value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                onChange={(e) =>
+                                    setCurrentPassword(e.target.value)
+                                }
                                 disabled={loading}
                             />
                         </div>
@@ -158,13 +182,17 @@ function Settings() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="confirm-password">Confirm New Password</Label>
+                            <Label htmlFor="confirm-password">
+                                Confirm New Password
+                            </Label>
                             <Input
                                 id="confirm-password"
                                 type="password"
                                 required
                                 value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onChange={(e) =>
+                                    setConfirmPassword(e.target.value)
+                                }
                                 disabled={loading}
                             />
                         </div>

@@ -1,3 +1,5 @@
+import { PasskeyRegister } from '@/components/mfa/passkey-register';
+import { TotpEnroll } from '@/components/mfa/totp-enroll';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -6,14 +8,21 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { TotpEnroll } from '@/components/mfa/totp-enroll';
-import { PasskeyRegister } from '@/components/mfa/passkey-register';
-import { ApiError, getDevices, listPasskeys, deletePasskey, totpDisable, type Device, type PasskeyCredential } from '@/lib/api';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, createLazyFileRoute } from '@tanstack/react-router';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import React, { useState } from 'react';
+import {
+    ApiError,
+    type Device,
+    type PasskeyCredential,
+    deletePasskey,
+    getDevices,
+    listPasskeys,
+    totpDisable,
+} from '@/lib/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, createLazyFileRoute } from '@tanstack/react-router';
+import type React from 'react';
+import { useState } from 'react';
 
 export const Route = createLazyFileRoute('/settings/security')({
     component: SecuritySettings,
@@ -36,11 +45,15 @@ function DeviceCard({ device }: { device: Device }) {
                 <div className="font-medium">
                     {device.user_agent ?? 'Unknown device'}
                     {device.is_current && (
-                        <span className="ml-2 text-xs text-green-600 font-normal">(This device)</span>
+                        <span className="ml-2 text-xs text-green-600 font-normal">
+                            (This device)
+                        </span>
                     )}
                 </div>
                 {device.ip_address && (
-                    <div className="text-muted-foreground text-xs">{device.ip_address}</div>
+                    <div className="text-muted-foreground text-xs">
+                        {device.ip_address}
+                    </div>
                 )}
                 <div className="text-muted-foreground text-xs">
                     Last active: {formatDate(device.last_active_at)}
@@ -50,7 +63,10 @@ function DeviceCard({ device }: { device: Device }) {
     );
 }
 
-function PasskeyRow({ passkey, onDeleted }: { passkey: PasskeyCredential; onDeleted: () => void }) {
+function PasskeyRow({
+    passkey,
+    onDeleted,
+}: { passkey: PasskeyCredential; onDeleted: () => void }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +78,11 @@ function PasskeyRow({ passkey, onDeleted }: { passkey: PasskeyCredential; onDele
             await deletePasskey(passkey.id);
             onDeleted();
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Failed to delete passkey.');
+            setError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'Failed to delete passkey.',
+            );
         } finally {
             setLoading(false);
         }
@@ -75,7 +95,9 @@ function PasskeyRow({ passkey, onDeleted }: { passkey: PasskeyCredential; onDele
                 <div className="text-muted-foreground text-xs">
                     Added: {formatDate(passkey.created_at)}
                 </div>
-                {error && <div className="text-xs text-destructive">{error}</div>}
+                {error && (
+                    <div className="text-xs text-destructive">{error}</div>
+                )}
             </div>
             <Button
                 variant="destructive"
@@ -105,7 +127,9 @@ function SecuritySettings() {
     const [showTotpEnroll, setShowTotpEnroll] = useState(false);
     const [showPasskeyRegister, setShowPasskeyRegister] = useState(false);
     const [totpDisableCode, setTotpDisableCode] = useState('');
-    const [totpDisableError, setTotpDisableError] = useState<string | null>(null);
+    const [totpDisableError, setTotpDisableError] = useState<string | null>(
+        null,
+    );
     const [totpDisableLoading, setTotpDisableLoading] = useState(false);
     const [totpSuccess, setTotpSuccess] = useState<string | null>(null);
 
@@ -119,7 +143,11 @@ function SecuritySettings() {
             setTotpDisableCode('');
             setShowTotpEnroll(false);
         } catch (err) {
-            setTotpDisableError(err instanceof ApiError ? err.message : 'Failed to disable TOTP.');
+            setTotpDisableError(
+                err instanceof ApiError
+                    ? err.message
+                    : 'Failed to disable TOTP.',
+            );
         } finally {
             setTotpDisableLoading(false);
         }
@@ -129,7 +157,10 @@ function SecuritySettings() {
         <div className="max-w-2xl mx-auto p-6 space-y-8">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Security Settings</h1>
-                <Link to="/settings" className="text-sm underline text-muted-foreground">
+                <Link
+                    to="/settings"
+                    className="text-sm underline text-muted-foreground"
+                >
                     ← Profile settings
                 </Link>
             </div>
@@ -144,13 +175,17 @@ function SecuritySettings() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {devicesLoading && (
-                        <p className="text-sm text-muted-foreground">Loading sessions…</p>
+                        <p className="text-sm text-muted-foreground">
+                            Loading sessions…
+                        </p>
                     )}
                     {devices?.map((device) => (
                         <DeviceCard key={device.id} device={device} />
                     ))}
                     {!devicesLoading && (!devices || devices.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No active sessions found.</p>
+                        <p className="text-sm text-muted-foreground">
+                            No active sessions found.
+                        </p>
                     )}
                 </CardContent>
             </Card>
@@ -160,11 +195,14 @@ function SecuritySettings() {
                 <CardHeader>
                     <CardTitle>Authenticator App (TOTP)</CardTitle>
                     <CardDescription>
-                        Use an authenticator app to generate one-time codes for login.
+                        Use an authenticator app to generate one-time codes for
+                        login.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {totpSuccess && <p className="text-sm text-green-600">{totpSuccess}</p>}
+                    {totpSuccess && (
+                        <p className="text-sm text-green-600">{totpSuccess}</p>
+                    )}
                     {showTotpEnroll ? (
                         <TotpEnroll
                             onSuccess={() => {
@@ -175,16 +213,28 @@ function SecuritySettings() {
                         />
                     ) : (
                         <div className="space-y-4">
-                            <Button onClick={() => { setTotpSuccess(null); setShowTotpEnroll(true); }}>
+                            <Button
+                                onClick={() => {
+                                    setTotpSuccess(null);
+                                    setShowTotpEnroll(true);
+                                }}
+                            >
                                 Set up authenticator app
                             </Button>
                             <div className="border-t pt-4">
                                 <p className="text-sm text-muted-foreground mb-2">
-                                    If TOTP is currently enabled, enter a code to disable it:
+                                    If TOTP is currently enabled, enter a code
+                                    to disable it:
                                 </p>
-                                <form onSubmit={handleTotpDisable} className="flex gap-2">
+                                <form
+                                    onSubmit={handleTotpDisable}
+                                    className="flex gap-2"
+                                >
                                     <div className="grid gap-1 flex-1">
-                                        <Label htmlFor="totp-disable-code" className="sr-only">
+                                        <Label
+                                            htmlFor="totp-disable-code"
+                                            className="sr-only"
+                                        >
                                             TOTP Code
                                         </Label>
                                         <Input
@@ -194,20 +244,31 @@ function SecuritySettings() {
                                             placeholder="6-digit code"
                                             maxLength={6}
                                             value={totpDisableCode}
-                                            onChange={(e) => setTotpDisableCode(e.target.value)}
+                                            onChange={(e) =>
+                                                setTotpDisableCode(
+                                                    e.target.value,
+                                                )
+                                            }
                                             disabled={totpDisableLoading}
                                         />
                                     </div>
                                     <Button
                                         type="submit"
                                         variant="destructive"
-                                        disabled={totpDisableLoading || !totpDisableCode}
+                                        disabled={
+                                            totpDisableLoading ||
+                                            !totpDisableCode
+                                        }
                                     >
-                                        {totpDisableLoading ? 'Disabling…' : 'Disable TOTP'}
+                                        {totpDisableLoading
+                                            ? 'Disabling…'
+                                            : 'Disable TOTP'}
                                     </Button>
                                 </form>
                                 {totpDisableError && (
-                                    <p className="text-sm text-destructive mt-1">{totpDisableError}</p>
+                                    <p className="text-sm text-destructive mt-1">
+                                        {totpDisableError}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -225,23 +286,34 @@ function SecuritySettings() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {passkeysLoading && (
-                        <p className="text-sm text-muted-foreground">Loading passkeys…</p>
+                        <p className="text-sm text-muted-foreground">
+                            Loading passkeys…
+                        </p>
                     )}
                     {passkeys?.map((passkey) => (
                         <PasskeyRow
                             key={passkey.id}
                             passkey={passkey}
-                            onDeleted={() => queryClient.invalidateQueries({ queryKey: ['auth', 'passkeys'] })}
+                            onDeleted={() =>
+                                queryClient.invalidateQueries({
+                                    queryKey: ['auth', 'passkeys'],
+                                })
+                            }
                         />
                     ))}
-                    {!passkeysLoading && (!passkeys || passkeys.length === 0) && (
-                        <p className="text-sm text-muted-foreground">No passkeys registered.</p>
-                    )}
+                    {!passkeysLoading &&
+                        (!passkeys || passkeys.length === 0) && (
+                            <p className="text-sm text-muted-foreground">
+                                No passkeys registered.
+                            </p>
+                        )}
                     {showPasskeyRegister ? (
                         <PasskeyRegister
                             onSuccess={() => {
                                 setShowPasskeyRegister(false);
-                                queryClient.invalidateQueries({ queryKey: ['auth', 'passkeys'] });
+                                queryClient.invalidateQueries({
+                                    queryKey: ['auth', 'passkeys'],
+                                });
                             }}
                             onCancel={() => setShowPasskeyRegister(false)}
                         />
