@@ -24,6 +24,8 @@ pub struct AuthConfig {
     pub valkey_url: String,
     /// TOTP issuer string shown in authenticator apps
     pub totp_issuer: String,
+    /// Allowed CORS origins. Use `["*"]` to allow all origins (development only).
+    pub allowed_origins: Vec<String>,
 }
 
 impl From<&ServerConfig> for AuthConfig {
@@ -38,6 +40,7 @@ impl From<&ServerConfig> for AuthConfig {
             jwt_access_token_duration_seconds: config.jwt_access_token_duration_seconds,
             valkey_url: config.valkey_url.clone(),
             totp_issuer: config.totp_issuer.clone(),
+            allowed_origins: config.allowed_origins.clone(),
         }
     }
 }

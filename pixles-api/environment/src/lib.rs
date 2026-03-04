@@ -73,6 +73,10 @@ pub struct ServerConfig {
     #[cfg(any(feature = "auth", feature = "upload"))]
     /// Valkey URL (e.g. "redis://127.0.0.1:6379")
     pub valkey_url: String,
+
+    #[cfg(any(feature = "auth", feature = "upload"))]
+    /// Allowed CORS origins. Use `["*"]` to allow all origins (development only).
+    pub allowed_origins: Vec<String>,
 }
 // TODO: Separate out these configs into environment variables struct ^^
 
@@ -177,6 +181,16 @@ impl Environment {
                     .into(), // TODO: If this is still used
                 #[cfg(any(feature = "auth", feature = "upload"))]
                 valkey_url: load_env("VALKEY_URL")?,
+                #[cfg(any(feature = "auth", feature = "upload"))]
+                allowed_origins: load_env("ALLOWED_ORIGINS")
+                    .map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+                    .unwrap_or_else(|_| {
+                        if cfg!(debug_assertions) {
+                            vec!["*".to_string()]
+                        } else {
+                            vec![]
+                        }
+                    }),
             },
             log_level: load_log_level("LOG_LEVEL").unwrap_or(if cfg!(debug_assertions) {
                 LevelFilter::TRACE

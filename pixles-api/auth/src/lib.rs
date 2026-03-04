@@ -1,5 +1,5 @@
 use config::AuthConfig;
-use salvo::cors::Cors;
+use salvo::cors::{AllowOrigin, Cors};
 use salvo::http::Method;
 use salvo::prelude::*;
 use sea_orm::DatabaseConnection;
@@ -53,9 +53,14 @@ pub async fn get_router<C: Into<AuthConfig>>(
     let webauthn = std::sync::Arc::new(builder.build().map_err(|e| eyre::eyre!(e))?);
     let passkey_service = service::PasskeyService::new(conn.clone(), webauthn);
 
-    // CORS configuration - TODO: Restrict later
+    // CORS configuration
+    let allow_origin = if config.allowed_origins.iter().any(|o| o == "*") {
+        AllowOrigin::any()
+    } else {
+        AllowOrigin::from(&config.allowed_origins)
+    };
     let cors = Cors::new()
-        .allow_origin("*")
+        .allow_origin(allow_origin)
         .allow_methods(vec![
             Method::GET,
             Method::POST,

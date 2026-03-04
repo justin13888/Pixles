@@ -2,7 +2,7 @@ use config::UploadServerConfig;
 use eyre::Result;
 use sea_orm::DatabaseConnection;
 
-use salvo::cors::Cors;
+use salvo::cors::{AllowOrigin, Cors};
 use salvo::http::Method;
 use salvo::prelude::*;
 use tracing::info;
@@ -48,8 +48,13 @@ pub async fn get_router<C: Into<UploadServerConfig>>(
         conn.clone(),
     );
 
+    let allow_origin = if config.allowed_origins.iter().any(|o| o == "*") {
+        AllowOrigin::any()
+    } else {
+        AllowOrigin::from(&config.allowed_origins)
+    };
     let cors = Cors::new()
-        .allow_origin("*") // TODO: restricting origins via config
+        .allow_origin(allow_origin)
         .allow_methods(vec![
             Method::GET,
             Method::POST,

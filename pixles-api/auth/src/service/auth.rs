@@ -221,6 +221,7 @@ mod tests {
             jwt_access_token_duration_seconds: 300,
             valkey_url: "redis://localhost:6379".to_string(),
             totp_issuer: "Pixles".to_string(),
+            allowed_origins: vec!["*".to_string()],
         };
         AuthService::new(conn, config)
     }
