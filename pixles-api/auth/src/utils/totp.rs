@@ -16,6 +16,8 @@ pub fn get_totp_generator(secret: &str) -> eyre::Result<TOTP> {
         Secret::Encoded(secret.to_string())
             .to_bytes()
             .wrap_err("Failed to parse secret")?,
+        None,
+        String::new(),
     )
     .wrap_err("Failed to create TOTP")
 }
