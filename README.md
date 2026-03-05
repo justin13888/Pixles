@@ -146,7 +146,7 @@ A: Even if the best development practices, rigorous testing, and conservative de
 
 ## How to contribute
 
-Pixles primarily benefits from active contributions and feedback. See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+Pixles primarily benefits from active contributions and feedback! Rather than a donation we actually need more hands. See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
 ## License
 
