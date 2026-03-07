@@ -28,12 +28,16 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Development',
-					autogenerate: { directory: 'development' },
+					label: 'Features',
+					autogenerate: { directory: 'features' },
 				},
 				{
 					label: 'Design',
 					autogenerate: { directory: 'design' },
+				},
+				{
+					label: 'Development',
+					autogenerate: { directory: 'development' },
 				},
 				{
 					label: 'Reference',
