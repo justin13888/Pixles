@@ -6,13 +6,14 @@ labels: enhancement, needs-triage
 assignees: ''
 ---
 
-## Feature Description
+## Description
 <!-- A clear and concise description of the feature you'd like to see -->
 
-## Target Component
-<!-- Which component would this feature apply to? -->
+## Component
+- [ ] pixles-android
 - [ ] pixles-api
-- [ ] pixles-core-kotlin
+- [ ] pixles-cli
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media
@@ -21,16 +22,7 @@ assignees: ''
 - [ ] Other: _____________________
 
 ## Use Case
-<!-- Describe the use case or problem this feature would solve -->
+<!-- Why is this needed? What problem does it solve? -->
 
-## Proposed Solution
+## Proposed Solution (optional)
 <!-- Describe your proposed solution -->
-
-## Alternatives Considered
-<!-- Describe any alternative solutions or features you've considered -->
-
-## Additional Context
-<!-- Add any other context, screenshots, or mockups about the feature request here -->
-
-## Implementation Ideas
-<!-- Optional: If you have ideas about implementation details -->
