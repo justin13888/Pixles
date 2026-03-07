@@ -1,135 +1,223 @@
 use std::path::PathBuf;
 
-use eyre::{Result, eyre};
 use indexmap::IndexMap;
-use pixles_core::import::{
-    ImportAction, ImportActionMapping, ImportActionPlan, ImportExecutionPlan,
-    ImportExecutionSummary, ImportResult, NewImportConfig, ScanResult, SpecialDirectoryStatus,
-    SpecialFileStatus,
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+use crate::import::{
+    GroupingResult, ScanResult, UploadExecutionPlan, UploadPriorityConfig, apply_grouping_rules,
+    get_upload_ordering,
 };
-use pixles_core::metadata::AssetType;
+use crate::metadata::AssetType;
+use crate::utils::file::are_there_nested_paths;
 
-/// Scan files and create an import plan.
-pub fn create_import_plan(file: PathBuf) -> Result<ImportActionPlan> {
-    // Parse path based on file or directory
-    let file_paths: Vec<PathBuf> = if file.is_dir() {
-        // Scan directory and ensure there aren't subdirectories
-        let entries = std::fs::read_dir(&file)
-            .map_err(|_| eyre!("Failed to read directory: {}", file.display()))?;
+/// <path> -> (<selected action>, <reason for action>)
+pub type ImportActionMapping = IndexMap<PathBuf, (Option<ImportAction>, ScanResult)>;
 
-        // If there is a subdirectory that isn't a special directory, set it as
-        // unknown
-        let mut paths = Vec::new();
-        for entry in entries {
-            let entry = entry.map_err(|_| eyre!("Failed to read directory entry"))?;
-            let path = entry.path();
-            paths.push(path);
-        }
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImportActionPlan {
+    /// A list of files to import, along with their intended actions.
+    mapping: ImportActionMapping,
+}
 
-        paths
-    } else {
-        // Single file
-        vec![file]
-    };
-
-    let mut mapping: ImportActionMapping = IndexMap::new();
-    for path in file_paths.into_iter() {
-        // TODO: Incorporate metadata to detect whether item is to skip
-        let scan_result: ScanResult = if path.is_dir() {
-            let is_special = SpecialDirectoryStatus::from_path(&path);
-            ScanResult::Directory {
-                detected_asset_type: if is_special.is_some() {
-                    Some(AssetType::Sidecar)
-                } else {
-                    None
-                },
-                is_special,
-            }
-        } else {
-            let is_special = SpecialFileStatus::from_path(&path);
-            let detected_asset_type = AssetType::from_file_path(&path);
-
-            ScanResult::File {
-                detected_asset_type,
-                is_special,
-            }
-        };
-
-        // TODO: handle case when scanresult indicates file/dir is to be ignored vv
-        let import_action: Option<ImportAction> = match &scan_result {
-            ScanResult::File {
-                detected_asset_type,
-                is_special,
-            } => match detected_asset_type {
-                None => {
-                    if is_special.is_some() {
-                        Some(ImportAction::New(NewImportConfig::new(AssetType::Sidecar)))
-                    } else {
-                        None
-                    }
-                }
-                Some(detected_asset_type) => Some(ImportAction::New(NewImportConfig::new(
-                    *detected_asset_type,
-                ))),
-            },
-            ScanResult::Directory {
-                detected_asset_type,
-                is_special,
-            } => match detected_asset_type {
-                None => {
-                    if is_special.is_some() {
-                        Some(ImportAction::New(NewImportConfig::new(AssetType::Sidecar)))
-                    } else {
-                        None
-                    }
-                }
-                Some(detected_asset_type) => Some(ImportAction::New(NewImportConfig::new(
-                    *detected_asset_type,
-                ))),
-            },
-        };
-
-        mapping.insert(path, (import_action, scan_result));
+impl ImportActionPlan {
+    /// Creates a new import plan with an empty mapping.
+    pub fn new(mapping: ImportActionMapping) -> Self {
+        ImportActionPlan { mapping }
     }
 
-    let plan = ImportActionPlan::new(mapping);
+    /// Returns the list of files and their actions in the import plan.
+    pub fn mapping(&self) -> &ImportActionMapping {
+        &self.mapping
+    }
 
-    Ok(plan)
+    /// Returns a mutable reference to the mapping.
+    pub fn mapping_mut(&mut self) -> &mut ImportActionMapping {
+        &mut self.mapping
+    }
+
+    // /// Update the action for a specific file in the import plan.
+    // pub fn update_action(&mut self, file: &PathBuf, action: Option<ImportAction>)
+    // {     if let Some(entry) = self.mapping.iter_mut().find(|(f, _)| f ==
+    // file)     {
+    //         entry.1 = action;
+    //     }
+    //     else
+    //     {
+    //         self.add_file(file.clone(), action);
+    //     }
+    // }
+
+    // /// Checks if import plan is ready
+    // pub fn is_ready(&self) -> bool {
+    //     !self.mapping.is_empty() && self.mapping.iter().all(|(_, action)|
+    // action.is_some()) }
+
+    /// Returns the number of files in the import plan.
+    pub fn len(&self) -> usize {
+        self.mapping.len()
+    }
+
+    /// Checks if the import plan is empty.
+    pub fn is_empty(&self) -> bool {
+        self.mapping.is_empty()
+    }
+
+    /// Applies standard grouping rules to the import action plan.
+    pub fn apply_grouping_rules(&mut self) -> GroupingResult<()> {
+        apply_grouping_rules(self)
+    }
 }
 
-/// Executes plan and returns the result of the import.
-pub fn execute_import_plan(plan: &ImportExecutionPlan) -> ImportExecutionSummary {
-    // TODO: Actually implement the import logic
+impl Default for ImportActionPlan {
+    fn default() -> Self {
+        ImportActionPlan::new(IndexMap::new())
+    }
+}
 
-    // Assumptions: Import execution plan is initialized properly, mapping is correct and normalized.
-    // Strategy:
-    // - Start importing queue, with
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ImportAction {
+    /// Import the file into collection
+    New(NewImportConfig),
+    // /// Update an existing entry with the file.
+    // Update,
+    /// Skip the file, leaving it unchanged.
+    Skip,
+}
 
-    let summary: Vec<(PathBuf, ImportResult)> = plan
-        .mapping()
-        .iter()
-        .map(|(file, action)| {
-            match action {
-                ImportAction::New(config) => {
-                    // Here you would implement the logic to import the file
-                    // For now, we just return a success result
-                    (file.clone(), ImportResult::Success)
-                }
-                ImportAction::Skip => {
-                    // Skip the file
-                    (file.clone(), ImportResult::Skipped)
-                }
+pub type ImportExecutionMapping = Vec<(PathBuf, ImportAction)>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImportExecutionPlan {
+    /// A list of files to import, along with their intended actions.
+    mapping: ImportExecutionMapping,
+}
+
+impl ImportExecutionPlan {
+    /// Normalize mapping (e.g. order by file name)
+    pub fn normalize(&mut self) -> &mut Self {
+        // Sort by file name
+        self.mapping.sort_by_key(|(path, _)| path.clone());
+        // self.mapping.sort_by(|(path_a, _), (path_b, _)| {
+        //     path_a.cmp(path_b)
+        // }); // TODO: See if this is faster than sort_by_key
+        self
+    }
+
+    /// Returns the list of files and their actions in the import plan.
+    pub fn mapping(&self) -> &ImportExecutionMapping {
+        &self.mapping
+    }
+
+    /// Get uploadable paths only
+    pub fn get_uploadable_paths(&self) -> impl Iterator<Item = PathBuf> {
+        self.mapping
+            .iter()
+            .filter_map(|(path, action)| match action {
+                ImportAction::New(_) => Some(path.clone()),
+                ImportAction::Skip => None,
+            })
+    }
+
+    /// Returns upload ordering
+    pub fn get_upload_ordering(
+        &self,
+        upload_priority_config: Option<UploadPriorityConfig>,
+    ) -> UploadExecutionPlan {
+        get_upload_ordering(self, upload_priority_config)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum ImportExecutionPlanError {
+    #[error("Import action plan is empty")]
+    EmptyPlan,
+    #[error("There are nested paths in the import plan")]
+    NestedPaths,
+    #[error("No action specified for file: {0}")]
+    NoActionForFile(PathBuf),
+    #[error("Invalid import action mapping: {0}")]
+    Io(#[from] std::io::Error),
+}
+
+impl TryFrom<ImportActionPlan> for ImportExecutionPlan {
+    type Error = ImportExecutionPlanError;
+
+    fn try_from(plan: ImportActionPlan) -> Result<Self, Self::Error> {
+        // No empty plans allowed
+        if plan.is_empty() {
+            return Err(ImportExecutionPlanError::EmptyPlan);
+        }
+
+        // Ensure there are no paths that nest with each other
+        // Note: We don't need to worry about following symlinks
+        let path_keys: Vec<_> = plan.mapping.keys().map(|p| p.to_path_buf()).collect();
+        if !(are_there_nested_paths(&path_keys)?) {
+            return Err(ImportExecutionPlanError::NestedPaths);
+        }
+
+        // Ensure all paths have an action
+        let mut mapping: ImportExecutionMapping = Vec::new();
+        for (file, (action, _result)) in plan.mapping.into_iter() {
+            if let Some(action) = action {
+                mapping.push((file, action));
+            } else {
+                return Err(ImportExecutionPlanError::NoActionForFile(file));
             }
-        })
-        .collect();
+        }
 
-    assert_eq!(
-        summary.len(),
-        plan.mapping().len(),
-        "Summary length must match mapping length"
-    );
+        let mut plan = ImportExecutionPlan { mapping };
+        plan.normalize();
 
-    ImportExecutionSummary(summary)
+        Ok(plan)
+    }
 }
 
-// TODO: Could make this more elegant ^^
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewImportConfig {
+    /// Asset type
+    pub asset_type: AssetType,
+    /// Album ID to import into
+    pub album_id: Option<String>,
+    /// Group ID to import into
+    pub group_id: Option<String>,
+}
+
+impl NewImportConfig {
+    /// Creates a new import configuration with the specified file type.
+    pub fn new(asset_type: AssetType) -> Self {
+        NewImportConfig {
+            asset_type,
+            album_id: None,
+            group_id: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImportExecutionSummary(pub Vec<(PathBuf, ImportResult)>);
+
+impl ImportExecutionSummary {
+    /// Returns number of successful imports.
+    pub fn success_count(&self) -> usize {
+        self.0
+            .iter()
+            .filter(|(_, result)| matches!(result, ImportResult::Success))
+            .count()
+    }
+
+    /// Returns total number of imports.
+    pub fn total_count(&self) -> usize {
+        self.0.len()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ImportResult {
+    /// The file was successfully imported.
+    Success,
+    /// The file was skipped.
+    Skipped,
+    /// An error occurred during import.
+    Error(String), // TODO: Use more specific error type
+}

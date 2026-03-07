@@ -68,7 +68,7 @@ Components:
 
 - [Pixles API](pixles-api/README.md): Various API services (HTTP, gRPC, GraphQL, WebSockets, etc.)
 - [Pixles Web](pixles-web/README.md) (WIP): Web client in React
-- [Pixles Core Kotlin](pixles-core-kotlin/README.md): Shared core Kotlin multiplatform library for client-specific logic
+- [Pixles Core](pixles-core/README.md): Shared core Kotlin multiplatform library for client-specific logic
 - [Pixles Desktop](pixles-desktop/README.md) (Planned): Windows/Linux desktop client
 - [Pixles Android](pixles-android/README.md) (WIP): Jetpack Compose App
 - [Pixles Swift](pixles-swift/README.md): SwiftUI client for iOS/macOS
@@ -94,7 +94,7 @@ Considering all the technologies used, you may have to switch between IDEs to de
 
 - `pixles-android`: Android Studio or IntelliJ IDEA with plugins
 - `pixles-api`: VS Code or similar
-- `pixles-core-kotlin`: Android Studio or IntelliJ IDEA with plugins
+- `pixles-core`: Android Studio or IntelliJ IDEA with plugins
 - `pixles-desktop`: VS Code or similar
 - `pixles-docs`: VS Code or similar
 - `pixles-media`: VS Code or similar

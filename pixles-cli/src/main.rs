@@ -8,8 +8,8 @@ use colored::*;
 use dialoguer::Confirm;
 use eyre::{Result, eyre};
 use futures::stream::{self, StreamExt};
-use pixles_core::metadata::FileMetadata;
-use pixles_core::utils::hash::get_file_hash;
+use crate::metadata::FileMetadata;
+use crate::utils::hash::get_file_hash;
 use tracing::{debug, trace};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, fmt};
@@ -20,8 +20,10 @@ use crate::utils::directories::{get_cache_dir, get_config_dir, get_data_dir};
 
 mod cli;
 mod config;
+mod constants;
 mod db;
 mod import;
+mod metadata;
 mod status;
 mod utils;
 

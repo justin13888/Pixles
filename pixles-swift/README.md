@@ -2,7 +2,7 @@
 
 This is the native client implementation for iOS, ipadOS and macOS, written in Swift.
 
-It uses `pixles-core-kotlin` for shared business logic via [KMP](https://www.jetbrains.com/kotlin-multiplatform/).
+It uses `pixles-core` for shared business logic via [KMP](https://www.jetbrains.com/kotlin-multiplatform/).
 
 ## Development
 

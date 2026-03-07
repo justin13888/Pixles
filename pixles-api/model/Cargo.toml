@@ -21,4 +21,4 @@ tracing = { workspace = true }
 sea-orm = { workspace = true }
 redis = { workspace = true }
 eyre = { workspace = true }
-uuid = { workspace = true }
+uuid = { workspace = true, features = ["v7"] }

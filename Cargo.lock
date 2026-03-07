@@ -3567,7 +3567,6 @@ dependencies = [
  "nanoid",
  "pixles-api-entity",
  "pixles-api-model",
- "pixles-core",
  "sea-orm",
  "serde",
  "serde_json",
@@ -3587,7 +3586,6 @@ dependencies = [
  "pixles-api-auth",
  "pixles-api-entity",
  "pixles-api-environment",
- "pixles-core",
  "prost",
  "prost-types",
  "salvo",
@@ -3640,7 +3638,6 @@ dependencies = [
  "pixles-api-environment",
  "pixles-api-model",
  "pixles-api-service",
- "pixles-core",
  "pixles-media",
  "ring",
  "salvo",
@@ -3652,6 +3649,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -3668,12 +3666,13 @@ dependencies = [
  "directories",
  "eyre",
  "futures",
+ "globset",
  "humansize",
  "indexmap 2.12.1",
+ "log",
  "nanoid",
  "pixles-cli-entity",
  "pixles-cli-migration",
- "pixles-core",
  "sea-orm",
  "serde",
  "sysinfo",
@@ -3681,7 +3680,9 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "uuid",
  "walkdir",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -3700,20 +3701,6 @@ version = "0.1.0"
 dependencies = [
  "sea-orm-migration",
  "tokio",
-]
-
-[[package]]
-name = "pixles-core"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "globset",
- "indexmap 2.12.1",
- "log",
- "serde",
- "thiserror 2.0.17",
- "uuid",
- "xxhash-rust",
 ]
 
 [[package]]

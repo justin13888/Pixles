@@ -10,7 +10,6 @@ path = "src/main.rs"
 [dependencies]
 pixles-cli-entity = { path = "./entity" }
 pixles-cli-migration = { path = "./migration" }
-pixles-core = { path = "../pixles-core-rust" }
 base64 = { workspace = true }
 capitalize = "0.3.4"
 chrono = { workspace = true }
@@ -29,8 +28,12 @@ sea-orm = { workspace = true, features = [
     "runtime-tokio-rustls",
     "debug-print",
 ] }
+globset = "0.4.16"
+log = { workspace = true }
 serde = { workspace = true }
 sysinfo = "0.36.0"
+uuid = { workspace = true, features = ["v7"] }
+xxhash-rust = { workspace = true, features = ["xxh3"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true, features = ["release_max_level_debug"] }

@@ -12,7 +12,7 @@ assignees: ''
 ## Affected Component
 <!-- Which component is affected by this performance issue? -->
 - [ ] pixles-api
-- [ ] pixles-core-kotlin
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

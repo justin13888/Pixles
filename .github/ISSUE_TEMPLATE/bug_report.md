@@ -14,7 +14,7 @@ assignees: ''
 - [ ] pixles-android
 - [ ] pixles-api
 - [ ] pixles-cli
-- [ ] pixles-core-kotlin
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

@@ -13,7 +13,6 @@ members = [
     "pixles-api/upload",
     "pixles-cli",
     "pixles-cli/migration",
-    "pixles-core-rust",
     "pixles-media",
     "pixles-sdk",
 ]

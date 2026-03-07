@@ -15,7 +15,7 @@ assignees: ''
 ## Affected Components
 <!-- Which components will be affected? -->
 - [ ] pixles-api
-- [ ] pixles-core-kotlin
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

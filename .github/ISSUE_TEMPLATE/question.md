@@ -15,7 +15,7 @@ assignees: ''
 ## Related Components
 <!-- Which component(s) is your question about? -->
 - [ ] pixles-api
-- [ ] pixles-core-kotlin
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

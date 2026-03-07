@@ -15,7 +15,7 @@ assignees: 'security-team-handle'
 ## Affected Component
 <!-- Which component is affected by this security issue? -->
 - [ ] pixles-api
-- [ ] pixles-core-kotlin
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

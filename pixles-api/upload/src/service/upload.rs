@@ -6,7 +6,8 @@ use crate::service::storage::StorageService;
 use crate::session::UploadSessionManager;
 use chrono::Utc;
 use nanoid::nanoid;
-use pixles_core::utils::hash::get_file_hash;
+use std::io;
+use std::path::Path;
 use sea_orm::{DatabaseConnection, TransactionTrait};
 use std::clone::Clone;
 use tokio::fs;
@@ -251,7 +252,10 @@ impl UploadService {
 
         // Verify hash (run sync hash in blocking task)
         let hash_path = final_path.clone();
-        let actual_hash = tokio::task::spawn_blocking(move || get_file_hash(&hash_path))
+        let actual_hash = tokio::task::spawn_blocking(move || -> io::Result<u64> {
+            let bytes = std::fs::read(&hash_path)?;
+            Ok(xxhash_rust::xxh3::xxh3_64(&bytes))
+        })
             .await
             .map_err(|e| UploadError::ProcessingError(e.to_string()))?
             .map_err(|e| UploadError::ProcessingError(e.to_string()))?;

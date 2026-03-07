@@ -12,7 +12,7 @@ assignees: ''
 ## Target Component
 <!-- Which component would this feature apply to? -->
 - [ ] pixles-api
-- [ ] pixles-core-kotlin
+- [ ] pixles-core
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

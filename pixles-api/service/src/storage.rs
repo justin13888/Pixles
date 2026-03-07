@@ -1,4 +1,4 @@
-use pixles_core::models::asset::Asset;
+use model::asset::Asset;
 
 use std::path::PathBuf;
 

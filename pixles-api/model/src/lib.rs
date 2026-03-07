@@ -1,3 +1,4 @@
+pub mod album;
 pub mod asset;
 pub mod errors;
 pub mod passkey;
