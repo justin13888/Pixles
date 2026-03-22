@@ -22,7 +22,9 @@ async fn register_and_login(
         }))
         .send(service)
         .await;
-    res.take_json().await.expect("Failed to parse token response")
+    res.take_json()
+        .await
+        .expect("Failed to parse token response")
 }
 
 /// Call POST /totp/enroll, assert 200, and return the provisioning URI.
@@ -112,10 +114,18 @@ async fn totp_enroll_returns_provisioning_uri() {
 
     assert_eq!(res.status_code, Some(StatusCode::OK));
     let body: serde_json::Value = res.take_json().await.unwrap();
-    let uri = body["provisioning_uri"].as_str().expect("missing provisioning_uri");
-    assert!(uri.starts_with("otpauth://totp/"), "URI should be an otpauth URI");
+    let uri = body["provisioning_uri"]
+        .as_str()
+        .expect("missing provisioning_uri");
+    assert!(
+        uri.starts_with("otpauth://totp/"),
+        "URI should be an otpauth URI"
+    );
     assert!(uri.contains("secret="), "URI must contain a secret");
-    assert!(uri.contains("Pixles-Test"), "URI must contain the configured issuer");
+    assert!(
+        uri.contains("Pixles-Test"),
+        "URI must contain the configured issuer"
+    );
 }
 
 #[tokio::test]
@@ -152,8 +162,7 @@ async fn totp_enroll_twice_returns_conflict() {
 async fn totp_verify_enrollment_valid_code_succeeds() {
     let ctx = setup().await;
     let service = build_service(&ctx);
-    let tokens =
-        register_and_login(&service, "totp_verify_ok@example.com", "totpverifyok").await;
+    let tokens = register_and_login(&service, "totp_verify_ok@example.com", "totpverifyok").await;
     let access = tokens.access_token.expose_secret().to_string();
 
     let uri = enroll_totp(&service, &access).await;
@@ -172,8 +181,7 @@ async fn totp_verify_enrollment_valid_code_succeeds() {
 async fn totp_verify_enrollment_invalid_code_returns_bad_request() {
     let ctx = setup().await;
     let service = build_service(&ctx);
-    let tokens =
-        register_and_login(&service, "totp_verify_bad@example.com", "totpverifybad").await;
+    let tokens = register_and_login(&service, "totp_verify_bad@example.com", "totpverifybad").await;
     let access = tokens.access_token.expose_secret().to_string();
 
     enroll_totp(&service, &access).await;
@@ -191,8 +199,7 @@ async fn totp_verify_enrollment_invalid_code_returns_bad_request() {
 async fn totp_verify_enrollment_without_enrolling_returns_bad_request() {
     let ctx = setup().await;
     let service = build_service(&ctx);
-    let tokens =
-        register_and_login(&service, "totp_no_enroll@example.com", "totpnoenroll").await;
+    let tokens = register_and_login(&service, "totp_no_enroll@example.com", "totpnoenroll").await;
     let access = tokens.access_token.expose_secret().to_string();
 
     // No /totp/enroll call — there is no secret to verify against.
@@ -247,7 +254,9 @@ async fn totp_disable_with_invalid_code_fails() {
         .await;
     // Invalid code is a 4xx — exact code depends on the TotpDisableResponses writer.
     assert!(
-        res.status_code.map(|s| s.is_client_error()).unwrap_or(false),
+        res.status_code
+            .map(|s| s.is_client_error())
+            .unwrap_or(false),
         "disable with wrong code should be a 4xx"
     );
 }
@@ -275,8 +284,7 @@ async fn totp_verify_login_invalid_mfa_token() {
 async fn totp_verify_login_wrong_code_returns_forbidden() {
     let ctx = setup().await;
     let service = build_service(&ctx);
-    let tokens =
-        register_and_login(&service, "totp_wrong@example.com", "totpwrong").await;
+    let tokens = register_and_login(&service, "totp_wrong@example.com", "totpwrong").await;
     let access = tokens.access_token.expose_secret().to_string();
 
     // Enroll and verify TOTP so the user has an active secret.
@@ -310,8 +318,7 @@ async fn totp_verify_login_wrong_code_returns_forbidden() {
 async fn totp_verify_login_max_attempts_exceeded() {
     let ctx = setup().await;
     let service = build_service(&ctx);
-    let tokens =
-        register_and_login(&service, "totp_maxattempts@example.com", "totpmax").await;
+    let tokens = register_and_login(&service, "totp_maxattempts@example.com", "totpmax").await;
     let access = tokens.access_token.expose_secret().to_string();
 
     enroll_and_verify(&service, &access).await;

@@ -8,7 +8,6 @@ use config::GraphqlServerConfig;
 use context::{AppContext, DbContext, UserContext};
 use eyre::Result;
 use loaders::Loaders;
-use salvo::http::header;
 use salvo::prelude::*;
 use schema::{AppSchema, create_schema};
 use sea_orm::DatabaseConnection;

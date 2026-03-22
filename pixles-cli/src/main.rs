@@ -117,7 +117,7 @@ async fn main() -> Result<()> {
             );
 
             // Init local DB connection
-            let db = init_sqlite().await?;
+            let _db = init_sqlite().await?;
             debug!("Initialized SQLite database connection");
 
             // TODO: Detect file structures and summarize into ImportPlan

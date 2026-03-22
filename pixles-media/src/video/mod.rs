@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-pub mod types;
 pub mod presets;
+pub mod types;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VideoFile {

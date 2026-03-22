@@ -5,7 +5,7 @@ pub struct GraphqlServerConfig {}
 // TODO: Flesh this out ^^
 
 impl From<&ServerConfig> for GraphqlServerConfig {
-    fn from(config: &ServerConfig) -> Self {
+    fn from(_config: &ServerConfig) -> Self {
         Self {}
     }
 }

@@ -7,11 +7,13 @@ use sea_orm::{
     QueryFilter, Set,
 };
 
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct OwnerService {
     _conn: DatabaseConnection,
 }
 
+#[allow(dead_code)]
 impl OwnerService {
     pub fn new(conn: DatabaseConnection) -> Self {
         Self { _conn: conn }

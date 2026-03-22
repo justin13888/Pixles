@@ -42,6 +42,7 @@ impl UploadService {
     }
 
     /// Create a new upload session with asset record in Postgres
+    #[allow(clippy::too_many_arguments)]
     pub async fn create_session(
         &self,
         owner_id: &str,

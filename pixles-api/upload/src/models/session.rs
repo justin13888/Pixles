@@ -47,6 +47,7 @@ pub enum UploadSessionStatus {
 
 impl UploadSessionStatus {
     /// Returns true if the upload is in progress
+    #[allow(dead_code)]
     pub fn in_progress(&self) -> bool {
         matches!(self, UploadSessionStatus::Uploading)
     }

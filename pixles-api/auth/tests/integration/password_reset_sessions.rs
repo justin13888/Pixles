@@ -16,7 +16,9 @@ async fn register(service: &salvo::Service, email: &str, username: &str) -> Toke
         }))
         .send(service)
         .await;
-    res.take_json().await.expect("Failed to parse token response")
+    res.take_json()
+        .await
+        .expect("Failed to parse token response")
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────

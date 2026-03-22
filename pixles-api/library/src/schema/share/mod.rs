@@ -4,10 +4,7 @@ use entity::share_link::ActiveModel as ShareLinkActiveModel;
 use entity::share_link::Model as ShareLinkModel;
 use entity::share_link::ShareLinkType as EntityShareLinkType;
 use entity::{album, album_share, owner_member, share_link, user};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, ModelTrait, QueryFilter,
-    QuerySelect, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, Set};
 
 use super::album::Album;
 use super::user::User;
@@ -318,10 +315,10 @@ impl ShareMutation {
             .ok_or_else(|| Error::new("Share link not found"))?;
 
         // Verify expiration
-        if let Some(expires) = link.expires_at {
-            if expires < Utc::now() {
-                return Err(Error::new("Share link expired"));
-            }
+        if let Some(expires) = link.expires_at
+            && expires < Utc::now()
+        {
+            return Err(Error::new("Share link expired"));
         }
 
         if link.share_type != EntityShareLinkType::Album {

@@ -28,6 +28,7 @@ pub fn get_sqlite_db_path() -> Option<PathBuf> {
 }
 
 /// Returns the sync directory for the Pixles CLI.
+#[allow(dead_code)]
 pub fn get_sync_dir() -> Option<PathBuf> {
     get_data_dir().map(|dir| dir.join("sync"))
 }

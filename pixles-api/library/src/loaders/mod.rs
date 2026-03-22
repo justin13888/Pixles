@@ -36,7 +36,7 @@ pub struct Loaders;
 // }
 
 impl Loaders {
-    pub fn new(conn: DatabaseConnection) -> Self {
+    pub fn new(_conn: DatabaseConnection) -> Self {
         Self {}
         // Self {
         //     user_loader: DataLoader::new(UserLoader { conn }, tokio::spawn),

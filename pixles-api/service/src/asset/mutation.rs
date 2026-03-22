@@ -7,6 +7,7 @@ pub struct Mutation;
 
 impl Mutation {
     /// Create asset with uploaded=false (upload in progress)
+    #[allow(clippy::too_many_arguments)]
     pub async fn create_pending(
         db: &impl ConnectionTrait,
         owner_id: String,

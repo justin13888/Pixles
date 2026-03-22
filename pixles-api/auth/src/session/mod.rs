@@ -7,7 +7,9 @@ use std::time::Duration;
 use model::errors::InternalServerError;
 
 pub mod storage;
-pub use self::storage::{InMemorySessionStorage, RateLimitResult, RedisSessionStorage, SessionStorage};
+pub use self::storage::{
+    InMemorySessionStorage, RateLimitResult, RedisSessionStorage, SessionStorage,
+};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Session {
@@ -27,8 +29,7 @@ pub struct SessionManager {
 
 impl SessionManager {
     pub async fn new(redis_url: String, ttl: Duration) -> Result<Self, InternalServerError> {
-        let manager =
-            RedisConnectionManager::new(redis_url).map_err(|e| InternalServerError::from(e))?;
+        let manager = RedisConnectionManager::new(redis_url).map_err(InternalServerError::from)?;
         let pool = Pool::builder()
             .build(manager)
             .await
@@ -141,7 +142,7 @@ impl SessionManager {
     pub async fn check_rate_limit(
         &self,
         key: &str,
-        max_requests: i64,
+        _max_requests: i64,
         window_secs: u64,
     ) -> Result<RateLimitResult, InternalServerError> {
         let result = self.storage.increment_rate_limit(key, window_secs).await?;

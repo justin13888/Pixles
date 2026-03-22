@@ -43,7 +43,7 @@ pub fn get_upload_ordering(
     let uploadable_paths: HashSet<PathBuf> = plan.get_uploadable_paths().collect();
 
     // Bucket by directory depth
-    let buckets_by_depth: Vec<Vec<PathBuf>> = {
+    let _buckets_by_depth: Vec<Vec<PathBuf>> = {
         if !priority_config.prioritize_lower_depth {
             vec![uploadable_paths.into_iter().collect::<Vec<_>>()]
         } else {

@@ -34,6 +34,7 @@ pub struct ListSessionsResponse {
 }
 
 /// Responses for create upload endpoint
+#[allow(dead_code)]
 pub enum CreateUploadResponses {
     Success(CreateUploadResponse),
     Unauthorized(String),

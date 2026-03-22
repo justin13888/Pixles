@@ -110,10 +110,11 @@ impl AuthService {
             tracing::info!("User found: {}", user.id);
 
             // Check account lockout
-            let failed_attempts = UserService::Query::get_failed_login_attempts(&self.conn, &user.id)
-                .await
-                .map_err(|e| LoginError::Unexpected(e.into()))?
-                .unwrap_or(0);
+            let failed_attempts =
+                UserService::Query::get_failed_login_attempts(&self.conn, &user.id)
+                    .await
+                    .map_err(|e| LoginError::Unexpected(e.into()))?
+                    .unwrap_or(0);
             if failed_attempts >= MAX_FAILED_LOGIN_ATTEMPTS {
                 return Err(LoginError::AccountLocked);
             }

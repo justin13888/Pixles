@@ -16,7 +16,9 @@ async fn register(service: &salvo::Service, email: &str, username: &str) -> Toke
         }))
         .send(service)
         .await;
-    res.take_json().await.expect("Failed to parse token response")
+    res.take_json()
+        .await
+        .expect("Failed to parse token response")
 }
 
 async fn login(service: &salvo::Service, email: &str) -> TokenResponse {
@@ -27,7 +29,9 @@ async fn login(service: &salvo::Service, email: &str) -> TokenResponse {
         }))
         .send(service)
         .await;
-    res.take_json().await.expect("Failed to parse token response")
+    res.take_json()
+        .await
+        .expect("Failed to parse token response")
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────
@@ -61,7 +65,10 @@ async fn devices_shows_current_session() {
     assert_eq!(res.status_code, Some(StatusCode::OK));
     let devices: Vec<Device> = res.take_json().await.expect("Failed to parse devices");
     assert_eq!(devices.len(), 1, "Should have exactly one active session");
-    assert!(devices[0].is_current, "The only device should be marked as current");
+    assert!(
+        devices[0].is_current,
+        "The only device should be marked as current"
+    );
 }
 
 /// After registering (session 1) and logging in again (session 2), GET
@@ -90,7 +97,10 @@ async fn devices_multiple_sessions_current_flagged_correctly() {
     assert_eq!(devices.len(), 2, "Both sessions should be listed");
 
     let current_count = devices.iter().filter(|d| d.is_current).count();
-    assert_eq!(current_count, 1, "Exactly one device should be marked current");
+    assert_eq!(
+        current_count, 1,
+        "Exactly one device should be marked current"
+    );
 
     // All devices must have non-empty IDs.
     for d in &devices {

@@ -1,6 +1,7 @@
 use salvo::prelude::*;
 use thiserror::Error;
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum UploadError {
     #[error("File exceeds size limit")]

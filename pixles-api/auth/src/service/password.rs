@@ -32,10 +32,12 @@ impl PasswordService {
                 let expires_at = Utc::now() + Duration::hours(1);
 
                 // Update user with token
-                UserService::Mutation::update_password_reset_token(conn, &user.id, &token, expires_at)
-                    .await
-                    .map(|_| ())
-                    .map_err(InternalServerError::from)
+                UserService::Mutation::update_password_reset_token(
+                    conn, &user.id, &token, expires_at,
+                )
+                .await
+                .map(|_| ())
+                .map_err(InternalServerError::from)
             }
             Ok(None) => {
                 // User not found - pretend success

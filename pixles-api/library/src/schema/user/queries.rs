@@ -7,7 +7,7 @@ pub struct UserQuery {
 
 #[Object]
 impl UserQuery {
-    async fn get_user(&self, ctx: &Context<'_>, id: ID) -> Result<User> {
+    async fn get_user(&self, _ctx: &Context<'_>, _id: ID) -> Result<User> {
         // TODO: Implement
         Ok(User {
             id: "123".to_string(),
@@ -24,11 +24,11 @@ impl UserQuery {
         })
     }
 
-    async fn list_users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
+    async fn list_users(&self, _ctx: &Context<'_>) -> Result<Vec<User>> {
         todo!()
     }
 
-    async fn me(&self, ctx: &Context<'_>) -> Result<Option<User>> {
+    async fn me(&self, _ctx: &Context<'_>) -> Result<Option<User>> {
         // let auth_service = ctx.data::<YourAuthService>()?;
 
         // // Get authorization header from context

@@ -133,6 +133,7 @@ impl TotpService {
     }
 
     /// Clear TOTP secret for user
+    #[allow(dead_code)]
     async fn clear_secret(&self, user_id: &str) -> eyre::Result<()> {
         service::user::Mutation::clear_totp_secret(&self.conn, user_id).await?;
         Ok(())

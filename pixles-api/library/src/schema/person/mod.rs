@@ -6,8 +6,8 @@ use entity::person::ActiveModel as PersonActiveModel;
 use entity::person::Model as PersonModel;
 use entity::{asset, face, person};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, EntityTrait, IntoActiveModel, ModelTrait, NotSet,
-    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Set,
+    ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, PaginatorTrait, QueryFilter,
+    QuerySelect, RelationTrait, Set,
 };
 use serde::{Deserialize, Serialize};
 

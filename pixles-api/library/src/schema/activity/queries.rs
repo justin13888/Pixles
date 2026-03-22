@@ -9,12 +9,12 @@ pub struct ActivityQuery;
 #[Object]
 impl ActivityQuery {
     /// Get activity by ID
-    async fn by_id(&self, ctx: &Context<'_>, id: ID) -> Result<Activity> {
+    async fn by_id(&self, _ctx: &Context<'_>, _id: ID) -> Result<Activity> {
         todo!()
     }
 
     /// Search activities based on filter, and pagination
-    async fn search(&self, ctx: &Context<'_>) -> Result<Vec<Activity>> {
+    async fn search(&self, _ctx: &Context<'_>) -> Result<Vec<Activity>> {
         // TODO: Add filter, sorting and pagination
         // todo!()
         // TODO: Remove hardcode

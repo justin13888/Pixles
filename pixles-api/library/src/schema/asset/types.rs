@@ -3,8 +3,8 @@ use chrono::{DateTime, Utc};
 use entity::asset::Model as AssetModel;
 use model::asset::AssetType as ModelAssetType;
 
+use crate::schema::Tag;
 use crate::schema::stack::AssetStack;
-use crate::schema::{Tag, user::User};
 
 #[derive(Enum, Clone, Copy, Eq, PartialEq)]
 pub enum AssetType {
@@ -59,7 +59,7 @@ pub struct ExifData {
 }
 
 /// Face bounding box (normalized 0-1 coordinates)
-#[derive(SimpleObject)]
+#[derive(SimpleObject, serde::Deserialize)]
 pub struct BoundingBox {
     pub x: f64,
     pub y: f64,
@@ -92,6 +92,7 @@ impl AssetMetadata {
     }
 
     #[graphql(name = "type")]
+    #[allow(unreachable_code, clippy::diverging_sub_expression)]
     async fn asset_type(&self) -> AssetType {
         // self.model.asset_type.into()
         todo!("Implement asset type handling")

@@ -26,14 +26,12 @@ async fn password_reset_flow() {
     assert_eq!(res.status_code, Some(StatusCode::OK));
 
     // Retrieve token from DB
-    let reset_token = service::user::Query::get_password_reset_token_by_email(
-        &ctx.db,
-        "reset@example.com",
-    )
-    .await
-    .expect("DB query failed")
-    .flatten()
-    .expect("Should have reset token");
+    let reset_token =
+        service::user::Query::get_password_reset_token_by_email(&ctx.db, "reset@example.com")
+            .await
+            .expect("DB query failed")
+            .flatten()
+            .expect("Should have reset token");
 
     // Reset password
     let res = TestClient::post("http://localhost/password-reset")

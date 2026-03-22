@@ -66,6 +66,7 @@ pub struct SyncStatus {
     pub remote_file_count: Option<u32>,
 }
 
+#[allow(dead_code)]
 pub struct ConfigStatus {
     pub cli_version: String,
     pub config_valid: bool,
@@ -74,6 +75,7 @@ pub struct ConfigStatus {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ConnectionStatus {
     Connected,
     Disconnected,

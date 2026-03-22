@@ -17,6 +17,7 @@ pub struct SharedContentResponse {
 }
 
 /// Possible responses for shared content access
+#[allow(dead_code)]
 pub enum SharedContentResponses {
     /// Successful retrieval
     Ok(SharedContentResponse),

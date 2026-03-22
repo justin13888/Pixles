@@ -167,7 +167,9 @@ impl Writer for LoginResponses {
             }
             Self::AccountLocked => {
                 res.status_code(StatusCode::LOCKED);
-                res.render(Json(ApiError::new("Account locked due to too many failed login attempts")));
+                res.render(Json(ApiError::new(
+                    "Account locked due to too many failed login attempts",
+                )));
             }
             Self::RateLimited(retry_after) => {
                 res.status_code(StatusCode::TOO_MANY_REQUESTS);

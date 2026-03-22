@@ -3,8 +3,8 @@ use salvo::prelude::*;
 use crate::state::AppState;
 
 mod assets;
-mod share;
 mod exports;
+mod share;
 
 pub fn get_router(state: AppState) -> Router {
     Router::new()

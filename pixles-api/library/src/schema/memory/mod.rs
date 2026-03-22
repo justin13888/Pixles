@@ -55,12 +55,12 @@ pub struct MemoryQuery;
 #[Object]
 impl MemoryQuery {
     /// Get today's memories ("On This Day")
-    async fn today(&self, ctx: &Context<'_>) -> Result<Vec<Memory>> {
+    async fn today(&self, _ctx: &Context<'_>) -> Result<Vec<Memory>> {
         todo!("Implement get today's memories")
     }
 
     /// Get recent unseen memories
-    async fn unseen(&self, ctx: &Context<'_>) -> Result<Vec<Memory>> {
+    async fn unseen(&self, _ctx: &Context<'_>) -> Result<Vec<Memory>> {
         todo!("Implement get unseen memories")
     }
 }
@@ -73,12 +73,12 @@ pub struct MemoryMutation;
 #[Object]
 impl MemoryMutation {
     /// Mark a memory as seen
-    async fn mark_seen(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
+    async fn mark_seen(&self, _ctx: &Context<'_>, _id: ID) -> Result<bool> {
         todo!("Implement mark memory seen")
     }
 
     /// Hide a memory (don't show again)
-    async fn hide(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
+    async fn hide(&self, _ctx: &Context<'_>, _id: ID) -> Result<bool> {
         todo!("Implement hide memory")
     }
 }

@@ -10,6 +10,7 @@ use pixles_core::import::{
 use pixles_core::metadata::AssetType;
 
 /// Scan files and create an import plan.
+#[allow(dead_code)]
 pub fn create_import_plan(file: PathBuf) -> Result<ImportActionPlan> {
     // Parse path based on file or directory
     let file_paths: Vec<PathBuf> = if file.is_dir() {
@@ -98,6 +99,7 @@ pub fn create_import_plan(file: PathBuf) -> Result<ImportActionPlan> {
 }
 
 /// Executes plan and returns the result of the import.
+#[allow(dead_code)]
 pub fn execute_import_plan(plan: &ImportExecutionPlan) -> ImportExecutionSummary {
     // TODO: Actually implement the import logic
 
@@ -110,7 +112,7 @@ pub fn execute_import_plan(plan: &ImportExecutionPlan) -> ImportExecutionSummary
         .iter()
         .map(|(file, action)| {
             match action {
-                ImportAction::New(config) => {
+                ImportAction::New(_config) => {
                     // Here you would implement the logic to import the file
                     // For now, we just return a success result
                     (file.clone(), ImportResult::Success)

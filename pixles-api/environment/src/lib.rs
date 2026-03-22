@@ -183,7 +183,12 @@ impl Environment {
                 valkey_url: load_env("VALKEY_URL")?,
                 #[cfg(any(feature = "auth", feature = "upload"))]
                 allowed_origins: load_env("ALLOWED_ORIGINS")
-                    .map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+                    .map(|v| {
+                        v.split(',')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect()
+                    })
                     .unwrap_or_else(|_| {
                         if cfg!(debug_assertions) {
                             vec!["*".to_string()]

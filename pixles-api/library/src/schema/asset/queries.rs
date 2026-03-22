@@ -1,6 +1,6 @@
 use crate::schema::SortDirection;
 
-use super::{AssetFilter, AssetMetadata, AssetSort, UploadSession, UploadSessionFilter};
+use super::{AssetFilter, AssetMetadata, AssetSort};
 use async_graphql::*;
 
 pub struct AssetQuery;
@@ -8,7 +8,7 @@ pub struct AssetQuery;
 #[Object]
 impl AssetQuery {
     /// Get asset metadata by ID
-    async fn by_id(&self, ctx: &Context<'_>, id: ID) -> Result<AssetMetadata> {
+    async fn by_id(&self, _ctx: &Context<'_>, _id: ID) -> Result<AssetMetadata> {
         todo!()
     }
 
@@ -16,11 +16,11 @@ impl AssetQuery {
     /// If sorting without a direction, assumes ascending order
     async fn search(
         &self,
-        ctx: &Context<'_>,
-        album_ids: Option<Vec<ID>>,
-        filter: Option<AssetFilter>,
-        sort: Option<AssetSort>,
-        sort_direction: Option<SortDirection>,
+        _ctx: &Context<'_>,
+        _album_ids: Option<Vec<ID>>,
+        _filter: Option<AssetFilter>,
+        _sort: Option<AssetSort>,
+        _sort_direction: Option<SortDirection>,
     ) -> Result<Vec<AssetMetadata>> {
         // TODO: Add sorting and pagination
         // TODO: Generate presigned URL for each asset on-the-fly

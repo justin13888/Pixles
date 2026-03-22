@@ -33,7 +33,10 @@ async fn login_user_success() {
 
     assert_eq!(res.status_code, Some(StatusCode::OK));
 
-    let tokens: TokenResponse = res.take_json().await.expect("Failed to parse token response");
+    let tokens: TokenResponse = res
+        .take_json()
+        .await
+        .expect("Failed to parse token response");
     assert!(!tokens.access_token.expose_secret().is_empty());
     assert!(!tokens.refresh_token.expose_secret().is_empty());
 }

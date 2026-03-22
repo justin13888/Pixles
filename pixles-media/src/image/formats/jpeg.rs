@@ -29,6 +29,7 @@ pub struct JpegImage {
     data: Vec<u8>,
     format: PixelFormat,
     color_space: ColorSpace,
+    #[allow(dead_code)]
     file_size_bytes: u64,
 }
 

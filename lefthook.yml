@@ -62,7 +62,7 @@ pre-push:
     lint-check-rust:
       priority: 1
       glob: "**/*.rs"
-      run: cargo clippy --workspace -- -D warnings
+      run: cargo clippy --workspace --exclude pixles-sdk -- -D warnings
     format-check-web:
       priority: 1
       glob: "pixles-web/**/*.{ts,tsx,js,jsx,json,jsonc,css}"

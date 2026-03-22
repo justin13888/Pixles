@@ -124,10 +124,7 @@ impl Query {
 
     /// Returns failed login attempts count for user
     #[cfg(feature = "auth")]
-    pub async fn get_failed_login_attempts(
-        db: &DbConn,
-        id: &str,
-    ) -> Result<Option<i32>, DbErr> {
+    pub async fn get_failed_login_attempts(db: &DbConn, id: &str) -> Result<Option<i32>, DbErr> {
         let user = User::find_by_id(id)
             .select_only()
             .column(user::Column::FailedLoginAttempts)

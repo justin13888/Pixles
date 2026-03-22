@@ -2,9 +2,7 @@ use async_graphql::*;
 use sea_orm::DatabaseConnection;
 use service::stack::Mutation as StackMutationType;
 
-use super::types::{
-    AddStackMemberInput, AssetStack, CreateStackInput, StackMember, UpdateStackInput,
-};
+use super::types::{AddStackMemberInput, AssetStack, CreateStackInput, StackMember};
 use crate::context::UserContext;
 
 #[derive(Default)]
@@ -13,9 +11,13 @@ pub struct StackMutation;
 #[Object]
 impl StackMutation {
     /// Create a new stack
-    async fn create_stack(&self, ctx: &Context<'_>, input: CreateStackInput) -> Result<AssetStack> {
-        let db = ctx.data::<DatabaseConnection>()?;
-        let user = ctx.data::<UserContext>()?;
+    async fn create_stack(
+        &self,
+        ctx: &Context<'_>,
+        _input: CreateStackInput,
+    ) -> Result<AssetStack> {
+        let _db = ctx.data::<DatabaseConnection>()?;
+        let _user = ctx.data::<UserContext>()?;
 
         // TODO: Validate user owns the assets provided in member_ids
 
@@ -30,8 +32,8 @@ impl StackMutation {
     /// Add a member to an existing stack
     async fn add_stack_member(
         &self,
-        ctx: &Context<'_>,
-        input: AddStackMemberInput,
+        _ctx: &Context<'_>,
+        _input: AddStackMemberInput,
     ) -> Result<StackMember> {
         todo!("Implement add_stack_member logic")
     }

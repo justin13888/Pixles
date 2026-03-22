@@ -14,8 +14,8 @@ impl AssetMutation {
     /// This is typically called after the file upload is complete
     async fn create_asset(
         &self,
-        ctx: &Context<'_>,
-        input: CreateAssetInput,
+        _ctx: &Context<'_>,
+        _input: CreateAssetInput,
     ) -> Result<AssetMetadata> {
         // TODO: This logic usually resides in `upload` finalize step.
         // If exposed here, it implies we are taking a session and finalizing it manually.
@@ -31,9 +31,9 @@ impl AssetMutation {
     async fn update_asset(
         &self,
         ctx: &Context<'_>,
-        input: UpdateAssetInput,
+        _input: UpdateAssetInput,
     ) -> Result<AssetMetadata> {
-        let db = ctx.data::<DatabaseConnection>()?;
+        let _db = ctx.data::<DatabaseConnection>()?;
         // TODO: Implement update logic in service (fields like description are missing in DB currently)
         // For now we just verify existence or update date if provided.
 
@@ -45,8 +45,8 @@ impl AssetMutation {
 
     /// Set favorite status of an asset
     /// Returns true if the favorite status was changed successfully
-    async fn set_favorite(&self, ctx: &Context<'_>, id: ID, is_favorite: bool) -> Result<bool> {
-        let db = ctx.data::<DatabaseConnection>()?;
+    async fn set_favorite(&self, ctx: &Context<'_>, _id: ID, _is_favorite: bool) -> Result<bool> {
+        let _db = ctx.data::<DatabaseConnection>()?;
         let _user = ctx.data::<UserContext>()?;
         // TODO: Check ownership/permissions
 
@@ -59,7 +59,7 @@ impl AssetMutation {
         let _user = ctx.data::<UserContext>()?;
         // TODO: Check ownership/permissions
 
-        AssetServiceMutation::soft_delete(db, &id.to_string()).await?;
+        AssetServiceMutation::soft_delete(db, id.as_ref()).await?;
         Ok(true)
     }
 
@@ -69,7 +69,7 @@ impl AssetMutation {
         let _user = ctx.data::<UserContext>()?;
         // TODO: Check permissions
 
-        AssetServiceMutation::restore(db, &id.to_string()).await?;
+        AssetServiceMutation::restore(db, id.as_ref()).await?;
         Ok(true)
     }
 
@@ -80,13 +80,13 @@ impl AssetMutation {
         // TODO: Check permissions (Owner/Admin)
 
         // TODO: Also delete file from storage!
-        AssetServiceMutation::delete(db, &id.to_string()).await?;
+        AssetServiceMutation::delete(db, id.as_ref()).await?;
         Ok(true)
     }
 
     /// Empty trash (Permanently delete all soft-deleted assets)
     async fn empty_trash(&self, ctx: &Context<'_>) -> Result<bool> {
-        let db = ctx.data::<DatabaseConnection>()?;
+        let _db = ctx.data::<DatabaseConnection>()?;
         // TODO: Implement bulk delete logic in service
         // 1. Find all deleted assets for user
         // 2. Delete files from storage

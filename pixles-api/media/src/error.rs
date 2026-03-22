@@ -3,6 +3,7 @@ use thiserror::Error;
 
 // TODO: Nothing is using this?
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum MediaError {
     #[error("Asset not found")]

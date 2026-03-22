@@ -45,7 +45,11 @@ pub async fn register_user(
     let rl_key = format!("register:{}", ip);
     match state
         .session_manager
-        .check_rate_limit(&rl_key, RATE_LIMIT_REGISTER_MAX, RATE_LIMIT_REGISTER_WINDOW_SECS)
+        .check_rate_limit(
+            &rl_key,
+            RATE_LIMIT_REGISTER_MAX,
+            RATE_LIMIT_REGISTER_WINDOW_SECS,
+        )
         .await
     {
         Ok(result) if result.count > RATE_LIMIT_REGISTER_MAX => {

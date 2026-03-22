@@ -179,22 +179,22 @@ impl AssetStack {
     }
 
     /// Primary asset for this stack
-    async fn primary_asset(&self, ctx: &Context<'_>) -> Result<AssetMetadata> {
+    async fn primary_asset(&self, _ctx: &Context<'_>) -> Result<AssetMetadata> {
         todo!("Resolve primary asset via dataloader")
     }
 
     /// Cover asset (may differ from primary)
-    async fn cover_asset(&self, ctx: &Context<'_>) -> Result<Option<AssetMetadata>> {
+    async fn cover_asset(&self, _ctx: &Context<'_>) -> Result<Option<AssetMetadata>> {
         todo!("Resolve cover asset via dataloader")
     }
 
     /// All members of this stack
-    async fn members(&self, ctx: &Context<'_>) -> Result<Vec<StackMember>> {
+    async fn members(&self, _ctx: &Context<'_>) -> Result<Vec<StackMember>> {
         todo!("Resolve members via service")
     }
 
     /// Count of members in this stack
-    async fn member_count(&self, ctx: &Context<'_>) -> Result<i32> {
+    async fn member_count(&self, _ctx: &Context<'_>) -> Result<i32> {
         todo!("Count members")
     }
 }
@@ -227,7 +227,7 @@ impl StackMember {
     }
 
     /// The asset in this membership
-    async fn asset(&self, ctx: &Context<'_>) -> Result<AssetMetadata> {
+    async fn asset(&self, _ctx: &Context<'_>) -> Result<AssetMetadata> {
         todo!("Resolve asset via dataloader")
     }
 }

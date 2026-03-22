@@ -20,6 +20,7 @@ use uuid::Uuid;
 // ============================================================================
 
 /// Query parameters for media transformation
+#[allow(dead_code)]
 #[derive(Debug, Deserialize, ToParameters, ToSchema)]
 #[salvo(parameters(default_parameter_in = Query))]
 pub struct MediaQueryParams {
@@ -38,6 +39,7 @@ pub struct MediaQueryParams {
 }
 
 /// Batch download request
+#[allow(dead_code)]
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct BatchDownloadRequest {
     /// Asset IDs to download
@@ -219,6 +221,7 @@ pub async fn get_stream(
 }
 
 /// Possible responses for batch download
+#[allow(dead_code)]
 #[derive(From, Debug)]
 pub enum BatchDownloadResponses {
     /// Job created successfully

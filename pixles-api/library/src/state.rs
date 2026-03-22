@@ -9,6 +9,7 @@ use crate::{config::GraphqlServerConfig, schema::AppSchema};
 pub struct AppState {
     pub schema: AppSchema,
     pub conn: DatabaseConnection,
+    #[allow(dead_code)]
     pub config: GraphqlServerConfig,
     pub auth_service: Arc<AuthService>,
 }

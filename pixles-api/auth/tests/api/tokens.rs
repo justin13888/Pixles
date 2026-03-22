@@ -53,7 +53,10 @@ async fn token_lifecycle() {
         .send(&service)
         .await;
     assert_eq!(res.status_code, Some(StatusCode::OK));
-    let new_tokens: TokenResponse = res.take_json().await.expect("Failed to parse refreshed tokens");
+    let new_tokens: TokenResponse = res
+        .take_json()
+        .await
+        .expect("Failed to parse refreshed tokens");
     assert!(!new_tokens.access_token.expose_secret().is_empty());
 
     // Logout
@@ -123,6 +126,8 @@ async fn logout_without_token_fails() {
     let ctx = setup().await;
     let service = build_service(&ctx);
 
-    let res = TestClient::post("http://localhost/logout").send(&service).await;
+    let res = TestClient::post("http://localhost/logout")
+        .send(&service)
+        .await;
     assert_eq!(res.status_code, Some(StatusCode::UNAUTHORIZED));
 }

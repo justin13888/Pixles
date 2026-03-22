@@ -1,6 +1,6 @@
 use crate::common::{build_service, setup};
-use auth::models::responses::TokenResponse;
 use auth::models::UserProfile;
+use auth::models::responses::TokenResponse;
 use salvo::http::StatusCode;
 use salvo::test::{ResponseExt, TestClient};
 use secrecy::ExposeSecret;
@@ -45,7 +45,9 @@ async fn get_profile_without_auth_fails() {
     let ctx = setup().await;
     let service = build_service(&ctx);
 
-    let res = TestClient::get("http://localhost/profile").send(&service).await;
+    let res = TestClient::get("http://localhost/profile")
+        .send(&service)
+        .await;
     assert_eq!(res.status_code, Some(StatusCode::UNAUTHORIZED));
 }
 

@@ -67,8 +67,13 @@ impl std::fmt::Display for LoginError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidCredentials => write!(f, "User not found or invalid credentials"),
-            Self::AccountLocked => write!(f, "Account temporarily locked due to too many failed login attempts"),
-            Self::RateLimited(retry_after) => write!(f, "Too many requests. Retry after {} seconds", retry_after),
+            Self::AccountLocked => write!(
+                f,
+                "Account temporarily locked due to too many failed login attempts"
+            ),
+            Self::RateLimited(retry_after) => {
+                write!(f, "Too many requests. Retry after {} seconds", retry_after)
+            }
             Self::Unexpected(e) => write!(f, "Internal server error: {}", e),
         }
     }
@@ -96,7 +101,9 @@ impl Writer for LoginError {
             }
             LoginError::AccountLocked => {
                 res.status_code(StatusCode::LOCKED);
-                res.render(Text::Plain("Account locked due to too many failed login attempts"));
+                res.render(Text::Plain(
+                    "Account locked due to too many failed login attempts",
+                ));
             }
             LoginError::RateLimited(retry_after) => {
                 res.status_code(StatusCode::TOO_MANY_REQUESTS);

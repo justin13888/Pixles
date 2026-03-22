@@ -4,7 +4,7 @@ use async_graphql::{Error, ErrorExtensions, ServerError};
 use auth::{claims::Scope, errors::ClaimValidationError, roles::UserRole, service::AuthService};
 use salvo::http::HeaderMap;
 use sea_orm::DatabaseConnection;
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::ExposeSecret;
 
 #[derive(Debug, Clone)]
 pub enum UserType {
@@ -19,6 +19,7 @@ pub enum UserType {
 #[derive(Debug, Clone)]
 pub struct UserContext {
     user_type: UserType,
+    #[allow(dead_code)]
     scopes: HashSet<Scope>,
 }
 
