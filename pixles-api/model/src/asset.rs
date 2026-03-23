@@ -33,7 +33,7 @@ pub struct CreateAsset {
     pub asset_type: AssetType,
     pub original_filename: String,
     pub file_size: i64,
-    pub file_hash: i64,
+    pub file_hash: String,
     pub content_type: String,
     pub date: Option<DateTime<Utc>>,
     pub uploaded: bool,

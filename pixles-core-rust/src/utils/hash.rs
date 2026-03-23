@@ -1,9 +1,8 @@
 use std::{fs, io, path::Path};
 
-/// Get hash of a file
-// TODO: Consider making this async (probably doesn't make sense at all for throughput)
-pub fn get_file_hash(path: &Path) -> io::Result<u64> {
-    // TODO: switch to streaming version for large files
+/// Get BLAKE3 hash of a file as a 64-char lowercase hex string.
+// TODO: switch to streaming version for large files
+pub fn get_file_hash(path: &Path) -> io::Result<String> {
     let bytes = fs::read(path)?;
-    Ok(xxhash_rust::xxh3::xxh3_64(&bytes))
+    Ok(blake3::hash(&bytes).to_hex().to_string())
 }

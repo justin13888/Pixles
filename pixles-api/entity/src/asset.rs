@@ -25,10 +25,9 @@ pub struct Model {
     pub original_filename: String,
     /// File size in bytes
     pub file_size: i64,
-    /// XXH3 hash of the file content
-    /// We just need a 64-bit value but Postgres only has BigInt (8-byte signed integer).
-    /// Just cast between u64 and i64 using `as` keyword.
-    pub file_hash: i64,
+    /// BLAKE3 hash of the file content (64-char lowercase hex)
+    #[sea_orm(column_type = "String(StringLen::N(64))")]
+    pub file_hash: String,
     /// MIME type
     pub content_type: String,
 

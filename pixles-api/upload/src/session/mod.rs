@@ -207,9 +207,7 @@ impl UploadSessionManager {
         let total_size: u64 = get_string("total_size")?
             .parse()
             .map_err(|e| UploadError::Unknown(format!("Invalid total_size: {}", e)))?;
-        let expected_hash: i64 = get_string("expected_hash")?
-            .parse()
-            .map_err(|e| UploadError::Unknown(format!("Invalid expected_hash: {}", e)))?;
+        let expected_hash: String = get_string("expected_hash")?;
 
         let status_str = get_string("status")?;
         let status: UploadSessionStatus = serde_json::from_str(&status_str)

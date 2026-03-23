@@ -16,7 +16,7 @@ impl Mutation {
         asset_type: AssetType,
         original_filename: String,
         file_size: i64,
-        file_hash: i64,
+        file_hash: String,
         content_type: String,
         captured_at: Option<DateTime<Utc>>,
     ) -> Result<asset::Model, DbErr> {

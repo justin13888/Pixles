@@ -59,7 +59,7 @@ impl Query {
     pub async fn find_by_hash_for_user(
         db: &DbConn,
         user_id: &str,
-        file_hash: i64,
+        file_hash: &str,
     ) -> Result<Option<asset::Model>, DbErr> {
         // Get all owner IDs the user is a member of
         let owner_ids: Vec<String> = OwnerMember::find()

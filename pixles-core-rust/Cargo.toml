@@ -12,4 +12,4 @@ log = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true, features = ["v7"] }
-xxhash-rust = { workspace = true, features = ["xxh3"] }
+blake3 = { workspace = true }

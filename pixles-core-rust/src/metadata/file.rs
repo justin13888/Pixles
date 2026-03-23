@@ -7,22 +7,22 @@ use serde::{Deserialize, Serialize};
 use crate::utils::hash::get_file_hash;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct HashData(u64);
+pub struct HashData(String);
 
 impl std::fmt::Debug for HashData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "0x{:x}", self.0)
+        write!(f, "{}", self.0)
     }
 }
 
-impl From<u64> for HashData {
-    fn from(value: u64) -> Self {
+impl From<String> for HashData {
+    fn from(value: String) -> Self {
         HashData(value)
     }
 }
 
 impl Deref for HashData {
-    type Target = u64;
+    type Target = String;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -31,8 +31,8 @@ impl Deref for HashData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileMetadata {
-    /// XXH3 Hash
-    pub hash_xxh3: HashData,
+    /// BLAKE3 hash (64-char lowercase hex)
+    pub hash_blake3: HashData,
     /// File size in bytes
     pub size: u64,
     // /// Media type if available
@@ -56,7 +56,7 @@ impl FileMetadata {
         let metadata = fs::metadata(path)?;
 
         // Get file hash
-        let hash_xxh3 = get_file_hash(path)?;
+        let hash = get_file_hash(path)?;
 
         // Get file size
         let size = metadata.len();
@@ -85,7 +85,7 @@ impl FileMetadata {
         // let media_type = ...;
 
         Ok(FileMetadata {
-            hash_xxh3: hash_xxh3.into(),
+            hash_blake3: hash.into(),
             size,
             // media_type,
             original_filename,

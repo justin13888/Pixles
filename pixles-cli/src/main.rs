@@ -137,7 +137,7 @@ async fn main() -> Result<()> {
                 })
                 .buffer_unordered(10) // Process up to 10 files concurrently
                 .filter_map(|result| async move { result })
-                .collect::<Vec<(PathBuf, u64)>>()
+                .collect::<Vec<(PathBuf, String)>>()
                 .await;
             let hash_duration = hash_start.elapsed();
 

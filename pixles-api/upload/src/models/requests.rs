@@ -9,8 +9,8 @@ pub struct CreateUploadRequest {
     pub filename: String,
     /// File size in bytes
     pub size: u64,
-    /// XXH3 hash of the complete file (signed 64-bit for DB compatibility)
-    pub hash: i64,
+    /// BLAKE3 hash of the complete file (64-char lowercase hex)
+    pub hash: String,
     /// MIME type (e.g., "image/jpeg")
     pub content_type: String,
     /// Optional album to add asset to

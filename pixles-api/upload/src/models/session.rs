@@ -17,8 +17,8 @@ pub struct UploadSession {
     pub album_id: Option<String>,
     /// Content type of the file being uploaded
     pub content_type: Option<String>,
-    /// Expected hash for verification on finalize
-    pub expected_hash: i64,
+    /// Expected BLAKE3 hash for verification on finalize (64-char lowercase hex)
+    pub expected_hash: String,
 
     // Upload state
     pub received_bytes: u64,

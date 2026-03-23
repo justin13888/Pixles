@@ -49,7 +49,7 @@ impl UploadService {
         upload_user_id: &str,
         content_type: Option<String>,
         total_size: u64,
-        expected_hash: i64,
+        expected_hash: String,
         album_id: Option<String>,
         original_filename: String,
     ) -> Result<UploadSession, UploadError> {
@@ -73,7 +73,7 @@ impl UploadService {
 
         // Check for duplicate hash - asset with same hash already exists for this user
         if let Some(existing) =
-            AssetService::Query::find_by_hash_for_user(&self.conn, upload_user_id, expected_hash)
+            AssetService::Query::find_by_hash_for_user(&self.conn, upload_user_id, &expected_hash)
                 .await
                 .map_err(|e| UploadError::Unknown(e.to_string()))?
         {
@@ -106,7 +106,7 @@ impl UploadService {
             asset_type,
             original_filename,
             total_size as i64,
-            expected_hash,
+            expected_hash.clone(),
             content_type
                 .clone()
                 .unwrap_or_else(|| "application/octet-stream".to_string()),
@@ -257,7 +257,7 @@ impl UploadService {
             .map_err(|e| UploadError::ProcessingError(e.to_string()))?
             .map_err(|e| UploadError::ProcessingError(e.to_string()))?;
 
-        if actual_hash as i64 != session.expected_hash {
+        if actual_hash != session.expected_hash {
             // Hash mismatch - clean up and delete asset
             if let Err(e) = fs::remove_file(&final_path).await {
                 tracing::warn!("Failed to delete file after hash mismatch: {}", e);
@@ -272,8 +272,8 @@ impl UploadService {
                 .await?;
 
             return Err(UploadError::ChecksumMismatch {
-                expected: format!("{:016x}", session.expected_hash),
-                actual: format!("{:016x}", actual_hash),
+                expected: session.expected_hash,
+                actual: actual_hash,
             });
         }
 
