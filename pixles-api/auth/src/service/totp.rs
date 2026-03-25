@@ -161,7 +161,7 @@ mod tests {
     use super::*;
 
     fn get_test_db_connection() -> DatabaseConnection {
-        todo!("Create test database connection")
+        DatabaseConnection::Disconnected
     }
 
     #[test]

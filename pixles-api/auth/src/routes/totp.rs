@@ -1,8 +1,7 @@
-use model::errors::InternalServerError;
 use salvo::oapi::extract::JsonBody;
 use salvo::prelude::*;
 
-use crate::claims::Claims;
+use crate::claims::{Claims, Scope};
 use crate::models::requests::{
     DisableTotpRequest, VerifyTotpEnrollmentRequest, VerifyTotpLoginRequest,
 };
@@ -71,7 +70,7 @@ pub async fn totp_verify_enrollment(
         Ok(false) => {
             return TotpVerifyEnrollmentResponses::InvalidCode;
         }
-        Err(e) => return InternalServerError::from(e).into(),
+        Err(e) => return e.into(),
     }
 }
 
@@ -125,8 +124,8 @@ pub async fn totp_verify_login(
         return TotpVerifyLoginResponses::InvalidMfaToken;
     }
 
-    // Check MFA token has no scopes (security check)
-    if !mfa_claims.scopes.is_empty() {
+    // Check MFA token has the MFA scope (security check)
+    if !mfa_claims.has_scopes(&[Scope::MfaToken]) {
         return TotpVerifyLoginResponses::InvalidMfaToken;
     }
 

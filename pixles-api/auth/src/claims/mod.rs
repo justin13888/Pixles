@@ -110,7 +110,7 @@ impl Claims {
 
     /// Returns true if the token has not expired
     pub fn has_expired(&self) -> bool {
-        self.exp > Utc::now().timestamp() as u64
+        self.exp <= Utc::now().timestamp() as u64
     }
 
     /// Returns true if the token has valid issuer

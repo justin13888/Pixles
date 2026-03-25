@@ -206,7 +206,7 @@ mod tests {
     }
 
     fn get_test_db_connection() -> DatabaseConnection {
-        todo!("Implement test DB connection")
+        DatabaseConnection::Disconnected
     }
 
     fn get_test_service() -> AuthService {
@@ -232,7 +232,11 @@ mod tests {
         let service = get_test_service();
         let claims = Claims::new_access_token("user1".to_string(), None);
 
-        assert!(service.validate_claims(&claims, &[Scope::ReadUser]).is_ok());
+        assert!(
+            service
+                .validate_claims(&claims, &[Scope::AccessToken])
+                .is_ok()
+        );
     }
 
     #[test]

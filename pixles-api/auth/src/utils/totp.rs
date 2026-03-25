@@ -3,7 +3,7 @@ use totp_rs::{Algorithm, Secret, TOTP};
 
 /// Generate a new Base32-encoded TOTP secret
 pub fn generate_secret() -> String {
-    Secret::generate_secret().to_string()
+    Secret::generate_secret().to_encoded().to_string()
 }
 
 /// Returns TOTP generator
@@ -16,6 +16,8 @@ pub fn get_totp_generator(secret: &str) -> eyre::Result<TOTP> {
         Secret::Encoded(secret.to_string())
             .to_bytes()
             .wrap_err("Failed to parse secret")?,
+        None,
+        "pixles".to_string(),
     )
     .wrap_err("Failed to create TOTP")
 }

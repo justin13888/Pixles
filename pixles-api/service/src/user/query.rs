@@ -40,11 +40,7 @@ impl Query {
     /// Returns email by ID
     /// Returns None if user not found
     pub async fn get_email_by_id(db: &DbConn, id: &str) -> Result<Option<String>, DbErr> {
-        let user = User::find_by_id(id)
-            .select_only()
-            .column(user::Column::Email)
-            .one(db)
-            .await?;
+        let user = User::find_by_id(id).one(db).await?;
         Ok(user.map(|u| u.email))
     }
 
@@ -54,22 +50,14 @@ impl Query {
         db: &DbConn,
         id: &str,
     ) -> Result<Option<bool>, DbErr> {
-        let user = User::find_by_id(id)
-            .select_only()
-            .column(user::Column::AccountVerified)
-            .one(db)
-            .await?;
-
-        let status = user.map(|u| u.account_verified);
-        Ok(status)
+        let user = User::find_by_id(id).one(db).await?;
+        Ok(user.map(|u| u.account_verified))
     }
 
     /// Returns hashed password by ID
     #[cfg(feature = "auth")]
     pub async fn get_password_hash_by_id(db: &DbConn, id: &str) -> Result<Option<String>, DbErr> {
         let user = User::find_by_id(id)
-            .select_only()
-            .column(user::Column::PasswordHash)
             .one(db)
             .await?
             .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
@@ -84,11 +72,7 @@ impl Query {
         db: &DbConn,
         id: &str,
     ) -> Result<Option<Option<String>>, DbErr> {
-        let user = User::find_by_id(id)
-            .select_only()
-            .column(user::Column::TotpSecret)
-            .one(db)
-            .await?;
+        let user = User::find_by_id(id).one(db).await?;
         Ok(user.map(|u| u.totp_secret))
     }
 
@@ -125,11 +109,7 @@ impl Query {
     /// Returns failed login attempts count for user
     #[cfg(feature = "auth")]
     pub async fn get_failed_login_attempts(db: &DbConn, id: &str) -> Result<Option<i32>, DbErr> {
-        let user = User::find_by_id(id)
-            .select_only()
-            .column(user::Column::FailedLoginAttempts)
-            .one(db)
-            .await?;
+        let user = User::find_by_id(id).one(db).await?;
         Ok(user.map(|u| u.failed_login_attempts))
     }
 
@@ -141,8 +121,6 @@ impl Query {
     ) -> Result<Option<Option<String>>, DbErr> {
         let user = User::find()
             .filter(user::Column::Email.eq(email))
-            .select_only()
-            .column(user::Column::PasswordResetToken)
             .one(db)
             .await?;
         Ok(user.map(|u| u.password_reset_token))
