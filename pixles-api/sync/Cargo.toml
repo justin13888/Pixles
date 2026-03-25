@@ -12,7 +12,7 @@ path = "src/lib.rs"
 pixles-api-auth = { path = "../auth" }
 pixles-api-entity = { path = "../entity" }
 pixles-api-environment = { path = "../environment", features = ["sync"] }
-pixles-core = { path = "../../pixles-core-rust" }
+pixles-core-rust = { path = "../../pixles-core-rust" }
 eyre = { workspace = true }
 futures-util = { workspace = true }
 http-body-util = "0.1"

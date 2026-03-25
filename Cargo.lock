@@ -3593,7 +3593,7 @@ dependencies = [
  "nanoid",
  "pixles-api-entity",
  "pixles-api-model",
- "pixles-core",
+ "pixles-core-rust",
  "sea-orm",
  "serde",
  "serde_json",
@@ -3613,7 +3613,7 @@ dependencies = [
  "pixles-api-auth",
  "pixles-api-entity",
  "pixles-api-environment",
- "pixles-core",
+ "pixles-core-rust",
  "prost",
  "prost-types",
  "salvo",
@@ -3666,7 +3666,7 @@ dependencies = [
  "pixles-api-environment",
  "pixles-api-model",
  "pixles-api-service",
- "pixles-core",
+ "pixles-core-rust",
  "pixles-media",
  "ring",
  "salvo",
@@ -3699,7 +3699,7 @@ dependencies = [
  "nanoid",
  "pixles-cli-entity",
  "pixles-cli-migration",
- "pixles-core",
+ "pixles-core-rust",
  "sea-orm",
  "serde",
  "sysinfo",
@@ -3729,7 +3729,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pixles-core"
+name = "pixles-core-rust"
 version = "0.1.0"
 dependencies = [
  "blake3",

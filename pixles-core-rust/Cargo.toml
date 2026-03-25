@@ -1,5 +1,5 @@
 [package]
-name = "pixles-core"
+name = "pixles-core-rust"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true

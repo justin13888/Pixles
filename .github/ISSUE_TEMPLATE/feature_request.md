@@ -13,7 +13,7 @@ assignees: ''
 - [ ] pixles-android
 - [ ] pixles-api
 - [ ] pixles-cli
-- [ ] pixles-core
+- [ ] pixles-core-rust
 - [ ] pixles-desktop
 - [ ] pixles-docs
 - [ ] pixles-media

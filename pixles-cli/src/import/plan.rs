@@ -2,12 +2,12 @@ use std::path::PathBuf;
 
 use eyre::{Result, eyre};
 use indexmap::IndexMap;
-use pixles_core::import::{
+use pixles_core_rust::import::{
     ImportAction, ImportActionMapping, ImportActionPlan, ImportExecutionPlan,
     ImportExecutionSummary, ImportResult, NewImportConfig, ScanResult, SpecialDirectoryStatus,
     SpecialFileStatus,
 };
-use pixles_core::metadata::AssetType;
+use pixles_core_rust::metadata::AssetType;
 
 /// Scan files and create an import plan.
 #[allow(dead_code)]
