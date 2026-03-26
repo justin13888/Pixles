@@ -17,6 +17,24 @@ members = [
     "pixles-media",
     "pixles-sdk",
 ]
+# pixles-sdk requires a pre-generated openapi.json (run generate_openapi.sh first)
+default-members = [
+    "pixles-api",
+    "pixles-api/auth",
+    "pixles-api/library",
+    "pixles-api/media",
+    "pixles-api/service",
+    "pixles-api/entity",
+    "pixles-api/sync",
+    "pixles-api/migration",
+    "pixles-api/model",
+    "pixles-api/testing",
+    "pixles-api/upload",
+    "pixles-cli",
+    "pixles-cli/migration",
+    "pixles-core-rust",
+    "pixles-media",
+]
 resolver = "3"
 
 [workspace.package]
@@ -76,7 +94,7 @@ tonic-health = "0.14.2"
 tonic-types = "0.14.2"
 tonic-prost = "0.14.2"
 tonic-prost-build = { version = "0.14.2" }
-uuid = "1.19.0"
+uuid = { version = "1.19.0", features = ["v4"] }
 tower-http = { version = "0.6.8", features = ["cors"] }
 tracing = "0.1.43"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }

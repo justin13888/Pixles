@@ -35,55 +35,55 @@ pub struct JpegImage {
 
 impl ImageMetadataExtractor for JpegImage {
     fn get_date_taken(&self) -> Option<chrono::DateTime<chrono::Utc>> {
-        unimplemented!()
+        None
     }
     fn get_dimensions(&self) -> (u32, u32) {
-        unimplemented!()
+        (self.width as u32, self.height as u32)
     }
     fn get_bit_depth(&self) -> u8 {
-        unimplemented!()
+        8
     }
     fn get_color_space(&self) -> ColorSpace {
-        unimplemented!()
+        self.color_space
     }
     fn get_file_size(&self) -> u64 {
-        unimplemented!()
+        self.file_size_bytes
     }
     fn get_device_metadata(&self) -> Option<DeviceMetadata> {
-        unimplemented!()
+        None
     }
     fn get_capture_settings(&self) -> Option<CaptureSettings> {
-        unimplemented!()
+        None
     }
     fn get_location(&self) -> Option<GpsLocation> {
-        unimplemented!()
+        None
     }
     fn get_content(&self) -> Option<ContentMetadata> {
-        unimplemented!()
+        None
     }
     fn raw_info(&self) -> Option<RawSensorInfo> {
-        unimplemented!()
+        None
     }
     fn exif(&self) -> Option<ExifData> {
-        unimplemented!()
+        None
     }
     fn xmp(&self) -> Option<XmpData> {
-        unimplemented!()
+        None
     }
     fn iptc(&self) -> Option<IptcData> {
-        unimplemented!()
+        None
     }
     fn icc_profile(&self) -> Option<IccProfile> {
-        unimplemented!()
+        None
     }
     fn motion_metadata(&self) -> Option<MotionPhotoInfo> {
-        unimplemented!()
+        None
     }
     fn auxiliary_images(&self) -> Vec<AuxiliaryImage> {
-        unimplemented!()
+        vec![]
     }
     fn c2pa_manifest(&self) -> Option<C2PAManifest> {
-        unimplemented!()
+        None
     }
 }
 

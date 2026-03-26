@@ -47,23 +47,23 @@ format-check-rust:
 
 [group('rust')]
 lint-rust:
-    cargo clippy --workspace --fix --allow-dirty
+    cargo clippy --workspace --exclude pixles-sdk --fix --allow-dirty
 
 [group('rust')]
 lint-check-rust:
-    cargo clippy --workspace -- -D warnings
+    cargo clippy --workspace --exclude pixles-sdk -- -D warnings
 
 [group('rust')]
 test-rust:
-    cargo test --workspace
+    cargo test --workspace --exclude pixles-sdk
 
 [group('rust')]
 test-coverage-rust:
-    cargo llvm-cov --workspace --fail-under-lines 0
+    cargo llvm-cov --workspace --exclude pixles-sdk --fail-under-lines 0
 
 [group('rust')]
 build-rust:
-    cargo build --workspace
+    cargo build --workspace --exclude pixles-sdk
 
 # ── Web ──────────────────────────────────────────────────────────────────────
 

@@ -116,7 +116,7 @@ pre-push:
     test-rust:
       priority: 2
       glob: "**/*.rs"
-      run: cargo test --workspace
+      run: cargo test --workspace --exclude pixles-sdk
     test-web:
       priority: 2
       glob: "pixles-web/**/*.{ts,tsx,js,jsx}"

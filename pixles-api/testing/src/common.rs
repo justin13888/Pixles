@@ -2,9 +2,11 @@ use sea_orm::{Database, DatabaseConnection};
 use sea_orm_migration::MigratorTrait;
 use std::{env, process::Command, str, sync::OnceLock, time::Duration};
 use thiserror::Error;
+use tokio::sync::Mutex;
 
 static DB_URL: OnceLock<String> = OnceLock::new();
 static CONTAINER_ID: OnceLock<String> = OnceLock::new();
+static INIT_MUTEX: Mutex<()> = Mutex::const_new(());
 
 /// Sets up a test postgres database. If TEST_DATABASE_URL is set, it will be used.
 /// Otherwise this will start a postgres docker container (requires docker CLI) and
@@ -19,18 +21,27 @@ pub async fn setup_test_db() -> Result<DatabaseConnection, TestDbError> {
         return Ok(db);
     }
 
+    // Fast path: already initialized
     if let Some(url) = DB_URL.get() {
         let db = Database::connect(url).await?;
         return Ok(db);
     }
 
-    // Start a postgres container with docker CLI. Use random host port mapping.
-    // Check docker is available by invoking `docker --version`
+    // Serialize container startup to prevent multiple containers being spawned when
+    // async tests run concurrently.
+    let _guard = INIT_MUTEX.lock().await;
+
+    // Double-check under lock
+    if let Some(url) = DB_URL.get() {
+        let db = Database::connect(url).await?;
+        return Ok(db);
+    }
+
+    // Start a postgres container with docker CLI.
     if Command::new("docker").arg("--version").output().is_err() {
         return Err(TestDbError::Docker("docker CLI not found in PATH or not runnable. Install Docker or set TEST_DATABASE_URL to run tests.".to_string()));
     }
-    // Expose 5432 to a random host port using `-p 0:5432` isn't supported; instead we'll
-    // ask docker to assign a random host port by `-p 5432` and then inspect mappings.
+
     let output = Command::new("docker")
         .args([
             "run",
