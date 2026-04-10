@@ -9,12 +9,25 @@ pub enum Commands {
         #[command(subcommand)]
         command: AuthCommands,
     },
-    /// Import files to Pixles
+    /// Import files into a local Pixles library
     Import {
-        /// Path to the file or directory to import
+        /// Source file or directory to import
         path: PathBuf,
+        /// Path to the Pixles library
+        #[arg(long, value_name = "PATH")]
+        library: PathBuf,
+        /// Move files instead of copying them
+        #[arg(long)]
+        r#move: bool,
+        /// Re-import files even if they already exist (duplicate override)
+        #[arg(long)]
+        force: bool,
     },
-    // TODO: Add download command
+    /// Manage the local library
+    Library {
+        #[command(subcommand)]
+        command: LibraryCommands,
+    },
     /// Sync local and remote data
     Sync {
         /// Force sync even if there are conflicts
@@ -54,6 +67,28 @@ pub enum Commands {
         /// Reset all data
         #[arg(long)]
         all: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum LibraryCommands {
+    /// Create a new Pixles library
+    Init {
+        /// Directory for the new library
+        path: PathBuf,
+        /// Human-readable library name
+        #[arg(long, default_value = "My Library")]
+        name: String,
+    },
+    /// Show library information
+    Info {
+        /// Path to the library
+        path: PathBuf,
+    },
+    /// Rebuild the SQLite index from sidecar files
+    Rebuild {
+        /// Path to the library
+        path: PathBuf,
     },
 }
 

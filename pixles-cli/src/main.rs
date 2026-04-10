@@ -1,21 +1,22 @@
 use std::path::PathBuf;
-use std::time::Instant;
 
 use capitalize::Capitalize;
 use clap::Parser;
-use cli::{AuthCommands, Cli, Commands};
+use cli::{AuthCommands, Cli, Commands, LibraryCommands};
 use colored::*;
 use dialoguer::Confirm;
 use eyre::{Result, eyre};
-use futures::stream::{self, StreamExt};
-use pixles_core_rust::metadata::FileMetadata;
-use pixles_core_rust::utils::hash::get_file_hash;
-use tracing::{debug, trace};
+use pixles_core::domain::ImportMode;
+use pixles_core::import::scanner::scan as scan_files;
+use pixles_core::import::{
+    CancellationToken, ImportConfig, ImportOutcome, ImportProgressEvent, execute, plan,
+};
+use pixles_core::library::{Library, LibraryError, init_library, open_library, rebuild_index};
+use pixles_core::metadata::FileMetadata;
+use tracing::trace;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, fmt};
-use walkdir::WalkDir;
 
-use crate::db::init_sqlite;
 use crate::utils::directories::{get_cache_dir, get_config_dir, get_data_dir};
 
 mod cli;
@@ -25,13 +26,10 @@ mod import;
 mod status;
 mod utils;
 
-// #[tokio::main(flavor = "multi_thread")] # TODO: see what default for tokio
-// runtime is ideal
 #[tokio::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
 
-    // Initialize tracing subscriber for logging
     let filter_layer = EnvFilter::try_from_default_env()
         .or_else(|_| {
             if cfg!(debug_assertions) {
@@ -52,12 +50,11 @@ async fn main() -> Result<()> {
         .with(fmt_layer)
         .init();
 
-    // Start parsing
     let cli = Cli::parse();
-
     trace!("Parsed CLI arguments: {:#?}", cli);
 
     match cli.command {
+        // ── Auth ──────────────────────────────────────────────────────────
         Commands::Auth { command } => match command {
             AuthCommands::Login => {
                 println!("{}", "Logging in to Pixles...".green());
@@ -71,86 +68,176 @@ async fn main() -> Result<()> {
                 println!("{}", "Checking authentication status...".blue());
                 match config::Config::from_default_path() {
                     Ok(config) => match status::AuthStatus::check(&config).await {
-                        Ok(auth_status) => {
-                            auth_status.display();
-                        }
-                        Err(e) => {
-                            println!("{}", format!("Error checking auth status: {e}").red());
-                        }
+                        Ok(auth_status) => auth_status.display(),
+                        Err(e) => println!("{}", format!("Error checking auth status: {e}").red()),
                     },
-                    Err(e) => {
-                        println!("{}", format!("Error loading config: {e}").red());
-                    }
+                    Err(e) => println!("{}", format!("Error loading config: {e}").red()),
                 }
             }
         },
-        Commands::Import { path } => {
+
+        // ── Library ───────────────────────────────────────────────────────
+        Commands::Library { command } => match command {
+            LibraryCommands::Init { path, name } => {
+                println!(
+                    "{}",
+                    format!("Creating library '{}' at {}...", name, path.display()).green()
+                );
+                let lib = init_library(&path, &name)
+                    .map_err(|e| eyre!("Failed to create library: {e}"))?;
+                println!(
+                    "{}",
+                    format!("Library created at {}", path.display()).green()
+                );
+                lib.close()
+                    .map_err(|e| eyre!("Failed to close library: {e}"))?;
+            }
+            LibraryCommands::Info { path } => {
+                let lib = open_library_or_err(&path)?;
+                let cfg = lib.config();
+                println!("{}", "Library info:".green());
+                println!("  Name:            {}", cfg.library_name);
+                println!("  Schema version:  {}", cfg.schema_version);
+                println!("  Last opened:     {}", cfg.last_opened_at);
+                println!(
+                    "  Last scrubbed:   {}",
+                    cfg.last_scrubbed_at
+                        .map(|t| t.to_string())
+                        .unwrap_or_else(|| "never".to_string())
+                );
+                lib.close()
+                    .map_err(|e| eyre!("Failed to close library: {e}"))?;
+            }
+            LibraryCommands::Rebuild { path } => {
+                println!(
+                    "{}",
+                    format!("Rebuilding index for {}...", path.display()).yellow()
+                );
+                let lib = open_library_or_err(&path)?;
+                rebuild_index(&lib).map_err(|e| eyre!("Rebuild failed: {e}"))?;
+                println!("{}", "Index rebuilt successfully.".green());
+                lib.close()
+                    .map_err(|e| eyre!("Failed to close library: {e}"))?;
+            }
+        },
+
+        // ── Import ────────────────────────────────────────────────────────
+        Commands::Import {
+            path,
+            library,
+            r#move,
+            force,
+        } => {
             println!(
                 "{}",
-                format!("Importing from path: {}", path.to_string_lossy().blue()).green()
-            );
-            // TODO: Implement import logic
-
-            // File or directory?
-            let paths: Vec<PathBuf> = if path.is_dir() {
-                println!("{}", "Importing from directory...".cyan());
-                // Handle directory import
-
-                WalkDir::new(&path)
-                    .into_iter()
-                    .filter_map(|entry| entry.ok())
-                    .filter(|entry| entry.file_type().is_file())
-                    .map(|entry| entry.path().to_path_buf())
-                    .collect()
-            } else if path.is_file() {
-                println!("{}", "Importing from file...".cyan());
-                // Handle file import
-                vec![path]
-            } else {
-                println!("{}", "Invalid path provided".red());
-                return Err(eyre!("Invalid path provided"));
-            };
-
-            println!(
-                "{}",
-                format!("Found {} files to import", paths.len()).green()
+                format!(
+                    "Importing {} into library {}...",
+                    path.to_string_lossy().blue(),
+                    library.to_string_lossy().blue()
+                )
+                .green()
             );
 
-            // Init local DB connection
-            let _db = init_sqlite().await?;
-            debug!("Initialized SQLite database connection");
+            let lib = open_library_or_err(&library)?;
 
-            // TODO: Detect file structures and summarize into ImportPlan
-            // TODO: Show TUI for edit and confirm
-
-            // Compute hashes for files
-            let hash_start = Instant::now();
-            let hashes = stream::iter(paths)
-                .map(|p| {
-                    let path = p.clone();
-                    async move {
-                        match get_file_hash(&path) {
-                            Ok(hash) => Some((path, hash)),
-                            Err(_) => None,
-                        }
-                    }
-                })
-                .buffer_unordered(10) // Process up to 10 files concurrently
-                .filter_map(|result| async move { result })
-                .collect::<Vec<(PathBuf, String)>>()
-                .await;
-            let hash_duration = hash_start.elapsed();
+            // Phase 1: Scan
+            println!("{}", "Scanning source files...".cyan());
+            let scan_result = scan_files(&[path]).map_err(|e| eyre!("Scan failed: {e}"))?;
 
             println!(
                 "{}",
                 format!(
-                    "Computed hashes for {} files in {:2} s",
-                    hashes.len(),
-                    hash_duration.as_secs_f32()
+                    "Found {} candidates ({} files total)",
+                    scan_result.candidates.len(),
+                    scan_result.total_files()
                 )
                 .green()
             );
+
+            // Phase 2: Plan
+            let config = ImportConfig {
+                import_mode: if r#move {
+                    ImportMode::Move
+                } else {
+                    ImportMode::Copy
+                },
+                force_reimport_duplicates: force,
+                target_album_id: None,
+            };
+
+            let plan_result =
+                plan(&scan_result, &lib.db, &config).map_err(|e| eyre!("Planning failed: {e}"))?;
+
+            println!(
+                "{}",
+                format!(
+                    "Plan: {} to import, {} duplicates skipped, {} unsupported/errors",
+                    plan_result.counts.to_import,
+                    plan_result.counts.duplicates,
+                    plan_result.counts.unsupported + plan_result.counts.errors,
+                )
+                .cyan()
+            );
+
+            if plan_result.counts.to_import == 0 {
+                println!("{}", "Nothing to import.".yellow());
+                lib.close()
+                    .map_err(|e| eyre!("Failed to close library: {e}"))?;
+                return Ok(());
+            }
+
+            // Phase 3: Execute
+            println!("{}", "Importing...".cyan());
+            let token = CancellationToken::new();
+
+            let summary = execute(
+                &plan_result,
+                &lib,
+                &config,
+                |event| {
+                    if let ImportProgressEvent::CandidateCompleted { outcomes, .. } = event {
+                        for (path, outcome) in &outcomes {
+                            let msg = format!("  {}", path.display());
+                            match outcome {
+                                ImportOutcome::Imported => {
+                                    println!("{}", format!("✓ {msg}").green());
+                                }
+                                ImportOutcome::DuplicateSkipped { .. } => {
+                                    println!("{}", format!("= {msg} (duplicate)").yellow());
+                                }
+                                ImportOutcome::CorruptTransfer => {
+                                    println!("{}", format!("✗ {msg} (corrupt transfer)").red());
+                                }
+                                ImportOutcome::CorruptUnreadable(e) => {
+                                    println!("{}", format!("✗ {msg} (unreadable: {e})").red());
+                                }
+                                _ => {
+                                    println!("{}", format!("- {msg}").dimmed());
+                                }
+                            }
+                        }
+                    }
+                },
+                &token,
+            )
+            .map_err(|e| eyre!("Import execution failed: {e}"))?;
+
+            println!(
+                "{}",
+                format!(
+                    "Done: {} imported, {} duplicates, {} errors",
+                    summary.imported_count(),
+                    summary.duplicate_count(),
+                    summary.error_count()
+                )
+                .green()
+            );
+
+            lib.close()
+                .map_err(|e| eyre!("Failed to close library: {e}"))?;
         }
+
+        // ── Sync ──────────────────────────────────────────────────────────
         Commands::Sync { force, dry_run } => {
             println!("{}", "Syncing local and remote data...".green());
             if force {
@@ -159,19 +246,19 @@ async fn main() -> Result<()> {
             if dry_run {
                 println!("{}", "Dry run mode enabled".yellow());
             }
-            // TODO: Implement sync logic
+            todo!("Implement sync logic");
         }
+
+        // ── Status ────────────────────────────────────────────────────────
         Commands::Status => {
             println!("{}", "Checking Pixles status...".blue());
             match status::StatusInfo::collect().await {
-                Ok(status_info) => {
-                    status_info.display();
-                }
-                Err(e) => {
-                    println!("{}", format!("Error collecting status: {e}").red());
-                }
+                Ok(status_info) => status_info.display(),
+                Err(e) => println!("{}", format!("Error collecting status: {e}").red()),
             }
         }
+
+        // ── List ──────────────────────────────────────────────────────────
         Commands::List { local, remote } => {
             println!("{}", "Listing files and albums...".green());
             if local {
@@ -182,6 +269,8 @@ async fn main() -> Result<()> {
             }
             todo!("Implement list logic");
         }
+
+        // ── Match ─────────────────────────────────────────────────────────
         Commands::Match { path } => {
             println!(
                 "{}",
@@ -195,24 +284,20 @@ async fn main() -> Result<()> {
             if !path.exists() {
                 return Err(eyre!("File does not exist: {}", path.to_string_lossy()));
             }
-
             if !path.is_file() {
                 return Err(eyre!("Path is not a file: {}", path.to_string_lossy()));
             }
 
-            // Get file metadata
             match FileMetadata::from_file_path(&path).await {
                 Ok(metadata) => {
                     println!("{}", "File metadata:".green());
                     println!("{metadata:#?}");
                 }
-                Err(e) => {
-                    return Err(eyre!("Failed to get file metadata: {}", e));
-                }
+                Err(e) => return Err(eyre!("Failed to get file metadata: {}", e)),
             }
-
-            // todo!("Implement match logic");
         }
+
+        // ── Reset ─────────────────────────────────────────────────────────
         Commands::Reset {
             config,
             data,
@@ -248,23 +333,18 @@ async fn main() -> Result<()> {
                 }
             }
 
-            // Prompt user for confirmation for each path
             for (label, path) in paths_to_remove {
                 if path.exists() {
-                    // Assert path is a directory
                     assert!(
                         path.is_dir(),
                         "Path {} is not a directory",
                         path.to_string_lossy()
                     );
-
-                    // Prompt user for confirmation
                     let prompt = format!(
                         "Are you sure you want to delete the {} directory?\n  Path: {}",
                         label,
                         path.to_string_lossy()
                     );
-
                     if Confirm::new()
                         .with_prompt(&prompt)
                         .default(false)
@@ -294,11 +374,32 @@ async fn main() -> Result<()> {
                         )
                         .yellow()
                     );
-                    continue;
                 }
             }
         }
     }
 
     Ok(())
+}
+
+fn open_library_or_err(path: &PathBuf) -> Result<Library> {
+    open_library(path).map_err(|e| match e {
+        LibraryError::CorruptVersion(msg) => {
+            eyre!(
+                "Library at {} has a corrupt version file: {}",
+                path.display(),
+                msg
+            )
+        }
+        LibraryError::Locked { pid, hostname, .. } => eyre!(
+            "Library at {} is locked by PID {} on {}. Is another Pixles instance running?",
+            path.display(),
+            pid,
+            hostname
+        ),
+        LibraryError::VersionMismatch { found, expected } => {
+            eyre!("Library version mismatch: found {found}, expected {expected}. Upgrade required.")
+        }
+        other => eyre!("Failed to open library at {}: {other}", path.display()),
+    })
 }

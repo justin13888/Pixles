@@ -6,7 +6,7 @@ use crate::service::storage::StorageService;
 use crate::session::UploadSessionManager;
 use chrono::Utc;
 use nanoid::nanoid;
-use pixles_core_rust::utils::hash::get_file_hash;
+use pixles_core::utils::hash::get_file_hash;
 use sea_orm::{DatabaseConnection, TransactionTrait};
 use std::clone::Clone;
 use tokio::fs;
