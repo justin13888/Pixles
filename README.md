@@ -6,6 +6,8 @@ Open Asset Management Scaled to Millions.
 
 > Alpha status: The `master` branch is the main development branch. Releases on GitHub will be made once: 1. Features/APIs have been stabilized internally; 2. Internal testing group have tested sufficiently.
 
+> Project Update (April 2026): We are porting to E2E encryption and offline-first philosophy so it will be another few months before we reach alpha again.
+
 ## Features
 
 - **Cross-platform**: Pixles is available on all common desktop and mobile platforms. They're fast on all.
