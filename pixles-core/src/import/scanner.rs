@@ -84,12 +84,12 @@ fn collect_files(
         .into_iter()
         .filter_entry(|e| {
             // Skip special directories
-            if e.file_type().is_dir() {
-                if let Some(status) = SpecialDirectoryStatus::from_path(e.path()) {
-                    match status {
-                        SpecialDirectoryStatus::Git | SpecialDirectoryStatus::DavinciResolve => {
-                            return false;
-                        }
+            if e.file_type().is_dir()
+                && let Some(status) = SpecialDirectoryStatus::from_path(e.path())
+            {
+                match status {
+                    SpecialDirectoryStatus::Git | SpecialDirectoryStatus::DavinciResolve => {
+                        return false;
                     }
                 }
             }
@@ -113,22 +113,23 @@ fn collect_files(
         }
 
         // For HEIC files: try to extract Apple content_identifier for Live Photo pairing
-        if ext == "heic" || ext == "heif" {
-            if let Some(ci) = extract_content_identifier(&path) {
-                content_id_map.insert(ci, path.clone());
-                // Don't add to regular files yet — handle in Live Photo logic
-                files.push(path);
-                continue;
-            }
+        if (ext == "heic" || ext == "heif")
+            && let Some(ci) = extract_content_identifier(&path)
+        {
+            content_id_map.insert(ci, path.clone());
+            // Don't add to regular files yet — handle in Live Photo logic
+            files.push(path);
+            continue;
         }
 
         // For MOV files: try to extract content_identifier for Live Photo pairing
-        if is_video(&ext) && (ext == "mov" || ext == "mp4") {
-            if let Some(ci) = extract_content_identifier(&path) {
-                mov_ci_map.insert(ci, path.clone());
-                files.push(path);
-                continue;
-            }
+        if is_video(&ext)
+            && (ext == "mov" || ext == "mp4")
+            && let Some(ci) = extract_content_identifier(&path)
+        {
+            mov_ci_map.insert(ci, path.clone());
+            files.push(path);
+            continue;
         }
 
         files.push(path);

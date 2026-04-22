@@ -97,12 +97,12 @@ fn decide(
         }
     };
 
-    if !config.force_reimport_duplicates {
-        if let Some(existing) = db.find_by_hash(&hash)? {
-            return Ok(ImportDecision::SkipDuplicate {
-                existing_uuid: existing.uuid,
-            });
-        }
+    if !config.force_reimport_duplicates
+        && let Some(existing) = db.find_by_hash(&hash)?
+    {
+        return Ok(ImportDecision::SkipDuplicate {
+            existing_uuid: existing.uuid,
+        });
     }
 
     Ok(ImportDecision::Import)

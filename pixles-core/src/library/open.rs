@@ -43,9 +43,8 @@ pub fn open_library(root: &Path) -> Result<Library, LibraryError> {
     })?;
 
     // 5. Startup scrub (release lock on failure).
-    startup_scrub(root, &mut config).map_err(|e| {
+    startup_scrub(root, &mut config).inspect_err(|_e| {
         let _ = lock::release(root);
-        e
     })?;
 
     // 6. Update last_opened_at.

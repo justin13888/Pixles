@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use capitalize::Capitalize;
 use clap::Parser;
@@ -382,7 +382,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn open_library_or_err(path: &PathBuf) -> Result<Library> {
+fn open_library_or_err(path: &Path) -> Result<Library> {
     open_library(path).map_err(|e| match e {
         LibraryError::CorruptVersion(msg) => {
             eyre!(

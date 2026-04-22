@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+type StemKey = (Option<PathBuf>, String);
+type StemFiles = Vec<(PathBuf, String)>;
+
 use crate::domain::{DetectionMethod, MemberRole, StackType};
 use crate::import::scan::ImportCandidate;
 use crate::metadata::AssetType;
@@ -48,7 +51,7 @@ pub fn is_supported_extension(ext: &str) -> bool {
 /// Files in different parent directories are never grouped together.
 pub fn group_by_stem(files: &[PathBuf]) -> Vec<ImportCandidate> {
     // Map: (parent, lowercase_stem) → Vec<(path, lowercase_ext)>
-    let mut by_stem: HashMap<(Option<PathBuf>, String), Vec<(PathBuf, String)>> = HashMap::new();
+    let mut by_stem: HashMap<StemKey, StemFiles> = HashMap::new();
 
     for path in files {
         let parent = path.parent().map(PathBuf::from);

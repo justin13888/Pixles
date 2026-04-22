@@ -1,5 +1,6 @@
 pub mod error;
 pub mod init;
+#[allow(clippy::module_inception)]
 pub mod library;
 pub mod lock;
 pub mod open;

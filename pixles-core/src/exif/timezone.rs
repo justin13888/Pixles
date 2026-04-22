@@ -19,31 +19,30 @@ pub fn resolve_timezone(extract: &ExifExtract) -> TimezoneResolution {
     // Case 1: OffsetTimeOriginal present
     if let (Some(dt), Some(offset_str)) =
         (extract.date_time_original, &extract.offset_time_original)
+        && let Some(offset) = parse_offset(offset_str)
     {
-        if let Some(offset) = parse_offset(offset_str) {
-            let local = offset.from_local_datetime(&dt).single();
-            let capture_utc = local.map(|t| t.timestamp());
-            return TimezoneResolution {
-                capture_timestamp,
-                capture_utc,
-                capture_tz: Some(offset_str.clone()),
-                capture_tz_source: Some(CaptureTzSource::OffsetExif),
-                tz_db_version: None,
-            };
-        }
+        let local = offset.from_local_datetime(&dt).single();
+        let capture_utc = local.map(|t| t.timestamp());
+        return TimezoneResolution {
+            capture_timestamp,
+            capture_utc,
+            capture_tz: Some(offset_str.clone()),
+            capture_tz_source: Some(CaptureTzSource::OffsetExif),
+            tz_db_version: None,
+        };
     }
 
     // Case 2: GPS coordinates present → offline timezone lookup
-    if let (Some(lat), Some(lon)) = (extract.gps_lat, extract.gps_lon) {
-        if let Some((tz_name, tz_db_ver)) = lookup_timezone(lat, lon) {
-            return TimezoneResolution {
-                capture_timestamp,
-                capture_utc: None, // Would need chrono-tz to apply IANA tz; leave as None
-                capture_tz: Some(tz_name),
-                capture_tz_source: Some(CaptureTzSource::GpsLookup),
-                tz_db_version: Some(tz_db_ver),
-            };
-        }
+    if let (Some(lat), Some(lon)) = (extract.gps_lat, extract.gps_lon)
+        && let Some((tz_name, tz_db_ver)) = lookup_timezone(lat, lon)
+    {
+        return TimezoneResolution {
+            capture_timestamp,
+            capture_utc: None, // Would need chrono-tz to apply IANA tz; leave as None
+            capture_tz: Some(tz_name),
+            capture_tz_source: Some(CaptureTzSource::GpsLookup),
+            tz_db_version: Some(tz_db_ver),
+        };
     }
 
     // Case 3: Floating

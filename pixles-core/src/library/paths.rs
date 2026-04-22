@@ -38,7 +38,7 @@ fn shard_dirs(uuid: &Uuid) -> (String, String) {
 fn date_parts(capture_utc: Option<i64>) -> (u32, u8) {
     match capture_utc {
         Some(ts) => {
-            let dt = DateTime::from_timestamp(ts, 0).unwrap_or_else(|| DateTime::UNIX_EPOCH.into());
+            let dt = DateTime::from_timestamp(ts, 0).unwrap_or(DateTime::UNIX_EPOCH);
             (dt.year() as u32, dt.month() as u8)
         }
         None => (1970, 1),

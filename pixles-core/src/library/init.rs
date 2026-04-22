@@ -49,10 +49,10 @@ pub fn init_library(root: &Path, name: &str) -> Result<Library, LibraryError> {
     }
 
     let result = init_inner(root, name);
-    if let Err(ref _e) = result {
-        if !root_existed {
-            let _ = fs::remove_dir_all(root);
-        }
+    if let Err(ref _e) = result
+        && !root_existed
+    {
+        let _ = fs::remove_dir_all(root);
     }
     result
 }

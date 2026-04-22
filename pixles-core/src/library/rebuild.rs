@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+
+type StackGroupKey = (String, String);
+type StackGroupMembers = Vec<(String, String, StackType)>;
 use walkdir::WalkDir;
 
 use crate::db::rows::{AssetRow, AssetStackRow, StackMemberRow};
@@ -49,7 +52,7 @@ pub fn rebuild_index(library: &Library) -> Result<(), LibraryError> {
 
     // Reconstruct stacks: group by (detection_key, detection_method) from stack_hint.
     // key: (detection_key, detection_method_str) → Vec<(uuid, member_role_str, StackType)>
-    let mut groups: HashMap<(String, String), Vec<(String, String, StackType)>> = HashMap::new();
+    let mut groups: HashMap<StackGroupKey, StackGroupMembers> = HashMap::new();
 
     for sidecar in &sidecars {
         if let Some(hint) = &sidecar.stack_hint {
