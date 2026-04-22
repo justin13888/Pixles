@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 pixles-api-entity = { path = "../entity" }
 pixles-api-model = { path = "../model" }
-pixles-core-rust = { path = "../../pixles-core-rust" }
+pixles-core = { path = "../../pixles-core" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }

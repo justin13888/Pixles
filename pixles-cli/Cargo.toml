@@ -10,7 +10,7 @@ path = "src/main.rs"
 [dependencies]
 pixles-cli-entity = { path = "./entity" }
 pixles-cli-migration = { path = "./migration" }
-pixles-core-rust = { path = "../pixles-core-rust" }
+pixles-core = { path = "../pixles-core" }
 base64 = { workspace = true }
 capitalize = "0.3.4"
 chrono = { workspace = true }
