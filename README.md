@@ -150,6 +150,10 @@ A: Even if the best development practices, rigorous testing, and conservative de
 
 Capsule primarily benefits from active contributions and feedback! Rather than a donation we actually need more hands. See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
+### Contributor License Agreement (CLA)
+
+We require all contributors to sign a CLA. This ensures the project maintains the legal flexibility necessary to secure future funding and a dedicated maintenance team, guaranteeing the software remains actively supported and self-sufficient for decades to come.
+
 ## License
 
 Capsule is licensed under the [AGPL-3.0 License](LICENSE).

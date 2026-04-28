@@ -20,3 +20,8 @@ While we will still accept PRs with unsigned commits, to maintain transparent ow
 * Linting: If you have LSPs configured in your editor for the various languages in your repo, it should lint using the appropriate tool with correct versions by default.
 * Commit messaging: Please use **Semantic Commits** (e.g., `feat:`, `fix:`, `docs:`, `test:`) to help us automate our changelog.
 * AI usage: Refer to [AI.md](./AI.md) :)
+
+### Contributor Checklist
+
+- [ ] I have signed the [Contributor License Agreement](CLA.md).
+- [ ] My code follows the project's style guidelines.
