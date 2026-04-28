@@ -1,4 +1,4 @@
-# Contributing to Pixles
+# Contributing to Capsule
 
 First off, thank you for considering contributing! It’s people like you who make this project a great tool for everyone.
 
